@@ -1,6 +1,6 @@
 {
   "name": "feature-loop-manager",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Standalone orchestrator workspace that clones, boots, and updates client repositories for the claude-code-boilerplate feature-loop engine.",
   "author": {
