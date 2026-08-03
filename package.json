@@ -4,8 +4,8 @@
   "private": true,
   "description": "Standalone orchestrator workspace that clones, boots, and updates client repositories for the claude-code-boilerplate feature-loop engine.",
   "author": {
-    "name": "Softaims",
-    "email": "engineering@softaims.com"
+    "name": "Muhammad-uzair029",
+    "email": "muhammaduzair0299@gmail.com"
   },
   "homepage": "https://github.com/Muhammad-uzair029/claude-code-boilerplate",
   "repository": {
