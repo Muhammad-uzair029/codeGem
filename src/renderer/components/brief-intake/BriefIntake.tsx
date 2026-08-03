@@ -26,10 +26,18 @@ export function BriefIntake(): JSX.Element {
       const files = Array.from(e.dataTransfer.files);
       if (files.length === 0) return;
       const first = files[0];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = (first as any).path as string | undefined;
+      // Electron 32 removed File.path — use the webUtils bridge exposed
+      // by the preload script instead.
+      let p = '';
+      try {
+        p = api().util.getPathForFile(first);
+      } catch {
+        p = '';
+      }
       if (!p) {
-        setError('Could not read the dropped file path.');
+        setError(
+          'Could not resolve the dropped file path. Try clicking into the "Brief markdown" textarea and pasting instead.',
+        );
         return;
       }
       try {

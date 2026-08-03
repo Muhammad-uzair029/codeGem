@@ -16,10 +16,15 @@ const IDENT_RX = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 export function registerWorkspaceIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('workspace:pickExistingDir', async () => {
     const win = getWin();
-    const result = await dialog.showOpenDialog(win ?? undefined!, {
+    const opts = {
       title: 'Select an existing project directory',
-      properties: ['openDirectory', 'createDirectory'],
-    });
+      properties: ['openDirectory', 'createDirectory'] as Array<
+        'openDirectory' | 'createDirectory'
+      >,
+    };
+    const result = await (win
+      ? dialog.showOpenDialog(win, opts)
+      : dialog.showOpenDialog(opts));
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
   });
@@ -74,11 +79,16 @@ export function registerWorkspaceIpc(getWin: () => BrowserWindow | null): void {
 
   ipcMain.handle('workspace:pickParentDir', async () => {
     const win = getWin();
-    const result = await dialog.showOpenDialog(win ?? undefined!, {
+    const opts = {
       title: 'Select the parent directory for the new project',
-      properties: ['openDirectory', 'createDirectory'],
+      properties: ['openDirectory', 'createDirectory'] as Array<
+        'openDirectory' | 'createDirectory'
+      >,
       defaultPath: desktopDefault(),
-    });
+    };
+    const result = await (win
+      ? dialog.showOpenDialog(win, opts)
+      : dialog.showOpenDialog(opts));
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
   });

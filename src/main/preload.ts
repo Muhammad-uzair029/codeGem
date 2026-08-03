@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
   BriefIntake,
   BriefIntakeResult,
@@ -66,6 +66,13 @@ const api: OrchestratorApi = {
       target_framework: TargetFramework | null;
     }) => ipcRenderer.invoke('state:setActive', patch) as Promise<PersistentConfig>,
     clearActive: () => ipcRenderer.invoke('state:clearActive') as Promise<PersistentConfig>,
+  },
+  util: {
+    // Electron 32 removed the non-standard File.path property. Renderer
+    // code must resolve dropped-file paths via webUtils.getPathForFile()
+    // instead. Exposing it here so the renderer can drop-in-replace the
+    // old `(file as any).path` reads.
+    getPathForFile: (file: File): string => webUtils.getPathForFile(file),
   },
 };
 

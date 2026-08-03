@@ -142,6 +142,9 @@ export interface OrchestratorApi {
     }) => Promise<PersistentConfig>;
     clearActive: () => Promise<PersistentConfig>;
   };
+  util: {
+    getPathForFile: (file: File) => string;
+  };
 }
 
 declare global {
