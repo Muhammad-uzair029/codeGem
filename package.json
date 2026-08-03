@@ -7,10 +7,10 @@
     "name": "Softaims",
     "email": "engineering@softaims.com"
   },
-  "homepage": "https://github.com/Softaims/claude-code-boilerplate",
+  "homepage": "https://github.com/Muhammad-uzair029/claude-code-boilerplate",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Softaims/claude-code-boilerplate.git",
+    "url": "https://github.com/Muhammad-uzair029/claude-code-boilerplate.git",
     "directory": "apps/feature-loop-manager"
   },
   "main": "out/main/index.js",
@@ -110,7 +110,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "Softaims",
+      "owner": "Muhammad-uzair029",
       "repo": "claude-code-boilerplate",
       "releaseType": "release"
     }
