@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 import { api } from '@renderer/lib/api';
 import { useWorkspaceStore } from '@renderer/state/workspaceStore';
 
@@ -73,6 +74,7 @@ export function BriefIntake(): JSX.Element {
         return;
       }
       setBriefWritten(true);
+      toast.success('Feature brief written');
     } finally {
       setBusy(false);
     }

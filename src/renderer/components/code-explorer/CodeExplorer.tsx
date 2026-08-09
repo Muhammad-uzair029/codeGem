@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Tree, type NodeApi, type NodeRendererProps } from 'react-arborist';
 import { api } from '@renderer/lib/api';
 import { useWorkspaceStore } from '@renderer/state/workspaceStore';
@@ -51,8 +52,7 @@ export function CodeExplorer(): JSX.Element {
     if (!targetPath) return;
     const r = await api().explorer.openInVSCode(targetPath);
     if (!r.ok && r.reason) {
-      // Surface via the browser title bar — toast comes in Phase 6.
-      console.warn('[explorer] VS Code open failed:', r.reason);
+      toast.error(r.reason, { duration: 6000 });
     }
   };
 

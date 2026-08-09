@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { api } from '@renderer/lib/api';
 import { useWorkspaceStore } from '@renderer/state/workspaceStore';
 import type { LoopStage } from '@shared/ipc';
@@ -30,6 +31,7 @@ export function LaunchPanel(): JSX.Element {
         return;
       }
       setSkills(true, r.skillsCopied, r.canonicalDirsEnsured);
+      toast.success(`${r.skillsCopied} skills injected`);
     } finally {
       setBusy(false);
     }

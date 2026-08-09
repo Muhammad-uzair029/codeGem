@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { api } from '@renderer/lib/api';
 import { useWorkspaceStore } from '@renderer/state/workspaceStore';
 
@@ -8,6 +9,17 @@ export function StickyLaunchBar(): JSX.Element {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const launchRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    launchRef.current = () => { if (canLaunch) void launch(); };
+  });
+
+  useEffect(() => {
+    const handler = () => launchRef.current();
+    window.addEventListener('flm:launch', handler);
+    return () => window.removeEventListener('flm:launch', handler);
+  }, []);
 
   const figmaMcpMissing = brief.figmaUrl.trim().length > 0 && brief.figmaMcpUrl.trim().length === 0;
 
@@ -41,6 +53,7 @@ export function StickyLaunchBar(): JSX.Element {
       }
       setSession(r.sessionId, true);
       setStage('unknown');
+      toast.success('Feature loop launched');
     } finally {
       setBusy(false);
     }
@@ -50,6 +63,7 @@ export function StickyLaunchBar(): JSX.Element {
     if (!sessionId) return;
     await api().loop.stop(sessionId);
     setSession(null, false);
+    toast.info('Loop stopped');
   };
 
   return (

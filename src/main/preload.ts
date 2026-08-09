@@ -76,6 +76,28 @@ const api: OrchestratorApi = {
     setLayout: (sizes: [number, number, number]) =>
       ipcRenderer.invoke('state:setLayout', sizes) as Promise<PersistentConfig>,
   },
+  shortcuts: {
+    onBrowseExisting: (cb: () => void) => {
+      const listener = () => cb();
+      ipcRenderer.on('shortcut:browseExisting', listener);
+      return () => ipcRenderer.removeListener('shortcut:browseExisting', listener);
+    },
+    onToggleLeft: (cb: () => void) => {
+      const listener = () => cb();
+      ipcRenderer.on('shortcut:toggleLeft', listener);
+      return () => ipcRenderer.removeListener('shortcut:toggleLeft', listener);
+    },
+    onQuickSwitch: (cb: () => void) => {
+      const listener = () => cb();
+      ipcRenderer.on('shortcut:quickSwitch', listener);
+      return () => ipcRenderer.removeListener('shortcut:quickSwitch', listener);
+    },
+    onLaunch: (cb: () => void) => {
+      const listener = () => cb();
+      ipcRenderer.on('shortcut:launch', listener);
+      return () => ipcRenderer.removeListener('shortcut:launch', listener);
+    },
+  },
   terminal: {
     open: (req: TerminalOpenRequest) =>
       ipcRenderer.invoke('terminal:open', req) as Promise<TerminalOpenResult>,

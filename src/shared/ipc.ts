@@ -196,6 +196,12 @@ export interface OrchestratorApi {
     clearActive: () => Promise<PersistentConfig>;
     setLayout: (sizes: [number, number, number]) => Promise<PersistentConfig>;
   };
+  shortcuts: {
+    onBrowseExisting: (cb: () => void) => () => void;
+    onToggleLeft: (cb: () => void) => () => void;
+    onQuickSwitch: (cb: () => void) => () => void;
+    onLaunch: (cb: () => void) => () => void;
+  };
   terminal: {
     open: (req: TerminalOpenRequest) => Promise<TerminalOpenResult>;
     write: (req: TerminalWriteRequest) => Promise<void>;

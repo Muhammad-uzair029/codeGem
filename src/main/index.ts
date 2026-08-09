@@ -1,6 +1,7 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, globalShortcut } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import windowStateKeeper from 'electron-window-state';
 import { registerWorkspaceIpc } from './services/workspaceService.js';
 import { registerInboxIpc } from './services/inboxService.js';
 import { registerSkillsIpc } from './services/skillInjectionService.js';
@@ -17,9 +18,16 @@ let mainWin: BrowserWindow | null = null;
 const getWin = (): BrowserWindow | null => mainWin;
 
 function createWindow(): void {
+  const winState = windowStateKeeper({
+    defaultWidth: 1180,
+    defaultHeight: 780,
+  });
+
   mainWin = new BrowserWindow({
-    width: 1180,
-    height: 780,
+    x: winState.x,
+    y: winState.y,
+    width: winState.width,
+    height: winState.height,
     minWidth: 960,
     minHeight: 640,
     backgroundColor: '#0b0d10',
@@ -33,8 +41,12 @@ function createWindow(): void {
     },
   });
 
+  winState.manage(mainWin);
+
   mainWin.once('ready-to-show', () => {
     mainWin?.show();
+    if (winState.isFullScreen) mainWin?.setFullScreen(true);
+    else if (winState.isMaximized) mainWin?.maximize();
   });
 
   mainWin.webContents.setWindowOpenHandler(({ url }) => {
@@ -46,6 +58,40 @@ function createWindow(): void {
     void mainWin.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
     void mainWin.loadFile(join(__dirname_, '..', 'renderer', 'index.html'));
+  }
+
+  registerShortcuts();
+}
+
+function registerShortcuts(): void {
+  const win = mainWin;
+  if (!win) return;
+
+  // Cmd+O — Browse existing directory (relay to renderer).
+  globalShortcut.register('CommandOrControl+O', () => {
+    win.webContents.send('shortcut:browseExisting');
+  });
+
+  // Cmd+B — Collapse/expand config rail.
+  globalShortcut.register('CommandOrControl+B', () => {
+    win.webContents.send('shortcut:toggleLeft');
+  });
+
+  // Cmd+K — Quick-switch project (open recent-projects dropdown).
+  globalShortcut.register('CommandOrControl+K', () => {
+    win.webContents.send('shortcut:quickSwitch');
+  });
+
+  // Cmd+Enter — Launch loop.
+  globalShortcut.register('CommandOrControl+Return', () => {
+    win.webContents.send('shortcut:launch');
+  });
+
+  // Cmd+R — Reload renderer (dev only).
+  if (isDev) {
+    globalShortcut.register('CommandOrControl+R', () => {
+      win.webContents.reload();
+    });
   }
 }
 
@@ -67,5 +113,6 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  globalShortcut.unregisterAll();
   if (process.platform !== 'darwin') app.quit();
 });

@@ -40,6 +40,28 @@ export function AppShell(): JSX.Element {
       .catch(() => {/* start fresh */});
   }, [hydrateFromConfig]);
 
+  // Global keyboard shortcut listeners from main process.
+  useEffect(() => {
+    const offToggleLeft = api().shortcuts.onToggleLeft(() => toggleLeft());
+    const offLaunch = api().shortcuts.onLaunch(() => {
+      // Delegate to StickyLaunchBar via a custom DOM event so it can check canLaunch state.
+      window.dispatchEvent(new CustomEvent('flm:launch'));
+    });
+    const offBrowse = api().shortcuts.onBrowseExisting(() => {
+      window.dispatchEvent(new CustomEvent('flm:browseExisting'));
+    });
+    const offQuickSwitch = api().shortcuts.onQuickSwitch(() => {
+      window.dispatchEvent(new CustomEvent('flm:quickSwitch'));
+    });
+    return () => {
+      offToggleLeft();
+      offLaunch();
+      offBrowse();
+      offQuickSwitch();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const onLayout = useCallback((newSizes: number[]) => {
     const next = newSizes as [number, number, number];
     setSizes(next);
