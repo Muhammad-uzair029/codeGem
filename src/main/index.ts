@@ -8,6 +8,7 @@ import { registerLoopIpc } from './services/loopService.js';
 import { registerPersistentStateIpc } from './services/persistentStateController.js';
 import { registerAutoUpdater } from './services/updaterService.js';
 import { registerTerminalIpc } from './services/terminalService.js';
+import { registerExplorerIpc } from './services/explorerService.js';
 
 const isDev = !app.isPackaged;
 const __dirname_ = join(fileURLToPath(import.meta.url), '..');
@@ -55,6 +56,7 @@ app.whenReady().then(() => {
   registerLoopIpc(getWin);
   registerPersistentStateIpc();
   registerTerminalIpc(getWin);
+  registerExplorerIpc();
 
   createWindow();
   registerAutoUpdater(getWin);
