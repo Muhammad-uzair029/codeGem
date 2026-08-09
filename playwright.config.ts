@@ -1,7 +1,5 @@
 import { defineConfig } from '@playwright/test';
 
-// Playwright config for Electron smoke tests. We launch the packaged
-// out/main/index.js via _electron.launch — no browser projects needed.
 export default defineConfig({
   testDir: './e2e',
   timeout: 60_000,
@@ -12,4 +10,15 @@ export default defineConfig({
   use: {
     trace: 'on-first-retry',
   },
+  projects: [
+    {
+      name: 'dev',
+      testMatch: 'smoke.spec.ts',
+    },
+    {
+      // Runs against the packaged .app bundle (requires pnpm pack:dir first).
+      name: 'packaged',
+      testMatch: 'packaged.spec.ts',
+    },
+  ],
 });

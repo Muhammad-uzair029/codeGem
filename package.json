@@ -26,7 +26,8 @@
     "pack:win": "electron-vite build && electron-builder --win",
     "pack:linux": "electron-vite build && electron-builder --linux",
     "release": "electron-vite build && electron-builder --publish always",
-    "test:e2e": "electron-vite build && playwright test",
+    "test:e2e": "electron-vite build && playwright test --project=dev",
+    "test:e2e:packaged": "playwright test --project=packaged",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
