@@ -7,6 +7,7 @@ import { registerSkillsIpc } from './services/skillInjectionService.js';
 import { registerLoopIpc } from './services/loopService.js';
 import { registerPersistentStateIpc } from './services/persistentStateController.js';
 import { registerAutoUpdater } from './services/updaterService.js';
+import { registerTerminalIpc } from './services/terminalService.js';
 
 const isDev = !app.isPackaged;
 const __dirname_ = join(fileURLToPath(import.meta.url), '..');
@@ -53,6 +54,7 @@ app.whenReady().then(() => {
   registerSkillsIpc();
   registerLoopIpc(getWin);
   registerPersistentStateIpc();
+  registerTerminalIpc(getWin);
 
   createWindow();
   registerAutoUpdater(getWin);
