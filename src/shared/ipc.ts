@@ -109,6 +109,63 @@ export interface LoopExitEvent {
   ts: number;
 }
 
+// Layout panel sizes persisted in config.json.
+export interface LayoutConfig {
+  panel_sizes: [number, number, number];
+}
+
+// Extended PersistentConfig with layout key.
+export interface PersistentConfigV2 extends PersistentConfig {
+  layout?: LayoutConfig;
+}
+
+// Terminal IPC types.
+export interface TerminalOpenRequest {
+  projectPath: string;
+}
+
+export interface TerminalOpenResult {
+  ok: boolean;
+  sessionId: string;
+  reason?: string;
+}
+
+export interface TerminalWriteRequest {
+  sessionId: string;
+  data: string;
+}
+
+export interface TerminalResizeRequest {
+  sessionId: string;
+  cols: number;
+  rows: number;
+}
+
+export interface TerminalDataEvent {
+  sessionId: string;
+  data: string;
+}
+
+export interface TerminalExitEvent {
+  sessionId: string;
+  code: number | null;
+}
+
+// Explorer IPC types.
+export interface FileNode {
+  id: string;
+  name: string;
+  path: string;
+  isDir: boolean;
+  children?: FileNode[];
+}
+
+export interface ExplorerReadTreeResult {
+  ok: boolean;
+  tree: FileNode[];
+  reason?: string;
+}
+
 // window.orchestrator surface.
 export interface OrchestratorApi {
   workspace: {
@@ -141,6 +198,20 @@ export interface OrchestratorApi {
       target_framework: TargetFramework | null;
     }) => Promise<PersistentConfig>;
     clearActive: () => Promise<PersistentConfig>;
+  };
+  terminal: {
+    open: (req: TerminalOpenRequest) => Promise<TerminalOpenResult>;
+    write: (req: TerminalWriteRequest) => Promise<void>;
+    resize: (req: TerminalResizeRequest) => Promise<void>;
+    close: (sessionId: string) => Promise<{ ok: boolean }>;
+    onData: (cb: (evt: TerminalDataEvent) => void) => () => void;
+    onExit: (cb: (evt: TerminalExitEvent) => void) => () => void;
+  };
+  explorer: {
+    readTree: (projectPath: string) => Promise<ExplorerReadTreeResult>;
+    openInVSCode: (projectPath: string) => Promise<{ ok: boolean; reason?: string }>;
+    openInFinder: (projectPath: string) => Promise<{ ok: boolean }>;
+    hasVSCodeCli: () => Promise<boolean>;
   };
   util: {
     getPathForFile: (file: File) => string;

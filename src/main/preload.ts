@@ -3,6 +3,7 @@ import type {
   BriefIntake,
   BriefIntakeResult,
   ExistingWorkspaceValidation,
+  ExplorerReadTreeResult,
   FrameworkDetection,
   LaunchRequest,
   LaunchResult,
@@ -16,6 +17,12 @@ import type {
   SkillInjectionRequest,
   SkillInjectionResult,
   TargetFramework,
+  TerminalDataEvent,
+  TerminalExitEvent,
+  TerminalOpenRequest,
+  TerminalOpenResult,
+  TerminalResizeRequest,
+  TerminalWriteRequest,
 } from '@shared/ipc';
 
 const api: OrchestratorApi = {
@@ -66,6 +73,36 @@ const api: OrchestratorApi = {
       target_framework: TargetFramework | null;
     }) => ipcRenderer.invoke('state:setActive', patch) as Promise<PersistentConfig>,
     clearActive: () => ipcRenderer.invoke('state:clearActive') as Promise<PersistentConfig>,
+  },
+  terminal: {
+    open: (req: TerminalOpenRequest) =>
+      ipcRenderer.invoke('terminal:open', req) as Promise<TerminalOpenResult>,
+    write: (req: TerminalWriteRequest) =>
+      ipcRenderer.invoke('terminal:write', req) as Promise<void>,
+    resize: (req: TerminalResizeRequest) =>
+      ipcRenderer.invoke('terminal:resize', req) as Promise<void>,
+    close: (sessionId: string) =>
+      ipcRenderer.invoke('terminal:close', sessionId) as Promise<{ ok: boolean }>,
+    onData: (cb: (evt: TerminalDataEvent) => void) => {
+      const listener = (_e: unknown, payload: TerminalDataEvent) => cb(payload);
+      ipcRenderer.on('terminal:data', listener);
+      return () => ipcRenderer.removeListener('terminal:data', listener);
+    },
+    onExit: (cb: (evt: TerminalExitEvent) => void) => {
+      const listener = (_e: unknown, payload: TerminalExitEvent) => cb(payload);
+      ipcRenderer.on('terminal:exit', listener);
+      return () => ipcRenderer.removeListener('terminal:exit', listener);
+    },
+  },
+  explorer: {
+    readTree: (projectPath: string) =>
+      ipcRenderer.invoke('explorer:readTree', projectPath) as Promise<ExplorerReadTreeResult>,
+    openInVSCode: (projectPath: string) =>
+      ipcRenderer.invoke('explorer:openInVSCode', projectPath) as Promise<{ ok: boolean; reason?: string }>,
+    openInFinder: (projectPath: string) =>
+      ipcRenderer.invoke('explorer:openInFinder', projectPath) as Promise<{ ok: boolean }>,
+    hasVSCodeCli: () =>
+      ipcRenderer.invoke('explorer:hasVSCodeCli') as Promise<boolean>,
   },
   util: {
     // Electron 32 removed the non-standard File.path property. Renderer
