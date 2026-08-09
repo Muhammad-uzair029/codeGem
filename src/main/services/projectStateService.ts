@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'no
 import { join } from 'node:path';
 import type {
   FrameworkDetection,
+  LayoutConfig,
   PersistentConfig,
   ProjectType,
   TargetFramework,
@@ -34,6 +35,7 @@ export function readConfig(): PersistentConfig {
       project_type: parsed.project_type ?? null,
       target_framework: parsed.target_framework ?? null,
       history: Array.isArray(parsed.history) ? parsed.history : [],
+      layout: parsed.layout,
     };
   } catch {
     return { ...EMPTY_CONFIG };
@@ -76,6 +78,12 @@ export function clearActiveProject(): PersistentConfig {
     project_type: null,
     target_framework: null,
   });
+}
+
+export function setLayout(sizes: [number, number, number]): PersistentConfig {
+  const cfg = readConfig();
+  const layout: LayoutConfig = { panel_sizes: sizes };
+  return writeConfig({ ...cfg, layout });
 }
 
 // Framework detection is a best-effort read of the target project's

@@ -73,6 +73,8 @@ const api: OrchestratorApi = {
       target_framework: TargetFramework | null;
     }) => ipcRenderer.invoke('state:setActive', patch) as Promise<PersistentConfig>,
     clearActive: () => ipcRenderer.invoke('state:clearActive') as Promise<PersistentConfig>,
+    setLayout: (sizes: [number, number, number]) =>
+      ipcRenderer.invoke('state:setLayout', sizes) as Promise<PersistentConfig>,
   },
   terminal: {
     open: (req: TerminalOpenRequest) =>

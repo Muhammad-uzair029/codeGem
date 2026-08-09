@@ -5,6 +5,11 @@
 export type ProjectType = 'NEW_SCAFFOLD' | 'EXISTING_LEGACY';
 export type TargetFramework = 'REACT_NATIVE_EXPO' | 'NEST_JS';
 
+// Layout panel sizes persisted in config.json.
+export interface LayoutConfig {
+  panel_sizes: [number, number, number];
+}
+
 // Persistent config.json shape (Electron userData/config.json).
 export interface PersistentConfig {
   active_project_path: string | null;
@@ -16,6 +21,7 @@ export interface PersistentConfig {
     target_framework: TargetFramework | null;
     last_used_at: string;
   }>;
+  layout?: LayoutConfig;
 }
 
 export interface ExistingWorkspaceValidation {
@@ -109,16 +115,6 @@ export interface LoopExitEvent {
   ts: number;
 }
 
-// Layout panel sizes persisted in config.json.
-export interface LayoutConfig {
-  panel_sizes: [number, number, number];
-}
-
-// Extended PersistentConfig with layout key.
-export interface PersistentConfigV2 extends PersistentConfig {
-  layout?: LayoutConfig;
-}
-
 // Terminal IPC types.
 export interface TerminalOpenRequest {
   projectPath: string;
@@ -198,6 +194,7 @@ export interface OrchestratorApi {
       target_framework: TargetFramework | null;
     }) => Promise<PersistentConfig>;
     clearActive: () => Promise<PersistentConfig>;
+    setLayout: (sizes: [number, number, number]) => Promise<PersistentConfig>;
   };
   terminal: {
     open: (req: TerminalOpenRequest) => Promise<TerminalOpenResult>;
