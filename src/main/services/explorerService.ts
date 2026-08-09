@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { readdirSync, statSync } from 'node:fs';
-import { join, basename } from 'node:path';
+import { join } from 'node:path';
 import { execSync, spawn } from 'node:child_process';
 import type { ExplorerReadTreeResult, FileNode } from '@shared/ipc';
 

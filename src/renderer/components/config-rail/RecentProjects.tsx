@@ -10,7 +10,7 @@ export function RecentProjects(): JSX.Element {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { setTargetPath, setValidation, setFramework, targetPath } = useWorkspaceStore();
+  const { setTargetPath, setValidation, setFramework, setMode, targetPath } = useWorkspaceStore();
 
   useEffect(() => {
     void api()
@@ -32,6 +32,7 @@ export function RecentProjects(): JSX.Element {
     setBusy(true);
     try {
       setTargetPath(entry.active_project_path, entry.project_type);
+      setMode(entry.project_type === 'NEW_SCAFFOLD' ? 'new' : 'existing');
       const [v, det] = await Promise.all([
         api().workspace.validateExisting(entry.active_project_path),
         api().workspace.detectFramework(entry.active_project_path),

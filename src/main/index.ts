@@ -43,6 +43,11 @@ function createWindow(): void {
 
   winState.manage(mainWin);
 
+  // Only capture shortcuts while the app window is focused to avoid
+  // stomping on Cmd+O / Cmd+B / Cmd+K in other macOS apps.
+  mainWin.on('focus', () => registerShortcuts());
+  mainWin.on('blur', () => globalShortcut.unregisterAll());
+
   mainWin.once('ready-to-show', () => {
     mainWin?.show();
     if (winState.isFullScreen) mainWin?.setFullScreen(true);
@@ -60,7 +65,6 @@ function createWindow(): void {
     void mainWin.loadFile(join(__dirname_, '..', 'renderer', 'index.html'));
   }
 
-  registerShortcuts();
 }
 
 function registerShortcuts(): void {

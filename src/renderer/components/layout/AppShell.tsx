@@ -23,6 +23,8 @@ export function AppShell(): JSX.Element {
   const leftRef = useRef<ImperativePanelHandle>(null);
   const rightRef = useRef<ImperativePanelHandle>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stable ref so the once-mounted shortcut listener always calls the latest toggleLeft.
+  const toggleLeftRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     void api()
@@ -40,9 +42,12 @@ export function AppShell(): JSX.Element {
       .catch(() => {/* start fresh */});
   }, [hydrateFromConfig]);
 
+  // Keep the ref current on every render so the mounted listener never goes stale.
+  useEffect(() => { toggleLeftRef.current = toggleLeft; });
+
   // Global keyboard shortcut listeners from main process.
   useEffect(() => {
-    const offToggleLeft = api().shortcuts.onToggleLeft(() => toggleLeft());
+    const offToggleLeft = api().shortcuts.onToggleLeft(() => toggleLeftRef.current());
     const offLaunch = api().shortcuts.onLaunch(() => {
       // Delegate to StickyLaunchBar via a custom DOM event so it can check canLaunch state.
       window.dispatchEvent(new CustomEvent('flm:launch'));
