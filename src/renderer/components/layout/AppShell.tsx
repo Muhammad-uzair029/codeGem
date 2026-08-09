@@ -7,6 +7,9 @@ import { BriefIntake } from '@renderer/components/brief-intake/BriefIntake';
 import { LaunchPanel } from '@renderer/components/launch-panel/LaunchPanel';
 import { TerminalView } from '@renderer/components/terminal-view/TerminalView';
 import { CodeExplorer } from '@renderer/components/code-explorer/CodeExplorer';
+import { RecentProjects } from '@renderer/components/config-rail/RecentProjects';
+import { CollapsibleSection } from '@renderer/components/config-rail/CollapsibleSection';
+import { StickyLaunchBar } from '@renderer/components/config-rail/StickyLaunchBar';
 
 const DEFAULT_SIZES: [number, number, number] = [28, 44, 28];
 const MIN_SIZES = { left: 200, center: 320, right: 240 };
@@ -100,10 +103,20 @@ export function AppShell(): JSX.Element {
               side="left"
             />
             {!leftCollapsed && (
-              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3" style={{ minWidth: MIN_SIZES.left }}>
-                <ProjectSelector />
-                <BriefIntake />
-                <LaunchPanel />
+              <div className="flex-1 flex flex-col overflow-hidden" style={{ minWidth: MIN_SIZES.left }}>
+                <RecentProjects />
+                <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+                  <CollapsibleSection title="Project" storageKey="project">
+                    <ProjectSelector />
+                  </CollapsibleSection>
+                  <CollapsibleSection title="Brief" storageKey="brief">
+                    <BriefIntake />
+                  </CollapsibleSection>
+                  <CollapsibleSection title="Advanced" storageKey="advanced">
+                    <LaunchPanel />
+                  </CollapsibleSection>
+                </div>
+                <StickyLaunchBar />
               </div>
             )}
           </div>

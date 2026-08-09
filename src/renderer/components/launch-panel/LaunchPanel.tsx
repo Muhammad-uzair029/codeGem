@@ -12,34 +12,11 @@ const STAGES: { id: LoopStage; label: string }[] = [
 ];
 
 export function LaunchPanel(): JSX.Element {
-  const {
-    targetPath,
-    validation,
-    brief,
-    briefWritten,
-    skillsInjected,
-    skillsCopiedCount,
-    canonicalDirsEnsured,
-    setSkills,
-    setSession,
-    setStage,
-    stage,
-    running,
-    sessionId,
-  } = useWorkspaceStore();
+  const { targetPath, validation, skillsInjected, skillsCopiedCount, canonicalDirsEnsured, setSkills, running, stage } =
+    useWorkspaceStore();
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const figmaMcpMissing =
-    brief.figmaUrl.trim().length > 0 && brief.figmaMcpUrl.trim().length === 0;
-
-  const canLaunch =
-    Boolean(targetPath && validation?.ok) &&
-    briefWritten &&
-    skillsInjected &&
-    !figmaMcpMissing &&
-    !running;
 
   const inject = async () => {
     if (!targetPath) return;
@@ -58,37 +35,12 @@ export function LaunchPanel(): JSX.Element {
     }
   };
 
-  const launch = async () => {
-    if (!canLaunch) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const r = await api().loop.launch({ targetPath, forceAutonomous: true });
-      if (!r.ok || !r.sessionId) {
-        setError(r.reason ?? 'Launch failed.');
-        setSession(null, false);
-        return;
-      }
-      setSession(r.sessionId, true);
-      setStage('unknown');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const stop = async () => {
-    if (!sessionId) return;
-    await api().loop.stop(sessionId);
-    setSession(null, false);
-  };
-
   return (
-    <section className="card p-5 space-y-4">
+    <section className="card p-4 space-y-3">
       <header>
-        <div className="text-sm font-semibold">3 · Inject skills + launch loop</div>
+        <div className="text-sm font-semibold">3 · Inject skills</div>
         <div className="text-xs text-neutral-400">
-          Skill matrix + <code>CLAUDE.md</code> are copied into the target project. Then
-          <code> claude /feature-loop --force-autonomous</code> runs inside that path.
+          Copies skill matrix + <code>CLAUDE.md</code> into the target project.
         </div>
       </header>
 
@@ -98,54 +50,29 @@ export function LaunchPanel(): JSX.Element {
           onClick={inject}
           disabled={!validation?.ok || busy || running}
         >
-          {skillsInjected ? `Re-inject skills (${skillsCopiedCount})` : 'Inject skills + CLAUDE.md'}
+          {skillsInjected ? `Re-inject (${skillsCopiedCount})` : 'Inject skills + CLAUDE.md'}
         </button>
         {skillsInjected && (
           <>
             <span className="pill">
-              <span className="text-good">●</span> {skillsCopiedCount} skills copied
+              <span className="text-good">●</span> {skillsCopiedCount} copied
             </span>
             {canonicalDirsEnsured.length > 0 && (
-              <span className="pill">
-                <span className="text-good">●</span> canonical: {canonicalDirsEnsured.join(', ')}
+              <span className="pill text-[10px]">
+                <span className="text-good">●</span> {canonicalDirsEnsured.join(', ')}
               </span>
             )}
           </>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          className="btn-primary"
-          onClick={launch}
-          disabled={!canLaunch || busy}
-          title={
-            !briefWritten
-              ? 'Write the feature brief first.'
-              : !skillsInjected
-                ? 'Inject skills first.'
-                : figmaMcpMissing
-                  ? 'Figma MCP URL required when a design URL is provided.'
-                  : ''
-          }
-        >
-          {running ? 'Loop running…' : 'Launch Autonomous Feature Loop'}
-        </button>
-        {running && (
-          <button className="btn-ghost" onClick={stop}>
-            Stop
-          </button>
-        )}
-        {error && (
-          <span className="text-xs text-bad" role="alert">
-            {error}
-          </span>
-        )}
-      </div>
+      {error && (
+        <div className="text-xs text-bad" role="alert">{error}</div>
+      )}
 
-      <div className="pt-2">
+      <div>
         <div className="field-label mb-2">Stage</div>
-        <ol className="flex items-center gap-2 text-[11px]">
+        <ol className="flex flex-wrap items-center gap-1.5 text-[10px]">
           {STAGES.map((s, i) => {
             const idx = STAGES.findIndex((x) => x.id === stage);
             const isActive = stage === s.id;
