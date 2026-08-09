@@ -1,17 +1,16 @@
 {
-  "name": "feature-loop-manager",
+  "name": "codegem",
   "version": "0.2.0",
   "private": true,
-  "description": "Standalone orchestrator workspace that clones, boots, and updates client repositories for the claude-code-boilerplate feature-loop engine.",
+  "description": "codeGem — AI-powered feature orchestrator for Claude Code workflows.",
   "author": {
     "name": "Muhammad-uzair029",
     "email": "muhammaduzair0299@gmail.com"
   },
-  "homepage": "https://github.com/Muhammad-uzair029/claude-code-boilerplate",
+  "homepage": "https://github.com/Muhammad-uzair029/codeGem",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Muhammad-uzair029/claude-code-boilerplate.git",
-    "directory": "apps/feature-loop-manager"
+    "url": "https://github.com/Muhammad-uzair029/codeGem.git"
   },
   "main": "out/main/index.js",
   "type": "module",
@@ -77,14 +76,14 @@
     ],
     "extraResources": [
       {
-        "from": "../../.claude/skills",
+        "from": ".claude/skills",
         "to": "boilerplate/.claude/skills",
         "filter": [
           "**/*"
         ]
       },
       {
-        "from": "../../CLAUDE.md",
+        "from": ".claude/CLAUDE.md",
         "to": "boilerplate/CLAUDE.md"
       }
     ],
@@ -148,7 +147,7 @@
     "publish": {
       "provider": "github",
       "owner": "Muhammad-uzair029",
-      "repo": "claude-code-boilerplate",
+      "repo": "codeGem",
       "releaseType": "release"
     }
   }
