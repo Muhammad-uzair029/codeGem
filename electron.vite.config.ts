@@ -14,6 +14,9 @@ export default defineConfig({
       lib: {
         entry: resolve(__dirname, 'src/main/index.ts'),
       },
+      rollupOptions: {
+        external: ['adm-zip'],
+      },
     },
     resolve: {
       alias: {
