@@ -16,6 +16,9 @@ import type {
   ProjectType,
   SkillInjectionRequest,
   SkillInjectionResult,
+  SkillsCacheStatus,
+  SkillsInstallResult,
+  SkillsRemoteListResult,
   TargetFramework,
   TerminalDataEvent,
   TerminalExitEvent,
@@ -48,6 +51,17 @@ const api: OrchestratorApi = {
   skills: {
     inject: (req: SkillInjectionRequest) =>
       ipcRenderer.invoke('skills:inject', req) as Promise<SkillInjectionResult>,
+  },
+  skillsRemote: {
+    fetchList: () =>
+      ipcRenderer.invoke('skillsRemote:fetchList') as Promise<SkillsRemoteListResult>,
+    install: (names: string[]) =>
+      ipcRenderer.invoke('skillsRemote:install', names) as Promise<SkillsInstallResult>,
+    installAll: () =>
+      ipcRenderer.invoke('skillsRemote:installAll') as Promise<SkillsInstallResult>,
+    status: () =>
+      ipcRenderer.invoke('skillsRemote:status') as Promise<SkillsCacheStatus>,
+    skip: () => ipcRenderer.invoke('skillsRemote:skip') as Promise<void>,
   },
   loop: {
     launch: (req: LaunchRequest) =>

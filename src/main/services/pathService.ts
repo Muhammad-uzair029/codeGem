@@ -12,6 +12,13 @@ import { fileURLToPath } from 'node:url';
 //   dev:     <repo>/apps/feature-loop-manager/src/main/services/pathService.ts
 // In both cases the boilerplate root is a few dir hops above.
 export function boilerplateRepoRoot(): string {
+  // Priority 1: user's downloaded cache (from skillsRemoteService)
+  const userDataCache = join(app.getPath('userData'), 'boilerplate');
+  if (existsSync(join(userDataCache, '.claude', 'skills'))) {
+    return userDataCache;
+  }
+
+  // Priority 2: dev mode — walk up directory tree
   const here = dirname(fileURLToPath(import.meta.url));
   let cursor = here;
   for (let hop = 0; hop < 10; hop++) {
@@ -22,13 +29,15 @@ export function boilerplateRepoRoot(): string {
     if (parent === cursor) break;
     cursor = parent;
   }
+
+  // Priority 3: bundled fallback (extraResources)
   const resourceFallback = join(process.resourcesPath ?? '', 'boilerplate');
   if (existsSync(join(resourceFallback, '.claude', 'skills'))) {
     return resourceFallback;
   }
+
   throw new Error(
-    `Could not locate boilerplate repo root (looked for .claude/skills/feature-loop). ` +
-      `Started from ${here}. Package this app inside claude-code-boilerplate/apps/feature-loop-manager/.`,
+    `Could not locate boilerplate repo root. Download skills via the onboarding screen or Settings.`,
   );
 }
 

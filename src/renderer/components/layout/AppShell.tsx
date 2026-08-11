@@ -10,6 +10,7 @@ import { CodeExplorer } from '@renderer/components/code-explorer/CodeExplorer';
 import { RecentProjects } from '@renderer/components/config-rail/RecentProjects';
 import { CollapsibleSection } from '@renderer/components/config-rail/CollapsibleSection';
 import { StickyLaunchBar } from '@renderer/components/config-rail/StickyLaunchBar';
+import { Onboarding } from '@renderer/components/onboarding/Onboarding';
 
 const DEFAULT_SIZES: [number, number, number] = [28, 44, 28];
 const MIN_SIZES = { left: 200, center: 320, right: 240 };
@@ -17,6 +18,7 @@ const MIN_SIZES = { left: 200, center: 320, right: 240 };
 export function AppShell(): JSX.Element {
   const hydrateFromConfig = useWorkspaceStore((s) => s.hydrateFromConfig);
   const targetPath = useWorkspaceStore((s) => s.targetPath);
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
   const [sizes, setSizes] = useState<[number, number, number]>(DEFAULT_SIZES);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
@@ -25,6 +27,17 @@ export function AppShell(): JSX.Element {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stable ref so the once-mounted shortcut listener always calls the latest toggleLeft.
   const toggleLeftRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    void api()
+      .skillsRemote.status()
+      .then((s) => {
+        setOnboardingDone(s.installed || s.skipped);
+      })
+      .catch(() => {
+        setOnboardingDone(true);
+      });
+  }, []);
 
   useEffect(() => {
     void api()
@@ -97,6 +110,21 @@ export function AppShell(): JSX.Element {
   };
 
   const version = import.meta.env.VITE_APP_VERSION as string | undefined;
+
+  if (onboardingDone === null) {
+    return (
+      <div className="flex h-screen bg-[#0b0d10] items-center justify-center">
+        <svg className="w-5 h-5 animate-spin text-violet-400" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (!onboardingDone) {
+    return <Onboarding onDone={() => setOnboardingDone(true)} />;
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#0b0d10] text-neutral-100">

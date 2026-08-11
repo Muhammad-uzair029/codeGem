@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { api } from '@renderer/lib/api';
 import { useWorkspaceStore } from '@renderer/state/workspaceStore';
 import type { LoopStage } from '@shared/ipc';
+import { SkillsUpdater } from '@renderer/components/config-rail/SkillsUpdater';
 
 const STAGES: { id: LoopStage; label: string }[] = [
   { id: 'intake', label: 'Intake' },
@@ -102,6 +103,8 @@ export function LaunchPanel(): JSX.Element {
           })}
         </ol>
       </div>
+
+      <SkillsUpdater />
     </section>
   );
 }

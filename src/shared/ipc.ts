@@ -65,6 +65,31 @@ export interface BriefIntakeResult {
   reason?: string;
 }
 
+export interface SkillInfo {
+  name: string;
+  description: string;
+}
+
+export interface SkillsRemoteListResult {
+  ok: boolean;
+  skills: SkillInfo[];
+  reason?: string;
+}
+
+export interface SkillsInstallResult {
+  ok: boolean;
+  count: number;
+  reason?: string;
+}
+
+export interface SkillsCacheStatus {
+  installed: boolean;
+  downloadedAt: string | null;
+  count: number;
+  skills: string[];
+  skipped: boolean;
+}
+
 export interface SkillInjectionRequest {
   targetPath: string;
   overwrite?: boolean;
@@ -179,6 +204,13 @@ export interface OrchestratorApi {
   };
   skills: {
     inject: (req: SkillInjectionRequest) => Promise<SkillInjectionResult>;
+  };
+  skillsRemote: {
+    fetchList: () => Promise<SkillsRemoteListResult>;
+    install: (names: string[]) => Promise<SkillsInstallResult>;
+    installAll: () => Promise<SkillsInstallResult>;
+    status: () => Promise<SkillsCacheStatus>;
+    skip: () => Promise<void>;
   };
   loop: {
     launch: (req: LaunchRequest) => Promise<LaunchResult>;
