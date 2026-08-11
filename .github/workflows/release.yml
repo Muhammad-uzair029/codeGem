@@ -110,13 +110,10 @@ jobs:
         if: runner.os == 'macOS'
         run: pip3 install setuptools --break-system-packages --quiet
 
-      - name: Configure MSVC for node-gyp (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: npm config set msvs_version 2022
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          npm_config_msvs_version: '2022'
 
       - name: Typecheck
         run: pnpm typecheck
