@@ -20,8 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Use a token with push rights so the tag push triggers release.yml.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # PAT_TOKEN (not GITHUB_TOKEN) is required here — pushes made with
+          # GITHUB_TOKEN are blocked from triggering other workflows (GitHub
+          # security rule). A PAT-authenticated push DOES fire release.yml.
+          token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
 
       - name: Configure git identity
@@ -47,6 +49,7 @@ jobs:
 
       - name: Commit, tag, and push
         run: |
+          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
           git add package.json
           git commit -m "chore: bump version to v${{ steps.bump.outputs.new }} [skip ci]"
           git tag "v${{ steps.bump.outputs.new }}"
