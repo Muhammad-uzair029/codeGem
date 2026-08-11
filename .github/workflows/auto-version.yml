@@ -1,0 +1,53 @@
+name: Auto-version · codeGem
+
+# Runs on every human push to main.
+# Bumps the patch version, commits, tags, and pushes — which then
+# triggers the release workflow to build and publish the binaries.
+on:
+  push:
+    branches: [main]
+
+# Skip if the push was made by this workflow itself (prevents loops).
+jobs:
+  bump:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Use a token with push rights so the tag push triggers release.yml.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump patch version in package.json
+        id: bump
+        run: |
+          OLD=$(node -p "require('./package.json').version")
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+            const [maj,min,pat] = pkg.version.split('.').map(Number);
+            pkg.version = \`\${maj}.\${min}.\${pat+1}\`;
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          NEW=$(node -p "require('./package.json').version")
+          echo "old=$OLD" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "Bumped $OLD → $NEW"
+
+      - name: Commit, tag, and push
+        run: |
+          git add package.json
+          git commit -m "chore: bump version to v${{ steps.bump.outputs.new }} [skip ci]"
+          git tag "v${{ steps.bump.outputs.new }}"
+          git push origin main
+          git push origin "v${{ steps.bump.outputs.new }}"

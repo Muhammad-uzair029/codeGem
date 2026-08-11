@@ -1,5 +1,7 @@
 name: Release · codeGem
 
+# Triggered automatically by auto-version.yml when it pushes a v* tag,
+# or manually via the GitHub Actions UI.
 on:
   push:
     tags:
@@ -7,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (must match package.json)'
+        description: 'Version to build (must match package.json, e.g. 0.2.1)'
         required: true
 
 concurrency:
@@ -15,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: write   # electron-builder needs this to upload release assets
 
 jobs:
   build:
@@ -51,11 +53,24 @@ jobs:
       - name: Build renderer + main + preload
         run: pnpm build
 
-      - name: Package + publish (electron-builder)
+      - name: Package + publish  (macOS — arm64 + x64 DMG)
+        if: runner.os == 'macOS'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: pnpm release
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'   # no code-signing cert yet
+        run: pnpm release --mac --arm64 --x64
+
+      - name: Package + publish  (Windows — NSIS installer)
+        if: runner.os == 'Windows'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm release --win
+
+      - name: Package + publish  (Linux — AppImage + deb)
+        if: runner.os == 'Linux'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm release --linux
 
       - name: Upload build logs on failure
         if: failure()
