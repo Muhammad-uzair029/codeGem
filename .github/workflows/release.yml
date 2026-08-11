@@ -136,18 +136,19 @@ jobs:
         run: |
           TAG="${{ needs.prepare.outputs.tag }}"
           REPO="${{ github.repository }}"
-          upload() {
-            local pattern="$1"
-            ls $pattern 2>/dev/null && \
-              gh release upload "$TAG" $pattern --clobber --repo "$REPO" || true
-          }
-          upload "dist/*.dmg"
-          upload "dist/*.zip"
-          upload "dist/*.exe"
-          upload "dist/*.AppImage"
-          upload "dist/*.deb"
-          upload "dist/*.blockmap"
-          upload "dist/latest*.yml"
+          shopt -s nullglob
+          files=(
+            dist/*.dmg
+            dist/*.zip
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.blockmap
+            dist/latest*.yml
+          )
+          if [ ${#files[@]} -gt 0 ]; then
+            gh release upload "$TAG" "${files[@]}" --clobber --repo "$REPO"
+          fi
 
       - name: Upload build logs on failure
         if: failure()

@@ -61,7 +61,7 @@
   },
   "build": {
     "appId": "com.softaims.feature-loop-manager",
-    "productName": "Feature-Loop Manager",
+    "productName": "Feature-Loop-Manager",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "dist",
