@@ -15,5 +15,5 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/main/**/*.ts", "src/shared/**/*.ts", "electron.vite.config.ts", "e2e/**/*.ts", "playwright.config.ts"]
+  "include": ["src/main/**/*.ts", "src/shared/**/*.ts", "electron.vite.config.ts", "playwright.config.ts"]
 }
