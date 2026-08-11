@@ -6,6 +6,7 @@ name: Auto-version · codeGem
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Skip if the push was made by this workflow itself (prevents loops).
 jobs:
