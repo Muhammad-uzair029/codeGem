@@ -51,6 +51,10 @@ const api: OrchestratorApi = {
   skills: {
     inject: (req: SkillInjectionRequest) =>
       ipcRenderer.invoke('skills:inject', req) as Promise<SkillInjectionResult>,
+    listInProject: (targetPath: string) =>
+      ipcRenderer.invoke('skills:listInProject', targetPath) as Promise<string[]>,
+    listAvailable: () =>
+      ipcRenderer.invoke('skills:listAvailable') as Promise<string[]>,
   },
   skillsRemote: {
     fetchList: () =>

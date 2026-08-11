@@ -93,6 +93,7 @@ export interface SkillsCacheStatus {
 export interface SkillInjectionRequest {
   targetPath: string;
   overwrite?: boolean;
+  skills?: string[];   // if provided, only inject these skill names; otherwise inject all
 }
 
 export interface SkillInjectionResult {
@@ -204,6 +205,8 @@ export interface OrchestratorApi {
   };
   skills: {
     inject: (req: SkillInjectionRequest) => Promise<SkillInjectionResult>;
+    listInProject: (targetPath: string) => Promise<string[]>;
+    listAvailable: () => Promise<string[]>;
   };
   skillsRemote: {
     fetchList: () => Promise<SkillsRemoteListResult>;

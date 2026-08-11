@@ -68,7 +68,7 @@ export function Onboarding({ onDone }: { onDone: () => void }): JSX.Element {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0b0d10] items-center justify-center p-8">
+    <div className="flex flex-col h-screen bg-surface-950 items-center justify-center p-8">
       <div className="w-full max-w-md">
         <div className="card p-8 space-y-6">
           {/* Logo / icon area */}

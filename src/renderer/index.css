@@ -2,6 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme: Dark (default) ─── */
+:root, [data-theme="dark"] {
+  --surface-950: 11 13 16;
+  --surface-900: 17 20 24;
+  --surface-800: 24 28 34;
+  --surface-700: 35 40 48;
+  --surface-600: 47 53 64;
+  --accent-500: 124 92 255;
+  --accent-600: 106 72 245;
+  --accent-700: 86 54 224;
+  color-scheme: dark;
+}
+
+/* ─── Theme: Light ─── */
+[data-theme="light"] {
+  --surface-950: 255 255 255;
+  --surface-900: 248 249 250;
+  --surface-800: 241 243 245;
+  --surface-700: 222 226 232;
+  --surface-600: 196 202 212;
+  --accent-500: 124 92 255;
+  --accent-600: 106 72 245;
+  --accent-700: 86 54 224;
+  color-scheme: light;
+}
+
+/* Light: override Tailwind neutral text scale */
+[data-theme="light"] .text-neutral-100 { color: #111827; }
+[data-theme="light"] .text-neutral-200 { color: #1f2937; }
+[data-theme="light"] .text-neutral-300 { color: #374151; }
+[data-theme="light"] .text-neutral-400 { color: #4b5563; }
+[data-theme="light"] .text-neutral-500 { color: #6b7280; }
+[data-theme="light"] .text-neutral-600 { color: #9ca3af; }
+
+/* ─── Theme: Mix (warm violet-dark, Claude-style) ─── */
+[data-theme="mix"] {
+  --surface-950: 20 18 28;
+  --surface-900: 27 24 40;
+  --surface-800: 37 33 56;
+  --surface-700: 52 47 78;
+  --surface-600: 72 65 108;
+  --accent-500: 124 92 255;
+  --accent-600: 106 72 245;
+  --accent-700: 86 54 224;
+  color-scheme: dark;
+}
+
+/* Mix: slightly warmer text tones */
+[data-theme="mix"] .text-neutral-100 { color: #ece8ff; }
+[data-theme="mix"] .text-neutral-200 { color: #d8d0ff; }
+[data-theme="mix"] .text-neutral-300 { color: #bfb4f5; }
+[data-theme="mix"] .text-neutral-400 { color: #a090d9; }
+[data-theme="mix"] .text-neutral-500 { color: #7b6db0; }
+[data-theme="mix"] .text-neutral-600 { color: #5e5388; }
+
 @layer base {
   html,
   body,

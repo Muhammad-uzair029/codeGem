@@ -133,7 +133,16 @@ export function registerSkillsIpc(): void {
       let skillsCopied = 0;
       let canonicalDirsEnsured: string[] = [];
       try {
-        copyDirRecursive(srcSkills, dstSkills, overwrite);
+        if (req.skills && req.skills.length > 0) {
+          // Selective injection — only copy the requested skill folders
+          for (const skillName of req.skills) {
+            const src = join(srcSkills, skillName);
+            const dst = join(dstSkills, skillName);
+            if (existsSync(src)) copyDirRecursive(src, dst, overwrite);
+          }
+        } else {
+          copyDirRecursive(srcSkills, dstSkills, overwrite);
+        }
         canonicalDirsEnsured = ensureCanonicalSkillDirs(dstSkills);
         skillsCopied = countSkills(dstSkills);
       } catch (err) {
@@ -173,4 +182,27 @@ export function registerSkillsIpc(): void {
       return { ok: true, skillsCopied, claudeMdWritten, canonicalDirsEnsured };
     },
   );
+
+  // List skill folder names already injected in a target project
+  ipcMain.handle('skills:listInProject', async (_evt, targetPath: string): Promise<string[]> => {
+    const skillsDir = join(targetPath, CLIENT_CLAUDE_BLUEPRINT.dirs.skills.root);
+    if (!existsSync(skillsDir)) return [];
+    return readdirSync(skillsDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name);
+  });
+
+  // List skill folder names available in the boilerplate cache
+  ipcMain.handle('skills:listAvailable', async (): Promise<string[]> => {
+    try {
+      const dir = boilerplateSkillsDir();
+      if (!existsSync(dir)) return [];
+      return readdirSync(dir, { withFileTypes: true })
+        .filter((e) => e.isDirectory())
+        .map((e) => e.name)
+        .sort();
+    } catch {
+      return [];
+    }
+  });
 }
