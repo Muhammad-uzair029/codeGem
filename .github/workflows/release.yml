@@ -110,9 +110,14 @@ jobs:
         if: runner.os == 'macOS'
         run: pip3 install setuptools --break-system-packages --quiet
 
+      - name: Setup MSBuild (Windows — required by node-gyp for node-pty rebuild)
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v2
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         env:
+          GYP_MSVS_VERSION: '2022'
           npm_config_msvs_version: '2022'
 
       - name: Typecheck
