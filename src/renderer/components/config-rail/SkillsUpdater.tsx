@@ -43,25 +43,54 @@ export function SkillsUpdater(): JSX.Element {
     }
   };
 
+  const isInstalled = status?.installed === true;
+  const isNotInstalled = status !== null && !status.installed;
+
   return (
-    <div className="border-t border-surface-700 pt-3 mt-3 space-y-2">
-      <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Skills</div>
-      <div className="text-[11px] text-neutral-500 break-all">
+    <div className="border-t border-surface-700/60 pt-3 mt-3 space-y-2.5">
+      {/* Section header */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-widest">
+          Skills
+        </span>
+        <div className="flex-1 h-px bg-surface-700/60" />
+      </div>
+
+      {/* Repo label */}
+      <div className="text-[11px] text-neutral-600 font-mono truncate leading-none">
         github.com/Muhammad-uzair029/claude-code-boilerplate
       </div>
-      {status ? (
-        <div className="text-[11px] text-neutral-400">
-          {status.installed
-            ? `${status.count} skills · updated ${status.downloadedAt ? timeAgo(status.downloadedAt) : 'unknown'}`
-            : status.skipped
-              ? 'Not installed — click Update All to install'
-              : 'Not installed'}
-        </div>
-      ) : (
-        <div className="text-[11px] text-neutral-500">Checking…</div>
-      )}
+
+      {/* Status row */}
+      <div className="flex items-center gap-2">
+        {status === null ? (
+          <>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-600 animate-pulse" />
+            <span className="text-[11px] text-neutral-500">Checking…</span>
+          </>
+        ) : isInstalled ? (
+          <>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-text-good" />
+            <span className="text-[11px] text-neutral-400">
+              {status.count} skills
+              {status.downloadedAt && (
+                <> · <span className="text-neutral-500">{timeAgo(status.downloadedAt)}</span></>
+              )}
+            </span>
+          </>
+        ) : isNotInstalled ? (
+          <>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-600" />
+            <span className="text-[11px] text-neutral-500">
+              {status.skipped ? 'Not installed — update to install' : 'Not installed'}
+            </span>
+          </>
+        ) : null}
+      </div>
+
+      {/* Update button */}
       <button
-        className="btn-ghost text-xs flex items-center gap-1.5"
+        className="btn-ghost text-xs py-1 px-2.5"
         onClick={update}
         disabled={updating}
       >
@@ -74,7 +103,7 @@ export function SkillsUpdater(): JSX.Element {
 
 function SmallSpinner(): JSX.Element {
   return (
-    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+    <svg className="w-3 h-3 animate-spin text-accent-500" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
