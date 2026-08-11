@@ -63,6 +63,7 @@
     "appId": "com.softaims.feature-loop-manager",
     "productName": "Feature-Loop-Manager",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "npmRebuild": false,
     "directories": {
       "output": "dist",
       "buildResources": "resources"
@@ -115,7 +116,6 @@
       "sign": false
     },
     "win": {
-      "npmRebuild": false,
       "target": [
         {
           "target": "nsis",
