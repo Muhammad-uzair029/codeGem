@@ -1,32 +1,84 @@
 name: Release · codeGem
 
-# Triggered automatically by auto-version.yml when it pushes a v* tag,
-# or manually via the GitHub Actions UI.
+# Fires on every human push to main.
+# Skips bot-pushed version-bump commits ([skip ci]) to prevent loops.
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to build (must match package.json, e.g. 0.2.1)'
-        required: true
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-permissions:
-  contents: write   # electron-builder needs this to upload release assets
-
+# ─────────────────────────────────────────────────────────────────────────────
 jobs:
+
+  # ── 1. Bump version, tag, create draft release ────────────────────────────
+  prepare:
+    name: Prepare release
+    if: |
+      github.actor != 'github-actions[bot]' &&
+      !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      tag:     ${{ steps.bump.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          node -e "
+            const fs  = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+            const [maj,min,pat] = pkg.version.split('.').map(Number);
+            pkg.version = \`\${maj}.\${min}.\${pat+1}\`;
+            fs.writeFileSync('package.json', JSON.stringify(pkg,null,2)+'\n');
+            console.log(pkg.version);
+          " | tee /tmp/new_version
+          VERSION=$(cat /tmp/new_version)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"    >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump + tag
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.tag }} [skip ci]"
+          git tag "${{ steps.bump.outputs.tag }}"
+          git push origin main "${{ steps.bump.outputs.tag }}"
+
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.bump.outputs.tag }}" \
+            --title "${{ steps.bump.outputs.version }}" \
+            --generate-notes \
+            --draft \
+            --repo "${{ github.repository }}"
+
+  # ── 2. Build binaries (macOS / Windows / Linux — parallel) ───────────────
   build:
-    name: Build (${{ matrix.os }})
+    name: Build · ${{ matrix.os }}
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -37,12 +89,22 @@ jobs:
         with:
           version: 9
 
-      - name: Setup Node
+      - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
+
+      - name: Stamp version into package.json
+        shell: bash
+        run: |
+          node -e "
+            const fs=require('fs');
+            const p=JSON.parse(fs.readFileSync('package.json','utf8'));
+            p.version='${{ needs.prepare.outputs.version }}';
+            fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
+          "
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -53,31 +115,64 @@ jobs:
       - name: Build renderer + main + preload
         run: pnpm build
 
-      - name: Package + publish  (macOS — arm64 + x64 DMG)
+      - name: Package · macOS (arm64 + x64 DMG + zip)
         if: runner.os == 'macOS'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'   # no code-signing cert yet
-        run: pnpm release --mac --arm64 --x64
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: pnpm exec electron-builder --mac --arm64 --x64 --publish never
 
-      - name: Package + publish  (Windows — NSIS installer)
+      - name: Package · Windows (NSIS installer)
         if: runner.os == 'Windows'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm release --win
+        run: pnpm exec electron-builder --win --publish never
 
-      - name: Package + publish  (Linux — AppImage + deb)
+      - name: Package · Linux (AppImage + deb)
         if: runner.os == 'Linux'
+        run: pnpm exec electron-builder --linux --publish never
+
+      - name: Upload artifacts to draft release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm release --linux
+        run: |
+          TAG="${{ needs.prepare.outputs.tag }}"
+          REPO="${{ github.repository }}"
+          upload() {
+            local pattern="$1"
+            ls $pattern 2>/dev/null && \
+              gh release upload "$TAG" $pattern --clobber --repo "$REPO" || true
+          }
+          upload "dist/*.dmg"
+          upload "dist/*.zip"
+          upload "dist/*.exe"
+          upload "dist/*.AppImage"
+          upload "dist/*.deb"
+          upload "dist/*.blockmap"
+          upload "dist/latest*.yml"
 
       - name: Upload build logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: builder-logs-${{ matrix.os }}
+          name: build-logs-${{ matrix.os }}
           path: |
+            dist/*.log
             dist/*.yml
-            dist/builder-*.log
           if-no-files-found: ignore
+
+  # ── 3. Publish the release ────────────────────────────────────────────────
+  publish:
+    name: Publish release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Mark release as published + latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ needs.prepare.outputs.tag }}" \
+            --draft=false \
+            --latest \
+            --repo "${{ github.repository }}"
