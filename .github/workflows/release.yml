@@ -107,9 +107,13 @@ jobs:
           "
 
       - name: Install Python setuptools (node-gyp/distutils fix for Python 3.12+)
-        if: runner.os != 'Linux'
+        if: runner.os == 'macOS'
+        run: pip3 install setuptools --break-system-packages --quiet
+
+      - name: Configure MSVC for node-gyp (Windows)
+        if: runner.os == 'Windows'
         shell: bash
-        run: pip3 install setuptools --quiet
+        run: npm config set msvs_version 2022
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
