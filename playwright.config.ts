@@ -16,6 +16,10 @@ export default defineConfig({
       testMatch: 'smoke.spec.ts',
     },
     {
+      name: 'dev-full',
+      testMatch: 'full.spec.ts',
+    },
+    {
       // Runs against the packaged .app bundle (requires pnpm pack:dir first).
       name: 'packaged',
       testMatch: 'packaged.spec.ts',
