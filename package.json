@@ -29,7 +29,7 @@
     "test:e2e:full": "electron-vite build && playwright test --project=dev-full",
     "test:e2e:all": "electron-vite build && playwright test --project=dev --project=dev-full",
     "test:e2e:packaged": "playwright test --project=packaged",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps && node scripts/fix-node-pty-perms.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
