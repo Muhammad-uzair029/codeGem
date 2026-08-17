@@ -12,6 +12,7 @@ import { CollapsibleSection } from '@renderer/components/config-rail/Collapsible
 import { StickyLaunchBar } from '@renderer/components/config-rail/StickyLaunchBar';
 import { Onboarding } from '@renderer/components/onboarding/Onboarding';
 import { SkillsUpdater } from '@renderer/components/config-rail/SkillsUpdater';
+import { TodoList } from '@renderer/components/config-rail/TodoList';
 import { useThemeStore, type Theme } from '@renderer/state/themeStore';
 
 const DEFAULT_SIZES: [number, number, number] = [28, 44, 28];
@@ -179,6 +180,9 @@ export function AppShell(): JSX.Element {
                   </CollapsibleSection>
                   <CollapsibleSection title="Advanced" storageKey="advanced">
                     <LaunchPanel />
+                  </CollapsibleSection>
+                  <CollapsibleSection title="Todos" storageKey="todos" defaultOpen={false}>
+                    <TodoList />
                   </CollapsibleSection>
                 </div>
                 <StickyLaunchBar />

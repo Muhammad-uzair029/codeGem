@@ -20,6 +20,14 @@ export default defineConfig({
       testMatch: 'full.spec.ts',
     },
     {
+      name: 'todos',
+      testMatch: 'todos.spec.ts',
+    },
+    {
+      name: 'flow',
+      testMatch: 'flow.spec.ts',
+    },
+    {
       // Runs against the packaged .app bundle (requires pnpm pack:dir first).
       name: 'packaged',
       testMatch: 'packaged.spec.ts',
