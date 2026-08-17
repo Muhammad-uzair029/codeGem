@@ -23,11 +23,14 @@ const XTERM_THEME = {
 export function TerminalView(): JSX.Element {
   const { targetPath, setStage, setSession, sessionId } = useWorkspaceStore();
   const [mode, setMode] = useState<TermMode>('shell');
+  const [isListening, setIsListening] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const shellSessionRef = useRef<string | null>(null);
   const roRef = useRef<ResizeObserver | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
   const initTerm = useCallback((container: HTMLDivElement, interactive: boolean) => {
     const term = new Terminal({
@@ -185,6 +188,48 @@ export function TerminalView(): JSX.Element {
     }
   };
 
+  const toggleVoice = () => {
+    if (isListening) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const transcript = (event.results[0]?.[0]?.transcript as string) ?? '';
+      if (transcript && shellSessionRef.current) {
+        void api().terminal.write({ sessionId: shellSessionRef.current, data: transcript });
+      }
+    };
+    recognition.onend = () => { setIsListening(false); recognitionRef.current = null; };
+    recognition.onerror = () => { setIsListening(false); recognitionRef.current = null; };
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsListening(true);
+  };
+
+  // Stop recognition when mode changes away from shell
+  useEffect(() => {
+    if (mode !== 'shell' && recognitionRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      recognitionRef.current.stop();
+    }
+  }, [mode]);
+
   return (
     <section className="flex flex-col h-full overflow-hidden">
       {/* Toolbar */}
@@ -216,6 +261,7 @@ export function TerminalView(): JSX.Element {
           <ToolBtn title="Copy selection" onClick={copySelection}>⎘</ToolBtn>
           {mode === 'shell' && (
             <>
+              <VoiceMicBtn isListening={isListening} onClick={toggleVoice} />
               <ToolBtn title="Restart session" onClick={restartShell}>↺</ToolBtn>
               <ToolBtn title="Stop session" onClick={stopShell}>■</ToolBtn>
             </>
@@ -255,6 +301,27 @@ function ToolBtn({
       className="w-7 h-7 flex items-center justify-center rounded text-neutral-400 hover:text-neutral-100 hover:bg-surface-700 transition-colors text-xs"
     >
       {children}
+    </button>
+  );
+}
+
+function VoiceMicBtn({ isListening, onClick }: { isListening: boolean; onClick: () => void }): JSX.Element {
+  return (
+    <button
+      title={isListening ? 'Stop recording' : 'Dictate to terminal'}
+      onClick={onClick}
+      className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
+        isListening
+          ? 'text-red-400 bg-red-500/20 hover:bg-red-500/30 animate-pulse'
+          : 'text-neutral-400 hover:text-neutral-100 hover:bg-surface-700'
+      }`}
+    >
+      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+        <line x1="8" y1="23" x2="16" y2="23" />
+      </svg>
     </button>
   );
 }
