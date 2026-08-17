@@ -114,40 +114,40 @@ test('Explorer column header is visible', async () => {
 // dispatch click events directly on the element, bypassing visibility checks.
 
 test('left panel collapses when collapse button is clicked', async () => {
-  const collapseBtn = window.locator('button[title="Collapse Config"]');
+  const collapseBtn = window.locator('button[title="Hide Config"]');
   await expect(collapseBtn).toBeVisible();
   await collapseBtn.click();
   // Conditional render: once collapsed, the Collapse button is removed from DOM.
-  await expect(window.locator('button[title="Collapse Config"]')).not.toBeAttached();
+  await expect(window.locator('button[title="Hide Config"]')).not.toBeAttached();
   // The Expand button is now in the 0-width panel (attached but not "visible").
-  await expect(window.locator('button[title="Expand Config"]')).toBeAttached();
+  await expect(window.locator('button[title="Show Config"]')).toBeAttached();
 });
 
 test('left panel expands after being collapsed', async () => {
   // The Expand button lives in a 0-width panel (outside the Playwright viewport).
   // Bypass all viewport checks by firing a native DOM click directly.
   await window.evaluate(() => {
-    document.querySelector<HTMLButtonElement>('button[title="Expand Config"]')?.click();
+    document.querySelector<HTMLButtonElement>('button[title="Show Config"]')?.click();
   });
-  await expect(window.locator('button[title="Collapse Config"]')).toBeVisible();
+  await expect(window.locator('button[title="Hide Config"]')).toBeVisible();
   await expect(window.locator('text=1 · Project').first()).toBeVisible();
 });
 
 // ─── 4. Right panel collapse / expand ────────────────────────────────────────
 
 test('right panel collapses when collapse button is clicked', async () => {
-  const collapseBtn = window.locator('button[title="Collapse Explorer"]');
+  const collapseBtn = window.locator('button[title="Hide Explorer"]');
   await expect(collapseBtn).toBeVisible();
   await collapseBtn.click();
-  await expect(window.locator('button[title="Collapse Explorer"]')).not.toBeAttached();
-  await expect(window.locator('button[title="Expand Explorer"]')).toBeAttached();
+  await expect(window.locator('button[title="Hide Explorer"]')).not.toBeAttached();
+  await expect(window.locator('button[title="Show Explorer"]')).toBeAttached();
 });
 
 test('right panel expands after being collapsed', async () => {
   await window.evaluate(() => {
-    document.querySelector<HTMLButtonElement>('button[title="Expand Explorer"]')?.click();
+    document.querySelector<HTMLButtonElement>('button[title="Show Explorer"]')?.click();
   });
-  await expect(window.locator('button[title="Collapse Explorer"]')).toBeVisible();
+  await expect(window.locator('button[title="Hide Explorer"]')).toBeVisible();
 });
 
 // ─── 5. CollapsibleSection defaults & toggle ─────────────────────────────────
@@ -289,12 +289,20 @@ test('drop zone shows "Select a project first." without a project', async () => 
 
 // ─── 9. LaunchPanel (Advanced section) ───────────────────────────────────────
 
-test('"3 · Inject skills" heading is visible', async () => {
-  await expect(window.locator('text=3 · Inject skills').first()).toBeVisible();
+test('Skills panel heading is visible', async () => {
+  await expect(window.locator('.text-sm.font-semibold', { hasText: 'Skills' }).first()).toBeVisible();
 });
 
-test('Inject skills button is disabled without a valid project', async () => {
-  await expect(window.locator('button', { hasText: /Inject skills/ })).toBeDisabled();
+test('Inject button is disabled without a valid project', async () => {
+  // Button text is now dynamic: "Inject N skill(s)" — matches all forms.
+  const btn = window.locator('button', { hasText: /^Inject \d+ skill/ }).first();
+  const alt = window.locator('text=Select a valid project first');
+  // If cache is empty the button doesn't render at all; the gate message is shown instead.
+  if (await btn.count() > 0) {
+    await expect(btn).toBeDisabled();
+  } else {
+    await expect(alt.first()).toBeVisible();
+  }
 });
 
 test('all 5 loop stage indicators render', async () => {
