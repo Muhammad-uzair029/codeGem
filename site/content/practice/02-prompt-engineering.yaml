@@ -1,0 +1,345 @@
+module: 02-prompt-engineering
+questions:
+  - id: prompt-system-1
+    lesson: 01-system-prompts-and-few-shot
+    type: mcq
+    level: junior
+    question: Which content belongs in the system prompt rather than the user message?
+    options:
+      - The specific question the user just asked
+      - The assistant's role, rules and required output format
+      - The model's previous answer
+      - The API key
+    answer: 1
+    explanation: >-
+      The system prompt holds standing instructions that apply to every turn. The user's current
+      question goes in the user message, and previous answers go in assistant messages.
+
+  - id: prompt-system-2
+    lesson: 01-system-prompts-and-few-shot
+    type: mcq
+    level: mid
+    question: Your sentiment classifier labels almost everything "positive". Your prompt has four few-shot examples, all labelled positive. What's the best first fix?
+    options:
+      - Raise the temperature
+      - Balance the examples across labels and include an edge case
+      - Remove the system prompt
+      - Add "BE ACCURATE" in capitals
+    answer: 1
+    explanation: >-
+      Models copy patterns in examples, including accidental ones like a skewed label distribution.
+      Balanced, varied examples fix the bias. Higher temperature only adds randomness, and shouting
+      doesn't supply the missing signal.
+
+  - id: prompt-system-3
+    lesson: 01-system-prompts-and-few-shot
+    type: open
+    level: mid
+    question: Write (or describe) a system prompt for a customer support bot of a SaaS product. Explain each part you include and why.
+    keyPoints:
+      - Role and goal of the assistant
+      - Product and user context
+      - Explicit rules with brief reasons
+      - Output format and tone (length, language, structure)
+      - What to do when unsure or out of scope - ask, say so, or escalate to a human
+      - Not relying on the system prompt for security; permissions enforced in code
+    modelAnswer: |
+      ```
+      You are the support assistant for Acme Invoicing, a tool small businesses use to send invoices.
+      Goal: resolve billing and how-to questions quickly and accurately.
+
+      Rules:
+      - Answer only from the help articles in <articles>. If they don't cover it, say so and offer
+        to open a ticket (we never want to guess about money).
+      - Never promise refunds; refunds need a human agent.
+      - Keep answers under 120 words, plain language, steps as a numbered list.
+      - If the request is unclear, ask one clarifying question.
+      ```
+
+      Parts: **role and goal** set the frame; **context** tells it who users are; **rules with reasons**
+      let it handle unlisted cases sensibly; **format** keeps output consistent; **fallbacks** prevent
+      invented answers. Account actions and data access are enforced in backend code, because a system
+      prompt can be extracted or overridden by users.
+    followUps:
+      - How would you test this prompt before launch?
+      - The prompt has grown to 3 pages of rules. What do you do?
+
+  - id: prompt-struct-1
+    lesson: 02-structured-output
+    type: mcq
+    level: junior
+    question: Why wrap a pasted user document in tags like <document>...</document> in a prompt?
+    options:
+      - The model can only read XML
+      - It clearly separates data from instructions, so the model doesn't confuse the two
+      - Tags reduce the token count
+      - It encrypts the document
+    answer: 1
+    explanation: >-
+      Tags label each part of the prompt. The model can tell where the instructions end and the material
+      begins, and you can refer to it by name ("summarize the text in <document>"). Tags add a few
+      tokens; they don't remove any.
+
+  - id: prompt-struct-2
+    lesson: 02-structured-output
+    type: open
+    level: mid
+    question: Your service calls JSON.parse on model output and crashes a few times a day. Walk through how you'd make structured output reliable.
+    keyPoints:
+      - Use schema-constrained output, JSON mode or tool calling if the provider supports it
+      - Define a schema (Zod or Pydantic) and validate every response
+      - Check the stop reason for truncation before parsing
+      - Retry once with the validation error included, then fail safely
+      - Keep schemas small; use enums and allow an explicit unknown value
+      - Log failures to find patterns
+    modelAnswer: |
+      1. **Find the cause**: log failing outputs. Typical culprits are truncation at `max_tokens`,
+         prose around the JSON, or markdown code fences.
+      2. **Constrain generation**: use the provider's structured-output / schema mode or a tool call
+         whose input schema is the shape I need. Otherwise give the schema and an example and say
+         "JSON only".
+      3. **Validate**: parse with a schema library (Zod, Pydantic), not just `JSON.parse`, so wrong
+         types and missing fields are caught.
+      4. **Check the stop reason**: if the output was cut off, raise the limit or shorten the request.
+      5. **Retry with feedback**: one retry that includes the validation error, then a safe fallback.
+      6. **Simplify the schema**: flat, enums for categories, nullable or "unknown" fields so the model
+         isn't forced to invent values.
+    followUps:
+      - What can still go wrong when the provider guarantees schema-valid JSON?
+
+  - id: prompt-struct-3
+    lesson: 02-structured-output
+    type: mcq
+    level: mid
+    question: You need JSON containing both the model's reasoning and a final "approved" boolean. Which design is best?
+    options:
+      - '{"approved": ..., "reasoning": ...} so the answer is easy to find'
+      - '{"reasoning": ..., "approved": ...} so the decision builds on the reasoning'
+      - Ask for reasoning in prose and the boolean in a second call with no context
+      - Skip the reasoning; booleans are always accurate
+    answer: 1
+    explanation: >-
+      The model generates fields in order. With reasoning first, the decision can use it. With the
+      decision first, the reasoning can only rationalise a choice already made. Your code can still read
+      the "approved" field by name.
+
+  - id: prompt-cot-1
+    lesson: 03-chain-of-thought
+    type: mcq
+    level: junior
+    question: Why does asking a model to reason step by step often improve answers on multi-step problems?
+    options:
+      - It routes the request to a larger model
+      - The written steps become context that later tokens can build on
+      - It disables sampling randomness
+      - It makes the request cheaper
+    answer: 1
+    explanation: >-
+      The model has no hidden scratchpad. Generated reasoning tokens are fed back as context, so later
+      steps and the final answer can use them. It costs more tokens, not fewer.
+
+  - id: prompt-cot-2
+    lesson: 03-chain-of-thought
+    type: open
+    level: mid
+    question: When would you use chain-of-thought prompting, when would you avoid it, and how do you use the result in code?
+    keyPoints:
+      - Use for multi-step logic, maths, planning, debugging, applying many rules
+      - Avoid for simple classification or extraction where it only adds cost and latency
+      - Reasoning in tags (or a JSON field) separate from the final answer
+      - Extract the answer strictly; keep reasoning for logs
+      - Allow enough max_tokens for reasoning plus answer
+      - Built-in reasoning models may make manual CoT prompting unnecessary
+    modelAnswer: |
+      **Use it** when the task needs several dependent steps: calculations, applying a policy with many
+      rules, planning, debugging. **Avoid it** for simple classification, extraction or rewriting, where
+      it adds tokens and latency without improving accuracy. Measure with an eval rather than guessing.
+
+      **In code**: ask for reasoning inside `<thinking>` and the result inside `<answer>` (or a
+      `reasoning` field before the `answer` field in JSON). Extract the answer with a strict pattern or
+      schema, keep the reasoning for logs and debugging, and give enough `max_tokens` so the answer isn't
+      cut off. With models that have a built-in reasoning mode, I'd enable that instead of prompting for
+      steps, and describe the goal rather than prescribing every step.
+    followUps:
+      - Is the model's written reasoning a faithful explanation of its decision?
+
+  - id: prompt-cot-3
+    lesson: 03-chain-of-thought
+    type: mcq
+    level: mid
+    question: After adding "think step by step" to a prompt, some answers come back with reasoning but no final answer. What's the most likely cause?
+    options:
+      - The model refuses to answer
+      - max_tokens is too low, so the output is truncated during the reasoning
+      - Temperature is too low
+      - Chain-of-thought doesn't work with system prompts
+    answer: 1
+    explanation: >-
+      Reasoning consumes output tokens. If the cap stayed at its old value, generation stops before the
+      answer. Check the stop reason; it will show the token limit was hit.
+
+  - id: prompt-version-1
+    lesson: 04-templates-and-versioning
+    type: mcq
+    level: mid
+    question: A teammate tweaked a prompt to fix one bad answer. What should happen before it ships?
+    options:
+      - Nothing; prompt edits are low risk
+      - Add the case to the eval set, run the full set, and compare scores with the current version
+      - Test the one fixed case manually
+      - Raise the temperature to compensate
+    answer: 1
+    explanation: >-
+      Prompt changes often fix one case and break others. Running the whole eval set catches regressions,
+      and adding the new case stops the bug from coming back later.
+
+  - id: prompt-version-2
+    lesson: 04-templates-and-versioning
+    type: design
+    level: senior
+    question: Design how your team manages prompts in production for 20 LLM-powered features, so changes are safe and regressions are traceable.
+    keyPoints:
+      - Prompts as named, versioned templates in the repo or a prompt registry
+      - Version is template plus model plus sampling settings
+      - Eval set per feature run in CI with thresholds that block merges
+      - Gradual rollout behind feature flags with instant rollback
+      - Log prompt version, model, usage, latency and outcome on every call
+      - Dashboards and alerts on quality, cost and latency per prompt version
+    modelAnswer: |
+      ### Storage
+      - Each prompt is a **template** with an ID, version, model, sampling settings and typed variable
+        slots. Stored in the repo (reviewed in PRs) or in a prompt registry with the same versioning.
+      - User data goes into slots wrapped in tags, never concatenated into instructions.
+
+      ### Change process
+      - Every change bumps the version and opens a PR.
+      - **CI runs the feature's eval set** (real inputs + expected outputs or grading rubric, often with
+        an LLM judge calibrated against human labels). A score drop below threshold blocks the merge.
+      - A model upgrade goes through the same pipeline, since it changes behaviour too.
+
+      ### Rollout
+      - Feature flag sends a percentage of traffic to the new version; compare quality signals, cost
+        and latency against the current one, then promote or roll back in one click.
+
+      ### Observability
+      - Every call logs `prompt_id@version`, model, token usage, latency, and outcome (validation pass,
+        user feedback).
+      - Per-version dashboards and alerts, so "answers got worse on Tuesday" maps to a specific change.
+
+      ### Ownership
+      - Each prompt has an owning team; production bugs become new eval cases.
+    followUps:
+      - How do you let non-engineers edit prompts safely?
+      - How do you keep the LLM judge from drifting?
+
+  - id: prompt-version-3
+    lesson: 04-templates-and-versioning
+    type: open
+    level: senior
+    question: Answer quality for a feature dropped last week and nobody changed the code. How do you investigate, and what would you put in place so it's faster next time?
+    keyPoints:
+      - Check whether the prompt, model version or settings changed (including provider model updates or aliases)
+      - Check whether inputs changed - new user segments, upstream data, retrieval results
+      - Compare logged prompt versions and outputs before and after
+      - Re-run the eval set against the current setup to reproduce
+      - Pin model versions, log prompt version and model per call, run scheduled evals
+    modelAnswer: |
+      "No code changed" doesn't mean nothing changed. I'd check:
+
+      1. **Prompt and config**: was the template edited in a registry or config service outside code
+         review? Compare logged prompt versions before and after the drop.
+      2. **Model**: did we use a moving alias that now points to a new model, or did the provider ship
+         an update? Check the model ID recorded in logs.
+      3. **Inputs**: new customer segment, upstream data format change, retrieval returning different
+         documents.
+      4. **Reproduce**: run the eval set on the current setup and on the last known-good setup.
+
+      To make it faster next time: pin exact model versions, log `prompt_id@version`, model and
+      settings on every call, run the eval set on a schedule (not only on changes) to catch silent
+      drift, and alert on quality signals like validation failures or negative feedback.
+    followUps:
+      - What quality signals can you collect without human labels?
+
+  - id: prompt-cache-1
+    lesson: 05-prompt-caching
+    type: mcq
+    level: junior
+    question: What does prompt caching reuse between requests?
+    options:
+      - The model's previous answer to a similar question
+      - The processed form of an identical prompt prefix
+      - Any prompt with similar meaning
+      - The output tokens
+    answer: 1
+    explanation: >-
+      Prompt caching matches an exact prefix and skips re-processing it. The answer is still generated
+      fresh. Reusing whole answers for similar questions is a different technique you would build
+      yourself.
+
+  - id: prompt-cache-2
+    lesson: 05-prompt-caching
+    type: open
+    level: mid
+    question: You enabled prompt caching but the usage data shows almost no cached tokens. List the likely causes and fixes.
+    keyPoints:
+      - Something dynamic (timestamp, user ID, request ID) appears early in the prompt
+      - Tool definitions, examples or JSON keys are ordered or serialized differently between requests
+      - The prefix is shorter than the provider's minimum cacheable length
+      - Requests are too infrequent and the cache expires between them
+      - With explicit-marker providers, the cache marker is missing or placed in the wrong spot
+    modelAnswer: |
+      Prompt caching needs a byte-identical prefix that's reused before it expires. Likely causes:
+
+      - **Dynamic content early**: a date, user name or request ID in the system prompt changes the
+        prefix every time. Move it after the stable content.
+      - **Unstable serialization**: tools, examples or JSON keys in a different order per request.
+        Build them deterministically.
+      - **Too short**: the prefix is below the provider's minimum cacheable size.
+      - **Too infrequent**: entries expire after a short idle period; low-traffic prompts never hit.
+        Consider a longer cache lifetime if offered, or accept it.
+      - **Missing marker**: on providers with explicit caching (e.g. Anthropic's `cache_control`),
+        the breakpoint is absent or placed before the content you meant to cache.
+
+      Verify with the usage fields (cache read / cached tokens) after each fix.
+    followUps:
+      - Could caching ever make a workload more expensive?
+
+  - id: prompt-cache-3
+    lesson: 05-prompt-caching
+    type: design
+    level: senior
+    question: An internal assistant answers questions about a 60-page engineering handbook. Every request sends the full handbook, and costs and latency are too high. Design the fix.
+    keyPoints:
+      - Measure first - usage per request, share of tokens that are the handbook
+      - Option A - prompt caching with handbook and system prompt as a stable prefix, question last
+      - Option B - retrieval of relevant sections instead of the whole handbook
+      - Compare options with an eval set on quality, cost and latency; hybrid is possible
+      - Also control output length, model size, and conversation history
+      - Monitor cache hit rate, cost per request and quality after rollout
+    modelAnswer: |
+      ### Measure
+      Log `usage` per request: the handbook is likely the vast majority of input tokens, sent unchanged
+      every time.
+
+      ### Option A: prompt caching
+      - Order the prompt as system prompt → handbook → (history) → question, with the cache point after
+        the handbook.
+      - Keep the handbook text byte-identical between requests (version it; no per-request edits).
+      - Cache hits make those tokens much cheaper and faster. Works well when traffic is frequent enough
+        to keep the cache warm. Minimal quality risk because the model still sees everything.
+
+      ### Option B: retrieval
+      - Chunk the handbook, embed it, and send only the top relevant sections.
+      - Much smaller prompts, but retrieval can miss the right section, so quality must be checked.
+
+      ### Decide with data
+      Run both on an eval set of real questions. Often: caching first (quick win, no quality risk),
+      retrieval if the handbook grows past what fits or caching alone isn't enough. They can combine.
+
+      ### Also
+      - Concise answers and a sensible `max_tokens`.
+      - A smaller model if the eval shows it's good enough.
+      - Track cache hit rate, cost per request, latency and answer quality after rollout.
+    followUps:
+      - The handbook is updated several times a day. How does that affect caching?
+      - When would retrieval clearly beat caching?

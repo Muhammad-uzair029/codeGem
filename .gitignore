@@ -20,3 +20,7 @@ playwright-report/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Local agent worktrees + Playwright MCP artifacts
+.claude/worktrees/
+.playwright-mcp/

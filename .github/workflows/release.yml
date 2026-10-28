@@ -186,3 +186,21 @@ jobs:
             --draft=false \
             --latest \
             --repo "${{ github.repository }}"
+
+      # The source repo is private, so installers are mirrored to a public
+      # repo for the skills site's download buttons and electron-updater
+      # (package.json build.publish points there). Needs PAT_TOKEN with
+      # contents:write on the public repo.
+      - name: Mirror installers to public releases repo
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          PUBLIC_REPO: Muhammad-uzair029/codeGem-releases
+        run: |
+          TAG="${{ needs.prepare.outputs.tag }}"
+          mkdir -p assets
+          gh release download "$TAG" --repo "${{ github.repository }}" --dir assets
+          gh release create "$TAG" assets/* \
+            --repo "$PUBLIC_REPO" \
+            --title "${{ needs.prepare.outputs.version }}" \
+            --notes "codeGem desktop app $TAG. Installers only; source is private. macOS builds are unsigned: if macOS blocks the app, run \`xattr -cr /Applications/Feature-Loop-Manager.app\`." \
+            --latest

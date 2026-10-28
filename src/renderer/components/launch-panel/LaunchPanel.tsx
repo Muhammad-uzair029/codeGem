@@ -13,7 +13,7 @@ const STAGES: { id: LoopStage; label: string }[] = [
 ];
 
 export function LaunchPanel(): JSX.Element {
-  const { targetPath, validation, setSkills, running, stage } = useWorkspaceStore();
+  const { targetPath, targetFramework, validation, setSkills, running, stage } = useWorkspaceStore();
 
   // Available skills in the cache
   const [available, setAvailable] = useState<string[]>([]);
@@ -57,6 +57,7 @@ export function LaunchPanel(): JSX.Element {
         targetPath,
         overwrite: true,
         skills: [...selected],
+        framework: targetFramework,
       });
       if (!r.ok) {
         setError(r.reason ?? 'Skill injection failed.');

@@ -1,0 +1,280 @@
+module: 10-leading-ai-teams
+questions:
+  - id: lead-projects-1
+    lesson: 01-running-ai-projects
+    type: open
+    level: mid
+    question: Tell me about an AI feature you took from idea to production. How did you scope it and decide it was ready?
+    keyPoints:
+      - Uses STAR (Situation, Task, Action, Result) with a specific project
+      - Narrow scope with a clear user, task and cost of a wrong output
+      - Built an eval set from real data and set go or no-go thresholds up front
+      - Time-boxed prototype, then a pilot with a human safety net
+      - Production hardening such as monitoring, fallbacks, cost controls and ownership
+      - Measurable result and one honest lesson learned
+    modelAnswer: |
+      **Situation.** Our support team spent much of their day on order-status emails.
+
+      **Task.** I led a small team to see if AI drafting could cut handling time without hurting quality.
+
+      **Action.** We scoped it to order-status emails only, with agents approving every draft, so a wrong draft was low risk. Before building, we collected a couple of hundred real emails with approved replies and agreed with the support lead on a target acceptance rate. A two-week prototype (retrieval over policies plus order data and one prompt) got close to target; the main failures were emails about several orders, so we added explicit handling for those. We piloted with a handful of agents, collected every rejected draft as a new eval case, then hardened it: tracing, prompt versioning, a fallback to the old workflow when the provider was slow, cost alerts, and a named owner who reviewed failures weekly. Rollout was behind a feature flag.
+
+      **Result.** Handling time for those emails dropped noticeably and agents accepted most drafts with light edits. Lesson: we underestimated hardening; next time I'd plan it as its own phase from day one.
+    followUps:
+      - What would have made you stop the project?
+      - How did you keep the eval set representative after launch?
+
+  - id: lead-projects-2
+    lesson: 01-running-ai-projects
+    type: mcq
+    level: mid
+    question: Your team's two-week AI prototype reaches well below the agreed go threshold on the eval set, and the failures are spread across many case types. What is the best next step?
+    options:
+      - Extend the prototype indefinitely until it passes
+      - Ship it anyway, since users will give feedback
+      - Make the go/no-go call - narrow the scope to case types that work, change approach, or stop - and communicate why
+      - Lower the threshold so it passes
+    answer: 2
+    explanation: The time-box exists to force a decision. Narrowing scope, changing approach or stopping are all valid; moving the goalposts or shipping something that failed its own bar destroys trust in the process.
+
+  - id: lead-projects-3
+    lesson: 01-running-ai-projects
+    type: open
+    level: senior
+    question: After an impressive demo, an executive wants your AI feature launched to all customers next week. Your evals and production readiness say it isn't ready. How do you handle it?
+    keyPoints:
+      - Acknowledges the business pressure and the value the executive sees
+      - Shows evidence such as eval results and concrete failure examples, not just opinion
+      - Explains the gap between a demo and production (monitoring, fallbacks, security, cost)
+      - Offers an alternative path such as a limited pilot, feature flag or narrower scope with dates
+      - Documents the decision and risk ownership, uses STAR if answered as a past example
+    modelAnswer: |
+      I'd start by agreeing on the goal: they want customer impact fast, and so do I. Then I'd make the risk concrete instead of saying "it's not ready." I'd show the eval results by case type and three or four real failure examples, and explain what's missing for production: monitoring, a fallback when the provider is slow, a security review of what customer data is sent, and cost limits. Then I'd offer a path that gets them most of what they want: launch next week to a small set of friendly customers behind a feature flag, with human review on risky outputs, and a dated plan for wider rollout tied to clear quality and readiness gates. If they still want a full launch, I'd write down the known risks and who owns them, and escalate if there's a legal or safety issue. In a past case like this, the pilot surfaced a failure type we hadn't seen, which made the case for the gates better than any argument.
+    followUps:
+      - What if the executive overrules you?
+
+  - id: lead-projects-4
+    lesson: 01-running-ai-projects
+    type: mcq
+    level: junior
+    question: Before writing much prototype code for a new AI feature, what should the team build first?
+    options:
+      - A polished UI to impress stakeholders
+      - A small set of real examples with expected outcomes (an eval set) and an agreed target
+      - A fine-tuned model
+      - A multi-agent architecture diagram
+    answer: 1
+    explanation: The eval set defines "good" and lets everyone judge progress objectively. A polished UI or fine-tuned model before knowing whether the approach works is premature.
+
+  - id: lead-standards-1
+    lesson: 02-ai-coding-standards
+    type: open
+    level: senior
+    question: You are asked to write your team's guidelines for AI-assisted coding. What would they include, and how would you roll them out?
+    keyPoints:
+      - Approved tools and clear rules on what code and data may be shared with them
+      - Author owns and can explain every line, AI use does not change accountability
+      - Small PRs, meaningful tests, verified dependencies
+      - PR template with testing notes, risk areas and useful AI-assistance context
+      - Automated gates (lint, types, tests, secret and dependency scans) plus a reviewer checklist
+      - Rolled out collaboratively and revised from real incidents and feedback
+    modelAnswer: |
+      **Content.**
+      - *Tools and data*: which tools are approved, configured how, and what may never be pasted in (secrets, customer data, regulated code). Agreed with security and legal.
+      - *Ownership*: you own every line you submit; if you can't explain it, it isn't ready.
+      - *Size and scope*: small PRs; split large generated changes.
+      - *Tests*: new behaviour needs tests that would fail if the code were wrong.
+      - *Dependencies*: justify new packages and verify they exist and are the intended, maintained package.
+      - *PR template*: what and why, how tested, where to look closely, and a short note on AI assistance to guide reviewers.
+      - *Review checklist*: non-existent APIs, edge cases, authorisation and validation, reuse of existing code, test quality.
+      - *Shared context*: project instruction files for AI tools with our conventions and commands.
+
+      **Rollout.** Draft with a few engineers including a sceptic, discuss in a team session, start as guidance for a month, then adjust from what we see in reviews and incidents. Add CI gates so the basics are automatic. Revisit quarterly, and turn recurring AI mistakes into new rules.
+    followUps:
+      - How would you enforce the data rules without slowing everyone down?
+
+  - id: lead-standards-2
+    lesson: 02-ai-coding-standards
+    type: mcq
+    level: mid
+    question: Reviewing an AI-assisted PR, you see a new import of a package nobody on the team has heard of. What should you check first?
+    options:
+      - Whether the package has a nice README
+      - That the package actually exists, is the intended and maintained one (not a look-alike name), and is needed at all
+      - Nothing, CI will catch problems
+      - Whether the AI tool recommended it confidently
+    answer: 1
+    explanation: Models can suggest packages that don't exist or confuse similar names, and attackers register look-alike package names to exploit this. Verify existence, identity and maintenance, and whether an existing dependency already does the job. CI may not catch a malicious but working package.
+
+  - id: lead-standards-3
+    lesson: 02-ai-coding-standards
+    type: open
+    level: mid
+    question: Since adopting AI tools, a junior engineer's PRs have become much larger and faster, and bugs from their changes have increased. How do you handle it?
+    keyPoints:
+      - Uses STAR structure and keeps the conversation private and supportive
+      - Looks at evidence first such as PR sizes and specific bugs
+      - Agrees on small PRs and self-review, including explaining generated code
+      - Pairs on a real change to model how to verify AI output
+      - Follows up with measurable outcomes such as bug rate and review rework
+    modelAnswer: |
+      **Situation/Task.** A junior's PRs had roughly tripled in size and several recent bugs traced back to their changes. I wanted to keep their speed but fix the quality.
+
+      **Action.** I looked at the PRs and bugs first so the conversation was about specifics. In a one-to-one, I framed it as "the tool is making you fast; let's make sure it's making you good too." We agreed on three things: PRs small enough to review in one sitting, reading and running every generated line before opening a PR, and being ready to explain any function in review. I paired with them on their next task to show how I give context to the tool, check that APIs exist, and write tests for edge cases first. In reviews I asked "walk me through this" on generated parts.
+
+      **Result.** Within a few weeks PR sizes dropped, review rework fell, and their bug rate went back to the team norm. They later added two of the pitfalls they'd hit to our team guidelines.
+    followUps:
+      - What would you do if the pattern continued after this?
+
+  - id: lead-standards-4
+    lesson: 02-ai-coding-standards
+    type: mcq
+    level: mid
+    question: Which rule best keeps code quality high as AI tools speed up code writing on a team?
+    options:
+      - Require that a fixed share of code be AI-generated
+      - Ban AI tools for anything but tests
+      - The author must understand and be able to explain every line, and PRs stay small enough for real review
+      - Let AI review tools approve PRs to save reviewer time
+    answer: 2
+    explanation: Ownership plus reviewable size keeps humans actually checking the code. Usage quotas reward the wrong thing, blanket bans push usage into the shadows, and AI review tools are a useful first pass but not a replacement for human approval.
+
+  - id: lead-limits-1
+    lesson: 03-explaining-ai-limits
+    type: open
+    level: mid
+    question: A non-technical client asks, "Why can't the AI just always give the right answer?" How do you explain it?
+    keyPoints:
+      - Plain-language analogy such as a fast, well-read intern
+      - Explains that models predict likely text and can be confidently wrong
+      - Frames quality as a measured rate on their own data
+      - Explains how the design catches or limits errors (sources, checks, human review)
+      - Connects to cost and the alternative of the current process
+    modelAnswer: |
+      I'd say: "Think of it as a very fast, well-read intern. It drafts answers in seconds and knows a lot, but it works by predicting what a good answer looks like, not by looking facts up in a perfect database. So sometimes it fills gaps with something that sounds right but isn't, and it says it with the same confidence."
+
+      Then I'd make it concrete: "On 200 of your real questions, it got about this many right. Here are examples of the ones it got wrong." And explain the plan: "We connect it to your documents so it answers from them and shows its sources, we add checks, and where a mistake would be costly a person reviews before it goes out. Your current team also makes mistakes; what matters is the error rate, how errors are caught, and the cost."
+    followUps:
+      - How would you adjust this explanation for a CFO versus a product manager?
+
+  - id: lead-limits-2
+    lesson: 03-explaining-ai-limits
+    type: open
+    level: senior
+    question: Tell me about a time you pushed back on unrealistic expectations for an AI project, for example a client wanting to remove human review entirely.
+    keyPoints:
+      - STAR structure with a concrete situation and stakes
+      - Grounded pushback in measured results and real failure examples
+      - Translated risk into business terms such as cost of errors and reputation
+      - Proposed a constructive alternative such as phased automation by risk level
+      - Documented the agreement and showed a measurable result
+    modelAnswer: |
+      **Situation.** A client wanted our document-processing system to approve invoices automatically and cut their review team entirely.
+
+      **Task.** I needed to keep the project on track without agreeing to a design that would cause expensive errors.
+
+      **Action.** We ran the system on a few months of their real invoices. I presented results by invoice type: standard invoices were almost always right, but unusual vendors and multi-currency invoices had a much higher error rate. I showed actual wrong extractions and what each would have cost if paid. Then I proposed phased automation: auto-approve standard invoices under a value limit, AI-prefill plus human review for the rest, and a monthly review of error rates to expand automation as quality improved. We wrote the thresholds and review points into the project plan.
+
+      **Result.** They reduced manual work substantially in the first phase, had no costly errors, and expanded automation to another invoice type after two months. The client later said the measured approach made it easier to get internal sign-off.
+    followUps:
+      - What would you have done if they insisted on full automation anyway?
+
+  - id: lead-limits-3
+    lesson: 03-explaining-ai-limits
+    type: mcq
+    level: junior
+    question: A stakeholder asks, "How accurate is our AI assistant?" Which answer is most useful?
+    options:
+      - "Very accurate, it uses a state-of-the-art model."
+      - "On our test set of 300 real requests it got 255 right; most misses are multi-step questions, and those go to a human."
+      - "It depends."
+      - "Accuracy can't be measured for language models."
+    answer: 1
+    explanation: A measured rate on real data, the main failure type and how failures are handled gives the stakeholder something to decide with. Model names say nothing about performance on their task, and "it depends" without specifics isn't an answer.
+
+  - id: lead-limits-4
+    lesson: 03-explaining-ai-limits
+    type: open
+    level: mid
+    question: Your AI assistant gave a client's customer a confidently wrong answer that caused a complaint. How do you communicate with the client and what do you change?
+    keyPoints:
+      - Responds quickly and honestly, takes ownership without blame-shifting to the model
+      - Explains what happened in plain language using the trace or logs
+      - Describes the immediate fix and the longer-term prevention
+      - Adds the case to the eval set and checks for similar failures
+      - Revisits expectations and where human review is needed
+    modelAnswer: |
+      I'd contact the client promptly, before they have to chase us. I'd own it ("our system gave a wrong answer") rather than blaming "the AI." Using the request trace, I'd explain simply what went wrong, for example the relevant policy page was outdated in the index, so the assistant answered from an old version. Then the fixes: immediate (re-index, correct the content, check recent conversations for the same issue) and preventive (index updates on every publish, dates shown in citations, the case added to the eval set, and a check for similar questions). I'd also use it to revisit where human review or handoff is needed. Finally, a short written follow-up with what we changed, so the client can reassure their own stakeholders.
+    followUps:
+      - How would you decide whether to pause the assistant while fixing it?
+
+  - id: lead-mentor-1
+    lesson: 04-mentoring-on-ai-tooling
+    type: open
+    level: mid
+    question: Tell me about a time you mentored an engineer who relied too heavily on AI tools and struggled to debug their own code.
+    keyPoints:
+      - STAR structure with a specific person and observable problem
+      - Diagnoses the gap in fundamentals rather than blaming the tool
+      - Uses pairing, explain-it-back reviews and practice without tools
+      - Encourages using AI to explain code and errors, not only to write code
+      - Measurable improvement in independence or quality
+    modelAnswer: |
+      **Situation.** A junior on my team shipped quickly with AI help but got stuck for hours whenever something broke, and often regenerated code instead of finding the cause.
+
+      **Task.** Build their debugging skills without taking away a tool that made them productive.
+
+      **Action.** We agreed on a simple rule for a month: when a bug appears, first form a hypothesis and reproduce it, then use the AI tool to explain the error or suggest where to look, not to rewrite the code. I paired with them on two real bugs, narrating how I read stack traces, add logging, and narrow the problem down. In reviews I asked them to walk me through generated functions. Once a week they solved a small bug without AI first, then compared with what the tool suggested.
+
+      **Result.** Over a couple of months they resolved most bugs on their own and their questions in stand-up shifted from "it doesn't work" to "I think it's X, can you check my reasoning?"
+    followUps:
+      - How do you avoid this feeling like punishment for using AI?
+
+  - id: lead-mentor-2
+    lesson: 04-mentoring-on-ai-tooling
+    type: mcq
+    level: mid
+    question: You want to know whether your team's AI tool adoption is actually helping. Which measure is most useful?
+    options:
+      - Percentage of code lines generated by AI
+      - Number of tool logins per engineer
+      - Changes in cycle time, review rework and defect rates, alongside engineer feedback
+      - Number of prompts written per day
+    answer: 2
+    explanation: Usage metrics are easy to game and can reward shipping code nobody checked. Delivery and quality outcomes, plus what engineers report, show whether tools are helping.
+
+  - id: lead-mentor-3
+    lesson: 04-mentoring-on-ai-tooling
+    type: open
+    level: senior
+    question: A highly respected senior engineer refuses to use AI tools and openly criticises them, and some of the team are following their lead. How do you approach it?
+    keyPoints:
+      - Listens first and takes their concerns (quality, security, skill erosion) seriously
+      - Avoids mandates or usage quotas
+      - Invites them to evaluate tools on a task they choose and to shape team standards
+      - Separates personal choice from team practices and outcomes
+      - Uses evidence from the team's own work to settle disagreements
+    modelAnswer: |
+      I'd start with a one-to-one to understand their objections. Often they're valid: generated code that looks right but isn't, security and data concerns, or worry that juniors stop learning. I'd agree with what's true and say I want their judgment shaping how we use these tools. Then I'd invite them to lead an evaluation: pick a couple of real tasks, try a tool, and report what worked and what didn't. Seniors who help write the review checklist and data rules usually become the team's most useful voice on AI, because they're hard to fool. I wouldn't mandate usage; how they personally write code matters less than the team's outcomes. If their public criticism discouraged others from even trying, I'd ask them to frame it as concerns we're addressing, and let our own metrics (quality, cycle time) settle the debate.
+    followUps:
+      - What if their evaluation concludes the tools aren't worth it?
+
+  - id: lead-mentor-4
+    lesson: 04-mentoring-on-ai-tooling
+    type: open
+    level: mid
+    question: You've been asked to help a team of ten engineers with mixed experience start using AI coding tools effectively. What's your plan for the first month or two?
+    keyPoints:
+      - Starts with approved tools, data rules and basic guidelines
+      - Tailors coaching to junior, mid and senior engineers
+      - Uses live pairing and short demo sessions on real tasks
+      - Builds a shared playbook and project instruction files
+      - Measures outcomes and gathers feedback, then adjusts
+    modelAnswer: |
+      **Week 1.** Confirm approved tools and data rules with security, set up shared project instruction files with our conventions, and run a short kickoff showing a real task done end to end, including where the tool got it wrong.
+
+      **Weeks 2 to 4.** Pair with each engineer on real work. Juniors focus on using AI to explain code and on reviewing everything they accept; mid-levels on planning, context and test-first prompting; seniors on evaluating tools and shaping the review checklist. Hold a short weekly demo where someone shares a win or a failure.
+
+      **Weeks 5 to 8.** Collect what worked into a team playbook, update the guidelines and PR template, and compare cycle time, review rework and defects with before. Ask the team in a short survey what's helping and what isn't, and adjust. Keep a light monthly process for trying new tools so we don't chase every release.
+    followUps:
+      - How would you handle an engineer who wants to use a tool that security hasn't approved?

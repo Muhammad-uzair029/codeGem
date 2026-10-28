@@ -1,0 +1,4 @@
+title: Evaluation and observability
+summary: Learn to measure whether an LLM app is actually good, catch regressions before users do, and trace what happened inside every request.
+icon: eval
+level: advanced

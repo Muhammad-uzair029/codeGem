@@ -20,6 +20,8 @@ Invoke the master SKILL (`../SKILL.md`) to run the pipeline. This file only desc
 - **`--dry-learnings <mod>/<feat>`** — run stage 5 in inspection mode; write a `Would apply` section to the learnings file but do NOT touch skill or template files.
 - **`--max-iters N`** — override default build/verify iter cap (3).
 - **`--max-heal-iters N`** — override default stage-3 self-healing retry cap (3).
+- **`--max-agents N`** — override per-stage sub-agent concurrency (default 6, ceiling 10). See `../SKILL.md` §Multi-agent policy.
+- **`--no-fanout`** — run every stage single-agent; no parallel sub-agents.
 - **`--force-autonomous`, `-y`** — end-to-end unattended run. Skips `split-approve` and `approve` gates. Stage -1 auto-approves its own split; Stage 0 auto-resolves every non-`BLOCKING` open question with safe-default engineering assumptions. `BLOCKING` questions still halt (exit 30).
 
 ## Subcommands

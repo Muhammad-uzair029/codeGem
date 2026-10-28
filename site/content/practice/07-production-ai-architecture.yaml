@@ -1,0 +1,341 @@
+module: 07-production-ai-architecture
+questions:
+  - id: prod-stream-1
+    lesson: 01-streaming-responses
+    type: mcq
+    level: junior
+    question: Which response header tells the browser that the server is sending Server-Sent Events?
+    options:
+      - "Content-Type: application/json"
+      - "Content-Type: text/event-stream"
+      - "Transfer-Encoding: websocket"
+      - "Accept: text/sse"
+    answer: 1
+    explanation: SSE responses use Content-Type text/event-stream and stay open while the server writes frames. There is no "websocket" transfer encoding, and Accept is a request header.
+
+  - id: prod-stream-2
+    lesson: 01-streaming-responses
+    type: mcq
+    level: mid
+    question: Your SSE endpoint streams token by token locally, but in production the whole answer appears at once after several seconds. What is the most likely cause?
+    options:
+      - The model stopped supporting streaming in production
+      - A proxy, CDN, or compression middleware is buffering the response
+      - EventSource only streams on localhost
+      - The NestJS @Sse decorator only works in development mode
+    answer: 1
+    explanation: Buffering at an intermediate hop is the classic cause. Disable proxy buffering for the route (for example X-Accel-Buffering no for nginx), and make sure compression middleware is not holding chunks.
+
+  - id: prod-stream-3
+    lesson: 01-streaming-responses
+    type: open
+    level: mid
+    question: You need to stream chat answers to a Next.js app, and every request must send the conversation history and a bearer token. Would you use EventSource or fetch, and how does the backend know when the user has left?
+    keyPoints:
+      - EventSource is GET-only and cannot set custom headers like Authorization
+      - Use fetch with POST and read res.body with a stream reader, parsing SSE frames
+      - Buffer partial chunks and split frames on the blank line
+      - On the server, detect disconnect (req close event or Observable teardown) and abort the provider stream
+      - Send named done and error events so the client knows how the stream ended
+    modelAnswer: |
+      I'd use **fetch** with a POST body and an `Authorization` header, because `EventSource` only does GET and can't set custom headers. The client reads `res.body` through a `TextDecoderStream` reader, appends to a buffer, splits on `\n\n`, and parses each `data:` line. The incomplete tail stays in the buffer for the next read.
+
+      On the NestJS side I either return an Observable from `@Sse()` (with a teardown function) or write to the raw response. With the raw response I listen for `req.on('close')`, and in both cases I call `abort()` on the provider stream so we stop paying for tokens nobody will read. The server sends an `event: done` frame on success and an `event: error` frame if something fails mid-stream, since the HTTP status is already 200 by then. On the client, an `AbortController` lets the user hit "stop".
+    followUps:
+      - How would you resume a stream after a network blip?
+      - How do you show an error that happens after 300 tokens have already been rendered?
+
+  - id: prod-queue-1
+    lesson: 02-queues-background-jobs
+    type: mcq
+    level: junior
+    question: In a BullMQ setup, what does a worker do?
+    options:
+      - It stores jobs in PostgreSQL
+      - It is a separate process that takes jobs from the Redis-backed queue and runs them
+      - It renders the progress bar in the browser
+      - It replaces the API server
+    answer: 1
+    explanation: Producers add jobs to a queue stored in Redis. Workers, usually in separate processes or containers, pick them up and process them.
+
+  - id: prod-queue-2
+    lesson: 02-queues-background-jobs
+    type: open
+    level: mid
+    question: An "analyse this contract" job calls an LLM on 40 chunks, then emails the user. Sometimes it fails on chunk 35 with a 429. Describe how you would make this job reliable.
+    keyPoints:
+      - Retries with exponential backoff for transient errors like 429 and timeouts
+      - Checkpoint per-chunk results so a retry resumes instead of starting over
+      - Make the email step idempotent (record that it was sent)
+      - Rate-limit workers or lower concurrency to stay within provider limits
+      - Fail fast on non-retryable errors and alert on the failed set
+    modelAnswer: |
+      First, configure the job with `attempts` and exponential `backoff`, and only treat transient errors (429, 5xx, timeouts) as retryable. A bad document should fail immediately.
+
+      Second, checkpoint. Store each chunk's analysis as it completes (keyed by job and chunk index). On retry the worker skips finished chunks, so we don't pay for 34 chunks again.
+
+      Third, idempotency. Queues run jobs at least once, so the email step checks a "sent" marker before sending, and the final save is an upsert.
+
+      Fourth, address the cause of the 429s: lower worker concurrency or use the worker `limiter` option so we stay within the provider's limits, and keep interactive jobs on a separate queue. Finally, alert when jobs land in the failed set so someone looks at them.
+    followUps:
+      - What happens to the job if the worker process is killed mid-run?
+
+  - id: prod-queue-3
+    lesson: 02-queues-background-jobs
+    type: design
+    level: senior
+    question: Design the backend for a feature where users upload up to 500 PDFs at once to be summarised and indexed for search. The UI must show progress and the system must not slow down the normal chat API.
+    keyPoints:
+      - Upload to object storage, then enqueue jobs; API returns quickly with a batch id
+      - Fan out one job per document (or per chunk), with a parent or batch record for progress
+      - Separate queues and workers for bulk ingestion vs interactive traffic
+      - Worker rate limits and concurrency tuned to embedding and LLM provider limits
+      - Idempotent steps, retries with backoff, checkpoints, failed-set handling
+      - Progress via polling or SSE; notify on completion
+    modelAnswer: |
+      ## Intake
+      The client uploads files directly to object storage (pre-signed URLs), then calls `POST /batches`. The API creates a batch record, enqueues one job per document with `jobId = doc:<id>` for de-duplication, and returns `202` with the batch id.
+
+      ## Processing
+      An `ingest` queue with its own worker deployment handles extract → chunk → embed → summarise. Each step saves its output so retries resume. Workers have a concurrency and `limiter` setting sized to provider limits. Embeddings are batched per request where the provider supports it.
+
+      ## Isolation
+      Chat uses a separate queue (or no queue) and separate worker or API instances. Bulk ingestion can never starve interactive traffic. Large batches can also be given lower priority or spread over time.
+
+      ## Reliability
+      Retries with exponential backoff for 429/5xx, fail fast on corrupt PDFs, and a failed set with alerts. All writes are upserts keyed by document and chunk.
+
+      ## Progress
+      Workers update a counter on the batch record (done, failed, total). The UI polls `GET /batches/:id` or subscribes to an SSE progress stream, and the user gets a notification when the batch finishes, with a list of failed files to retry.
+    followUps:
+      - How would you estimate and cap the cost of one batch before starting?
+      - How would you handle a user deleting a document while it is being processed?
+
+  - id: prod-cache-1
+    lesson: 03-caching-with-redis
+    type: mcq
+    level: mid
+    question: Which request is the riskiest to serve from a semantic cache?
+    options:
+      - "What are your support hours?"
+      - "How do I reset my password?"
+      - "What is the balance on my account?"
+      - "Which file formats can I upload?"
+    answer: 2
+    explanation: The balance question is personal. A semantic hit from another user would leak their data, and the answer changes over time. The others are public, stable FAQ answers that suit caching.
+
+  - id: prod-cache-2
+    lesson: 03-caching-with-redis
+    type: open
+    level: senior
+    question: Product wants to add a semantic cache to the support bot to cut costs. What would you put in place before turning it on?
+    keyPoints:
+      - Allow-list request types where a near-match answer is acceptable (public, non-personal)
+      - Scope by tenant and user or permission context to avoid data leaks
+      - Tune the similarity threshold on labelled real traffic and measure the wrong-hit rate
+      - TTLs and invalidation when source docs or prompts change
+      - Include model and prompt version in the cache scope
+      - Monitoring and a kill switch
+    modelAnswer: |
+      I'd start with an **exact cache**, which is safe, and add semantic caching only for an allow-listed set of intents, such as public FAQ questions. Personal or account-specific requests never go through it.
+
+      Every entry is scoped by tenant (and user, if anything personal could slip in), plus model and prompt version, so a prompt change invalidates old answers.
+
+      For the threshold, I'd sample logged question pairs, label whether the cached answer would be acceptable, and pick the threshold that keeps wrong hits under an agreed rate. Negation and numbers are the usual failures, so I'd check those by hand.
+
+      Entries get a TTL and are purged when the source documents change. Finally, I'd log every semantic hit with its similarity score, track user feedback on cached answers, and keep a feature flag to switch it off instantly.
+    followUps:
+      - How would you handle multi-turn conversations where the last message alone is ambiguous?
+
+  - id: prod-cache-3
+    lesson: 03-caching-with-redis
+    type: mcq
+    level: junior
+    question: You change your system prompt, but users still get answers in the old style from your exact cache. What should have been in the cache key?
+    options:
+      - The user's IP address
+      - A prompt version (and the model id)
+      - The current timestamp
+      - Nothing, exact caches can't be invalidated
+    answer: 1
+    explanation: Anything that changes the answer belongs in the key. Including a prompt version and model id means a change produces new keys. A timestamp would make every key unique and the cache useless.
+
+  - id: prod-route-1
+    lesson: 04-rate-limits-fallbacks-routing
+    type: mcq
+    level: mid
+    question: Which of these errors should your LLM client generally NOT retry?
+    options:
+      - 429 Too Many Requests
+      - 503 Service Unavailable
+      - 400 Bad Request caused by an invalid parameter
+      - A request timeout
+    answer: 2
+    explanation: A 400 caused by bad input fails the same way every time, so retrying just wastes time. 429, 503, and timeouts are transient and worth retrying with backoff.
+
+  - id: prod-route-2
+    lesson: 04-rate-limits-fallbacks-routing
+    type: open
+    level: mid
+    question: Explain what a circuit breaker does in front of an LLM provider and why it helps users during an outage.
+    keyPoints:
+      - Tracks recent failures per provider or route
+      - After a threshold, opens and stops sending requests for a cool-down period
+      - Requests fail fast or go straight to the fallback instead of waiting for timeouts
+      - Half-open state lets a few test requests through to detect recovery
+      - Reduces load on the struggling provider and on your own threads and connections
+    modelAnswer: |
+      A circuit breaker counts failures for each provider. While things are healthy it is **closed** and requests flow. When failures cross a threshold, it **opens**: for a cool-down period we don't call that provider at all, and requests go straight to the fallback or fail fast with a friendly message.
+
+      After the cool-down it goes **half-open** and lets a few requests through. If they succeed it closes again; if not, it reopens.
+
+      Without it, every user request during an outage waits for a full timeout and maybe several retries before falling back, so the app feels frozen, and we keep pounding a provider that is already struggling.
+    followUps:
+      - Would you keep breaker state per process or shared in Redis? Why?
+
+  - id: prod-route-3
+    lesson: 04-rate-limits-fallbacks-routing
+    type: design
+    level: senior
+    question: Design an internal "LLM gateway" service that every team in your company calls instead of calling providers directly.
+    keyPoints:
+      - Single API normalising requests and responses across providers and models
+      - Per-team and per-user quotas, rate limiting, and budgets
+      - Routing by task or policy, fallback chains, retries with backoff, circuit breakers
+      - Central secrets management; teams never hold provider keys
+      - Logging, usage and cost attribution, PII controls, caching
+      - Config-driven model catalogue with evals before enabling routes
+    modelAnswer: |
+      ## API
+      One endpoint for chat and one for embeddings, with a normalised request shape (messages, tools, max tokens, stream flag). Teams name a **use case** or model alias, not a raw provider model id.
+
+      ## Policy and routing
+      A config-driven catalogue maps aliases to ordered fallback chains. The router applies retries with jittered backoff, circuit breakers per provider and region, and timeouts. Streaming is passed through as SSE.
+
+      ## Limits and cost
+      Quotas per team and per user (token buckets in Redis), plus monthly budgets with alerts. Every response records input and output tokens, model, route, and team, so cost is attributable.
+
+      ## Security
+      Provider keys live only in the gateway's secret store. Teams authenticate with their own scoped credentials. Optional PII redaction and data-handling rules per use case (for example "EU data only").
+
+      ## Observability
+      Structured logs with configurable retention, latency and error dashboards per route, and `servedBy` on every response. Exact caching is opt-in per use case.
+
+      ## Change management
+      New models or fallback routes are enabled only after the owning team's eval suite passes on them. This could be built in-house or on an existing gateway product, depending on control and compliance needs.
+    followUps:
+      - How do you stop the gateway itself from becoming a single point of failure?
+      - How would you support tool calling consistently across providers?
+
+  - id: prod-cost-1
+    lesson: 05-cost-control-token-budgets
+    type: mcq
+    level: junior
+    question: Which setting puts a hard upper limit on how many tokens the model can generate in one response?
+    options:
+      - temperature
+      - max_tokens (or the provider's equivalent output limit)
+      - top_p
+      - stream
+    answer: 1
+    explanation: The max output tokens setting caps generation length and therefore the worst-case output cost. Temperature and top_p change randomness, not length, and stream only changes delivery.
+
+  - id: prod-cost-2
+    lesson: 05-cost-control-token-budgets
+    type: open
+    level: senior
+    question: Your LLM bill tripled this month while traffic only grew 20%. Walk through how you would investigate and what fixes you would consider.
+    keyPoints:
+      - Break usage down by feature, model, tenant, and route using per-request token logs
+      - Separate input from output tokens to find the driver
+      - Look for growing context (history, RAG chunks), agent loops, retries and fallbacks, or a model change
+      - Check for a single heavy tenant or abuse
+      - Fixes such as output caps, context trimming, routing to smaller models, caching, budgets and alerts
+      - Validate fixes with evals so quality doesn't drop
+    modelAnswer: |
+      Traffic up 20% but cost up 200% means cost per request rose, so I look for what changed per request.
+
+      1. **Slice the data.** Group per-request usage by feature, model, tenant, and route. Usually one slice explains most of it.
+      2. **Input vs output.** Rising input points at context growth: longer chat histories, a bigger top-k in RAG, a longer system prompt. Rising output points at missing `max_tokens` or a prompt change that made answers wordier.
+      3. **Hidden multipliers.** Agent loops taking more steps, retries stacking across SDK, gateway, and our code during an incident, or a fallback to a pricier model that stayed on.
+      4. **Who.** One tenant running a script, or abuse of a free tier.
+      5. **Releases.** Correlate the jump with deploys, such as a model switch or a prompt change.
+
+      Fixes depend on the cause: output caps, history summarisation, lower top-k, routing simple tasks to a smaller model, prompt caching for repeated prefixes, per-tenant budgets, and spend alerts so we catch this in days, not at the invoice. Each change runs through evals first.
+    followUps:
+      - How would you set a fair token budget for a free plan?
+
+  - id: prod-cost-3
+    lesson: 05-cost-control-token-budgets
+    type: mcq
+    level: mid
+    question: Why use Redis INCRBY to track per-user token usage instead of reading the value, adding in application code, and writing it back?
+    options:
+      - INCRBY uses fewer tokens
+      - INCRBY is atomic, so concurrent requests don't overwrite each other's updates
+      - Redis does not support SET
+      - INCRBY automatically bills the user
+    answer: 1
+    explanation: Read-modify-write from several servers at once loses updates (two requests read 100 and both write back their own total). INCRBY does the addition inside Redis atomically.
+
+  - id: prod-deploy-1
+    lesson: 06-deploying-aws-cloudflare
+    type: mcq
+    level: mid
+    question: Your NestJS API holds SSE connections for up to a few minutes and also runs BullMQ workers. Which AWS compute option is the most natural fit?
+    options:
+      - AWS Lambda for everything
+      - Amazon ECS (for example on Fargate) running long-lived containers
+      - Amazon S3 static hosting
+      - Amazon Bedrock
+    answer: 1
+    explanation: Long-lived connections and always-on queue workers suit containers. Lambda has an execution time cap and needs special setup for streaming. S3 serves static files, and Bedrock provides model access, not compute for your app.
+
+  - id: prod-deploy-2
+    lesson: 06-deploying-aws-cloudflare
+    type: open
+    level: mid
+    question: Compare calling models through Amazon Bedrock with calling a model provider's API directly. When would you pick each?
+    keyPoints:
+      - Bedrock uses IAM auth, AWS billing, and can be reached privately from a VPC
+      - Fits companies with AWS-centric governance and compliance processes
+      - Direct APIs may get new models and features sooner
+      - Model availability on Bedrock varies by region
+      - An abstraction layer keeps switching possible
+    modelAnswer: |
+      **Bedrock** makes model access look like any other AWS service: IAM roles instead of a separate vendor key, billing on the AWS invoice, private connectivity from the VPC, and AWS's logging and governance tooling. It also offers models from several providers behind one API (the Converse API). It fits teams already running in AWS whose security reviews prefer AWS-native controls.
+
+      **Direct provider APIs** often get new models and features first, and their own docs and SDKs cover every option. They fit teams that want the newest capabilities fast or that are not on AWS.
+
+      Either way I'd check regional availability for the models we need, compare data-processing terms, and keep a thin internal interface so we can move between them.
+    followUps:
+      - How would you keep the option to switch later without rewriting every call site?
+
+  - id: prod-deploy-3
+    lesson: 06-deploying-aws-cloudflare
+    type: design
+    level: senior
+    question: Design the deployment for a global AI writing assistant (Next.js frontend, streaming chat, document ingestion) with users mostly in Europe and North America and a small team to run it.
+    keyPoints:
+      - Split request path, background ingestion, model access, and data stores
+      - Streaming-capable request path (containers, or an edge proxy with streaming support)
+      - Background ingestion on queue workers, not time-capped functions
+      - Gateway layer for logging, caching, rate limiting, and fallbacks
+      - Data residency for EU users (regions, provider terms, logs)
+      - Favour managed services for a small team; verify current platform limits
+    modelAnswer: |
+      ## Shape
+      - **Frontend**: Next.js on a managed host or CDN.
+      - **Edge**: a Cloudflare Worker (or equivalent) handles auth checks, per-user rate limits, and proxies streaming responses.
+      - **Core API**: NestJS on containers (ECS on Fargate or similar) in an EU region and a US region, holding SSE connections with load balancer idle timeouts raised and keep-alive pings.
+      - **Background**: BullMQ workers on the same container platform with managed Redis, for ingestion and embeddings.
+      - **Models**: provider APIs or Bedrock behind a gateway (AI Gateway or an internal one) for logs, caching, fallbacks, and cost attribution.
+      - **Data**: Postgres (with a vector extension or a separate vector DB) per region.
+
+      ## Data residency
+      EU users are routed to the EU stack. Model endpoints, logs, caches, and backups for those users stay in EU regions where the providers support it, and provider data-processing terms are reviewed.
+
+      ## Small-team trade-offs
+      Managed Redis, managed Postgres, and managed containers rather than Kubernetes. Infrastructure as code from day one. All limits (timeouts, payload sizes) checked against current docs during design.
+    followUps:
+      - What would you change if traffic was 95% in one region?

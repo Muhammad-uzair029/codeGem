@@ -1,0 +1,183 @@
+---
+// codeGem desktop app downloads from GitHub Releases (the installer files are
+// still named Feature-Loop-Manager).
+// The repo comes from RELEASES_REPO / site.config.json at build time. The
+// browser asks the GitHub API for the latest release; if that fails (private
+// repo 404, rate limit, offline) the fallback card stays, which is also what
+// people without JavaScript see.
+import { getManifest } from '../../lib/skills.mjs';
+const repo = getManifest().releasesRepo;
+const releasesUrl = `https://github.com/${repo}/releases/latest`;
+---
+<div class="dl" data-download data-repo={repo}>
+  <div class="dl-grid">
+    <div class="dl-about">
+      <h3 style="margin-top:0">What the app does</h3>
+      <ul class="dl-points">
+        <li>Pick a project and write a short brief.</li>
+        <li>Press Launch and watch each feature-loop stage run live.</li>
+        <li>Approve or send back the work at the two review points.</li>
+      </ul>
+      <p class="muted">You do not need it: every skill also works by typing a command in Claude Code. Use whichever you prefer, or both.</p>
+      <p class="faint">The installer file is named <code>Feature-Loop-Manager</code>, the app's working title.</p>
+    </div>
+
+    <div class="card dl-card">
+      <!-- Fallback, shown until (and unless) the latest release loads. -->
+      <div data-dl-fallback>
+        <div class="eyebrow">codeGem desktop app</div>
+        <h3 style="margin:0 0 6px">Download for macOS, Windows or Linux</h3>
+        <p class="muted">Installers are published on GitHub Releases.</p>
+        <a class="btn" href={releasesUrl} rel="noopener">Open the latest release</a>
+        <p class="faint" style="margin:10px 0 0" data-dl-status>If the page asks you to sign in, use a GitHub account that has access to the codeGem repo.</p>
+      </div>
+
+      <!-- Filled in by the script when the release is available. -->
+      <div data-dl-live hidden>
+        <div class="eyebrow" data-dl-version></div>
+        <h3 style="margin:0 0 10px" data-dl-title>Download for your computer</h3>
+        <div class="dl-primary" data-dl-primary></div>
+        <p class="faint" style="margin:8px 0 0" data-dl-hint hidden></p>
+        <details class="dl-others">
+          <summary>Other platforms</summary>
+          <ul data-dl-others></ul>
+        </details>
+        <p class="faint" style="margin:8px 0 0"><a href={releasesUrl} rel="noopener">All release files and notes</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="note warn" style="margin-top:16px">
+    <p><strong>macOS:</strong> the app is not signed yet. If macOS says it is damaged or blocks it, move it to Applications and run
+    <code>xattr -cr /Applications/Feature-Loop-Manager.app</code> in Terminal, then open it again.</p>
+  </div>
+</div>
+
+<script>
+  type Asset = { name: string; browser_download_url: string; size: number };
+  type Build = { key: string; label: string; detail: string; url: string; size: number };
+
+  const CACHE_KEY = 'cg-release-v1';
+
+  function classify(a: Asset): Build | null {
+    const n = a.name;
+    if (/\.(blockmap|zip|yml|yaml|sha\d*|txt)$/i.test(n)) return null;
+    const mk = (key: string, label: string, detail: string): Build => ({ key, label, detail, url: a.browser_download_url, size: a.size });
+    if (/mac.*arm64.*\.dmg$/i.test(n)) return mk('mac-arm64', 'macOS · Apple Silicon', 'M1, M2, M3, M4 and later (.dmg)');
+    if (/mac.*(x64|intel).*\.dmg$/i.test(n)) return mk('mac-x64', 'macOS · Intel', 'Older Intel Macs (.dmg)');
+    if (/mac.*universal.*\.dmg$/i.test(n)) return mk('mac-universal', 'macOS', 'Universal (.dmg)');
+    if (/win.*\.exe$/i.test(n)) return mk('win-x64', 'Windows', '64-bit installer (.exe)');
+    if (/linux.*\.AppImage$/i.test(n)) return mk('linux-appimage', 'Linux · AppImage', 'Runs on most distributions');
+    if (/linux.*\.deb$/i.test(n)) return mk('linux-deb', 'Linux · .deb', 'Debian, Ubuntu and similar');
+    return null;
+  }
+
+  async function detect(): Promise<{ os: 'mac' | 'windows' | 'linux' | 'other'; arm: boolean | null }> {
+    const nav = navigator as Navigator & { userAgentData?: any };
+    const ua = navigator.userAgent || '';
+    const plat = (nav.userAgentData && nav.userAgentData.platform) || navigator.platform || '';
+    let os: 'mac' | 'windows' | 'linux' | 'other' = 'other';
+    if (/mac/i.test(plat) || /Macintosh|Mac OS X/.test(ua)) os = 'mac';
+    else if (/win/i.test(plat) || /Windows/.test(ua)) os = 'windows';
+    else if (/linux/i.test(plat) || /Linux|X11/.test(ua)) os = /Android/i.test(ua) ? 'other' : 'linux';
+    let arm: boolean | null = null;
+    try {
+      if (nav.userAgentData && nav.userAgentData.getHighEntropyValues) {
+        const v = await nav.userAgentData.getHighEntropyValues(['architecture']);
+        if (v.architecture) arm = v.architecture === 'arm';
+      }
+    } catch (e) {
+      arm = null;
+    }
+    return { os, arm };
+  }
+
+  function mb(n: number) {
+    return n ? `${Math.round(n / 1e6)} MB` : '';
+  }
+
+  function button(b: Build, primary: boolean) {
+    const a = document.createElement('a');
+    a.className = primary ? 'btn dl-btn' : 'btn secondary dl-btn';
+    a.href = b.url;
+    a.rel = 'noopener';
+    const strong = document.createElement('span');
+    strong.textContent = `Download for ${b.label}`;
+    const small = document.createElement('small');
+    small.textContent = [b.detail, mb(b.size)].filter(Boolean).join(' · ');
+    a.append(strong, small);
+    return a;
+  }
+
+  async function loadRelease(repo: string) {
+    try {
+      const hit = sessionStorage.getItem(CACHE_KEY);
+      if (hit) {
+        const c = JSON.parse(hit);
+        if (c.repo === repo && Date.now() - c.t < 10 * 60 * 1000) return c.data;
+      }
+    } catch (e) {}
+    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } });
+    if (!res.ok) throw new Error(String(res.status));
+    const data = await res.json();
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ repo, t: Date.now(), data }));
+    } catch (e) {}
+    return data;
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-download]').forEach(async (root) => {
+    const q = <T extends Element = HTMLElement>(s: string) => root.querySelector(s) as T | null;
+    const status = q('[data-dl-status]');
+    let rel: any;
+    try {
+      rel = await loadRelease(root.dataset.repo || '');
+    } catch (e) {
+      const code = e instanceof Error ? e.message : '';
+      if (status && code === '403') status.textContent = 'GitHub is limiting requests right now, so we could not list the files here. The link above still works.';
+      return; // keep the fallback
+    }
+    const builds = ((rel && rel.assets) || []).map(classify).filter(Boolean) as Build[];
+    if (!builds.length) return;
+    const by = Object.fromEntries(builds.map((b) => [b.key, b]));
+    const { os, arm } = await detect();
+
+    let primary: Build[] = [];
+    let hint = '';
+    if (os === 'mac') {
+      const order = arm === false ? ['mac-x64', 'mac-arm64'] : ['mac-arm64', 'mac-x64'];
+      primary = [...order, 'mac-universal'].map((k) => by[k]).filter(Boolean);
+      if (arm === null && primary.length > 1) hint = 'Not sure which Mac you have? Apple menu > About This Mac: "Chip: Apple M..." means Apple Silicon; "Processor: Intel" means Intel.';
+    } else if (os === 'windows') primary = [by['win-x64']].filter(Boolean);
+    else if (os === 'linux') primary = [by['linux-appimage'] || by['linux-deb']].filter(Boolean);
+    const others = builds.filter((b) => !primary.includes(b));
+
+    const version = String(rel.tag_name || rel.name || '').replace(/^v?/, 'v');
+    const date = rel.published_at ? new Date(rel.published_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    q('[data-dl-version]')!.textContent = ['codeGem desktop app', version, date && `released ${date}`].filter(Boolean).join(' · ');
+    if (!primary.length) q('[data-dl-title]')!.textContent = 'Choose your platform';
+    const prim = q('[data-dl-primary]')!;
+    prim.replaceChildren(...primary.map((b, i) => button(b, i === 0 || os === 'mac')));
+    const hintEl = q('[data-dl-hint]')!;
+    if (hint) {
+      hintEl.textContent = hint;
+      hintEl.hidden = false;
+    }
+    const ul = q('[data-dl-others]')!;
+    ul.replaceChildren(
+      ...others.map((b) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = b.url;
+        a.rel = 'noopener';
+        a.textContent = b.label;
+        li.append(a, document.createTextNode(` · ${[b.detail, mb(b.size)].filter(Boolean).join(' · ')}`));
+        return li;
+      }),
+    );
+    const det = q<HTMLDetailsElement>('.dl-others')!;
+    det.hidden = others.length === 0;
+    if (!primary.length) det.open = true;
+    q('[data-dl-fallback]')!.hidden = true;
+    q('[data-dl-live]')!.hidden = false;
+  });
+</script>

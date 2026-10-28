@@ -1,0 +1,4 @@
+title: Production AI architecture
+summary: Take an AI feature from a demo to a service that streams fast, survives provider outages, stays inside budget, and runs on AWS or Cloudflare. You'll be able to explain each design choice in a system-design interview.
+icon: server
+level: advanced

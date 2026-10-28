@@ -14,6 +14,7 @@ import type {
   OrchestratorApi,
   PersistentConfig,
   ProjectType,
+  RunRecord,
   SkillInjectionRequest,
   SkillInjectionResult,
   SkillsCacheStatus,
@@ -82,6 +83,8 @@ const api: OrchestratorApi = {
       ipcRenderer.on('loop:exit', listener);
       return () => ipcRenderer.removeListener('loop:exit', listener);
     },
+    latestRun: (targetPath: string) =>
+      ipcRenderer.invoke('loop:latestRun', targetPath) as Promise<RunRecord | null>,
   },
   state: {
     read: () => ipcRenderer.invoke('state:read') as Promise<PersistentConfig>,
@@ -93,6 +96,8 @@ const api: OrchestratorApi = {
     clearActive: () => ipcRenderer.invoke('state:clearActive') as Promise<PersistentConfig>,
     setLayout: (sizes: [number, number, number]) =>
       ipcRenderer.invoke('state:setLayout', sizes) as Promise<PersistentConfig>,
+    setIsolateRuns: (on: boolean) =>
+      ipcRenderer.invoke('state:setIsolateRuns', on) as Promise<PersistentConfig>,
   },
   shortcuts: {
     onBrowseExisting: (cb: () => void) => {

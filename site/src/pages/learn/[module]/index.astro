@@ -1,0 +1,120 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ModuleIcon from '../../../components/learn/ModuleIcon.astro';
+import Progress from '../../../components/learn/Progress.astro';
+import CourseCard from '../../../components/learn/CourseCard.astro';
+import { getModules, getCourses, coursesForModule, getQuestions, LEVEL_LABEL } from '../../../lib/learn.js';
+import { iconTone } from '../../../lib/learn-ui.js';
+import '../../../styles/learn.css';
+
+export function getStaticPaths() {
+  return getModules().map((m) => ({ params: { module: m.slug } }));
+}
+
+const modules = getModules();
+const m = modules.find((x) => x.slug === Astro.params.module)!;
+const prev = modules[m.index - 1];
+const next = modules[m.index + 1];
+const courses = getCourses();
+const related = coursesForModule(courses, m.slug);
+const shown = related.slice(0, 4);
+const questionCount = getQuestions().filter((q) => q.module === m.slug).length;
+const keys = m.lessons.map((l) => l.key).join(' ');
+const lessons = JSON.stringify(m.lessons.map((l) => ({ key: l.key, url: l.url, title: l.title }))).replace(/</g, '\\u003c');
+---
+<Base title={m.title} active="learn" description={m.summary}>
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/learn/">Learn</a><span aria-hidden="true">/</span><span aria-current="page">Module {m.index + 1}</span></nav>
+  </div>
+
+  <header class="wrap mod-head">
+    <div class="mod-head-main">
+      <p class="mod-kicker"><span class="lm-icon" data-g={iconTone(m.icon)}><ModuleIcon name={m.icon} /></span>Module {m.index + 1} of {modules.length}</p>
+      <h1>{m.title}</h1>
+      <p class="lede">{m.summary}</p>
+      <div class="tag-row">
+        <span class="tag">{LEVEL_LABEL[m.level]}</span>
+        <span class="tag">{m.lessons.length} lessons</span>
+        <span class="tag">{m.minutes} min total</span>
+        <span class="tag">{questionCount} practice questions</span>
+      </div>
+    </div>
+    <div class="card mod-progress" data-module-progress={m.slug} data-keys={keys} data-state="todo">
+      <div class="progress-label"><span>Your progress</span><span data-count>0 of {m.lessons.length} done</span></div>
+      <Progress label={`${m.title} progress`} />
+      <a class="btn mod-cta" href={m.lessons[0].url} data-module-cta>Start lesson 1</a>
+      <a class="l-link" href={`/interview/?module=${m.slug}`}>Practice this module ({questionCount} questions) <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <section class="wrap l-section" aria-labelledby="lessons-h">
+    <h2 id="lessons-h" class="l-h2">Lessons</h2>
+    <ol class="lesson-list">
+      {m.lessons.map((l, i) => (
+        <li>
+          <a class="card card-link lesson-row" href={l.url} data-lesson-done={l.key}>
+            <span class="lesson-mark" aria-hidden="true">
+              <span class="lesson-n">{i + 1}</span>
+              <svg class="lesson-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+            </span>
+            <span class="lesson-row-body">
+              <span class="lesson-row-title">{l.title}</span>
+              <span class="lesson-row-summary">{l.summary}</span>
+            </span>
+            <span class="lesson-row-meta">
+              <span>{l.minutes} min</span>
+              <span class="lesson-row-state" data-done-label>Not done yet</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="wrap l-section" aria-labelledby="courses-h">
+    <div class="l-section-head l-section-head-row">
+      <h2 id="courses-h" class="l-h2">Related courses</h2>
+      {related.length > shown.length && <a class="l-link" href={`/courses/?module=${m.slug}`}>See all {related.length} <span aria-hidden="true">→</span></a>}
+    </div>
+    {shown.length ? (
+      <ul class="course-grid">
+        {shown.map((c) => <li><CourseCard course={c} provider={c.provider} featured={c.featured} modules={modules} /></li>)}
+      </ul>
+    ) : (
+      <div class="card l-empty">
+        <p><strong>No related courses listed yet.</strong></p>
+        <p class="muted">Browse the full catalog for free courses from Anthropic and others.</p>
+        <a class="btn secondary" href="/courses/">Browse courses</a>
+      </div>
+    )}
+  </section>
+
+  <nav class="wrap l-pager" aria-label="Modules">
+    {prev ? <a class="card card-link l-pager-link" href={prev.url}><span class="faint">← Previous module</span><span>{prev.title}</span></a> : <span />}
+    {next ? <a class="card card-link l-pager-link is-next" href={next.url}><span class="faint">Next module →</span><span>{next.title}</span></a> : <a class="card card-link l-pager-link is-next" href="/interview/?mode=mock"><span class="faint">Finished the path? →</span><span>Try a mock interview</span></a>}
+  </nav>
+
+  <script type="application/json" id="module-lessons" set:html={lessons} />
+  <script>
+    import { paintProgress, getDone } from '../../../scripts/learn-store.js';
+    paintProgress();
+    let lessons: { key: string; url: string; title: string }[] = [];
+    try {
+      lessons = JSON.parse(document.getElementById('module-lessons')?.textContent || '[]');
+    } catch {}
+    const done = getDone();
+    const cta = document.querySelector<HTMLAnchorElement>('[data-module-cta]');
+    const n = lessons.filter((l) => done[l.key]).length;
+    const nextIdx = lessons.findIndex((l) => !done[l.key]);
+    if (cta && n > 0) {
+      if (nextIdx === -1) {
+        cta.textContent = 'Practice this module';
+        cta.href = cta.nextElementSibling?.getAttribute('href') || cta.href;
+        cta.nextElementSibling?.setAttribute('hidden', '');
+      } else {
+        cta.textContent = `Continue with lesson ${nextIdx + 1}`;
+        cta.href = lessons[nextIdx].url;
+      }
+    }
+  </script>
+</Base>

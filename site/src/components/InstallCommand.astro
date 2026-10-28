@@ -1,0 +1,34 @@
+---
+// One install command with macOS/Linux and Windows variants and a copy button.
+// The text is rendered with the baked site URL, then rewritten in the browser
+// with window.location.origin (see scripts/site.js).
+import { installCommand } from '../lib/commands.js';
+import { getManifest } from '../../lib/skills.mjs';
+
+interface Props {
+  args: string[];
+  label?: string;
+  id?: string;
+}
+const { args, label = 'Run in your project folder', id } = Astro.props;
+const base = getManifest().siteUrl;
+const joined = args.join(' ');
+---
+<div class="cmd" id={id} data-cmd>
+  <div class="cmd-head">
+    <span class="cmd-label" data-cmd-label>{label}</span>
+    <div class="os-switch" role="group" aria-label="Operating system">
+      <span class="os-ind" aria-hidden="true"></span>
+      <button type="button" class="os-tab" data-os-tab="unix" aria-pressed="true">macOS / Linux</button>
+      <button type="button" class="os-tab" data-os-tab="windows" aria-pressed="false">Windows</button>
+    </div>
+  </div>
+  <div class="cmd-line" data-os-pane="unix">
+    <code data-install data-os="unix" data-args={joined}>{installCommand('unix', base, args)}</code>
+    <button type="button" class="copy" aria-label="Copy command"><span class="copy-ico" aria-hidden="true"></span><span class="copy-txt">Copy</span></button>
+  </div>
+  <div class="cmd-line" data-os-pane="windows">
+    <code data-install data-os="windows" data-args={joined}>{installCommand('windows', base, args)}</code>
+    <button type="button" class="copy" aria-label="Copy command"><span class="copy-ico" aria-hidden="true"></span><span class="copy-txt">Copy</span></button>
+  </div>
+</div>

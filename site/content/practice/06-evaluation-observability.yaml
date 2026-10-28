@@ -1,0 +1,346 @@
+module: 06-evaluation-observability
+questions:
+  - id: eval-why-1
+    lesson: 01-why-llm-apps-need-evals
+    type: mcq
+    level: junior
+    question: What is the main reason exact-match unit tests don't work well for checking a chatbot's free-text answers?
+    options:
+      - Unit test frameworks can't call APIs
+      - Many different answers can be correct, and the same prompt can give different outputs
+      - LLM outputs are always wrong
+      - Unit tests only work for front-end code
+    answer: 1
+    explanation: >-
+      Free-text tasks have many acceptable answers and sampling adds variation, so an exact string
+      assertion fails on good answers. Evals use graders and pass rates instead. Unit tests are
+      still right for the deterministic parts of the app.
+
+  - id: eval-why-2
+    lesson: 01-why-llm-apps-need-evals
+    type: mcq
+    level: mid
+    question: You need to check that every response is valid JSON matching your schema. Which grader should you use?
+    options:
+      - An LLM-as-judge with a detailed rubric
+      - A code-based check that parses and validates against the schema
+      - Human review of every output
+      - A public benchmark
+    answer: 1
+    explanation: >-
+      Anything code can verify should be checked by code: it's free, fast, and deterministic. LLM
+      judges are for qualities code can't measure, such as tone or helpfulness.
+
+  - id: eval-why-3
+    lesson: 01-why-llm-apps-need-evals
+    type: open
+    level: mid
+    question: Your manager asks, "We have unit tests. Why do we also need evals for the AI features?" Answer them.
+    keyPoints:
+      - Unit tests cover deterministic code; model behavior is non-deterministic and fuzzy
+      - Evals score quality across many examples and give metrics, not pass/fail on one case
+      - Prompt or model changes can silently regress other cases
+      - Public benchmarks don't reflect our users and data
+      - Offline evals before shipping plus online monitoring after
+    modelAnswer: |
+      Unit tests are still needed: they check parsing, tool code and prompt assembly, which are
+      deterministic. But the model's answers vary, and "correct" is a judgment, not an exact
+      string. A prompt tweak that fixes one case can quietly break five others.
+
+      Evals run the app over a realistic dataset and score each output with code checks, an LLM
+      judge or humans. That gives numbers we can track ("grounded answers went from 85% to 92%")
+      and compare between versions before shipping. Public model benchmarks don't tell us how the
+      model does on our documents and users; only our own evals do. After launch, we sample
+      production traffic and score it too, because real users find cases our dataset missed.
+    followUps:
+      - What would you build first if you had one day?
+
+  - id: eval-judge-1
+    lesson: 02-datasets-judges-human-review
+    type: mcq
+    level: mid
+    question: In pairwise comparisons, your LLM judge picks answer A 70% of the time, but when you swap the order it picks the new first answer 70% of the time. What is going on?
+    options:
+      - Answer A is genuinely better
+      - Position bias; the judge favors whatever comes first
+      - Verbosity bias
+      - The temperature is too low
+    answer: 1
+    explanation: >-
+      The preference follows the position, not the content. Run every comparison in both orders
+      and only count consistent verdicts (treat disagreements as ties).
+
+  - id: eval-judge-2
+    lesson: 02-datasets-judges-human-review
+    type: mcq
+    level: mid
+    question: Which rubric design usually gives the most consistent LLM-judge scores?
+    options:
+      - '"Rate this answer from 1 to 10"'
+      - Several specific criteria, each scored pass/fail, with reasoning before the verdict
+      - '"Is this answer good? Yes or no"'
+      - A score based on answer length
+    answer: 1
+    explanation: >-
+      Vague scales drift between runs. Specific binary criteria make the judge's job clear and tell
+      you what failed. A single vague yes/no has the same problem as a 1–10 scale.
+
+  - id: eval-judge-3
+    lesson: 02-datasets-judges-human-review
+    type: open
+    level: senior
+    question: You plan to use an LLM-as-judge to score 10,000 support answers a week. How do you make sure its scores can be trusted?
+    keyPoints:
+      - Specific binary rubric, reasoning first, temperature 0, versioned judge prompt
+      - Experts label a calibration sample with the same rubric
+      - Measure agreement and especially false passes, per category
+      - Mitigate known biases (position, verbosity, self-preference)
+      - Use code checks for things code can verify
+      - Ongoing human spot-checks and re-calibration when the judge changes
+    modelAnswer: |
+      1. **Rubric**: break "good" into specific pass/fail criteria (answers the question, grounded
+         in policy, no unauthorized promises). Ask for reasoning, then a JSON verdict. Temperature 0,
+         prompt under version control.
+      2. **Calibrate**: domain experts label 100–200 answers with the same rubric. Run the judge on
+         them and measure agreement per criterion and per category. Focus on **false passes**
+         (judge OK, human not OK), since those let bad answers through.
+      3. **Fix the judge** where it disagrees: clearer definitions, a few labeled examples in the
+         prompt, splitting criteria. Consider a different model family than the one being judged,
+         to reduce self-preference.
+      4. **Use code where possible** for format, length, required facts.
+      5. **Keep checking**: humans review a weekly sample, and agreement is re-measured whenever
+         the judge model or prompt changes.
+    followUps:
+      - What agreement level would you accept, and does it depend on the criterion?
+
+  - id: eval-judge-4
+    lesson: 02-datasets-judges-human-review
+    type: design
+    level: senior
+    question: Design the eval dataset and grading process for a new internal HR policy assistant before it launches to 5,000 employees.
+    keyPoints:
+      - Sources - real questions from HR tickets (anonymized), expert-written edge cases, adversarial cases
+      - Categories and slices (leave, benefits, payroll, out-of-scope, sensitive topics)
+      - Reference answers or criteria written or reviewed by HR experts
+      - Graders - code checks, calibrated LLM judge, human review for sensitive cases
+      - Must-pass cases (escalate harassment reports, no legal advice) and launch thresholds
+      - Versioned dataset that grows from production failures after launch
+    modelAnswer: |
+      ### Collect
+      - 150–300 anonymized questions from past HR tickets and chat logs, so the wording is real.
+      - Expert-written edge cases: regional policy differences, contractors vs employees, recent
+        policy changes.
+      - Out-of-scope and adversarial inputs: "What's my manager's salary?", prompt injection,
+        requests for legal advice.
+
+      ### Label
+      HR experts write reference answers (or the key facts each answer must contain) with the
+      source policy section. Tag each example with a category.
+
+      ### Grade
+      - Code: cites a policy section, required facts present, refuses restricted data requests.
+      - LLM judge: grounded in the cited policy, answers the question, appropriate tone. Calibrated
+        against expert labels first.
+      - Humans: every sensitive-topic answer reviewed before launch.
+
+      ### Gate
+      Must-pass set (harassment reports are escalated to a human, no salary data leaks, no legal
+      advice) at 100%. Per-category thresholds for groundedness and correctness.
+
+      ### After launch
+      Version the dataset. Add every thumbs-down and escalated conversation as a new example after
+      review.
+    followUps:
+      - How do you keep the dataset current when policies change?
+
+  - id: eval-rag-1
+    lesson: 03-rag-metrics
+    type: mcq
+    level: mid
+    question: In a RAG eval, context recall is high but faithfulness is low. Where should you look first?
+    options:
+      - The retriever's embeddings
+      - The generation step - prompt or model is adding unsupported claims
+      - The chunk size
+      - The vector database index type
+    answer: 1
+    explanation: >-
+      High recall means the needed information was retrieved. Low faithfulness means the answer
+      contains claims not supported by that context, so the problem is in generation. Tighten the
+      prompt ("answer only from the context, say when it's missing") or try a different model.
+
+  - id: eval-rag-2
+    lesson: 03-rag-metrics
+    type: mcq
+    level: mid
+    question: Which RAG metric cannot be computed without a reference answer (or labeled relevant chunks)?
+    options:
+      - Faithfulness
+      - Response relevancy
+      - Context recall
+      - Answer length
+    answer: 2
+    explanation: >-
+      Context recall asks whether everything needed was retrieved, which requires knowing what was
+      needed. Faithfulness only compares the answer to the retrieved context, and response
+      relevancy compares the answer to the question.
+
+  - id: eval-rag-3
+    lesson: 03-rag-metrics
+    type: open
+    level: senior
+    question: Define faithfulness, response relevancy, context precision, and context recall, and for each one say what fix you'd try if it were low.
+    keyPoints:
+      - Faithfulness is claims supported by retrieved context over total claims; fix prompt or model
+      - Response relevancy is whether the answer addresses the question; fix prompt, handle evasive answers
+      - Context precision is relevant chunks ranked near the top; add reranker, reduce top-k, better chunks
+      - Context recall is whether retrieval covered everything the reference needs; chunking, embeddings, hybrid search, larger k
+      - These are LLM-judged and should be spot-checked; faithful is not the same as correct
+    modelAnswer: |
+      - **Faithfulness**: fraction of the answer's claims that are supported by the retrieved
+        context. Low means hallucination or outside knowledge. Fix: stricter grounding
+        instructions, require citations, allow "I don't know", or try a different model.
+      - **Response relevancy**: does the answer address the question asked (Ragas estimates it
+        by generating questions from the answer and comparing them to the original). Low means
+        off-topic or evasive answers. Fix: prompt clarity, handle ambiguous questions with a
+        clarifying question.
+      - **Context precision**: are the relevant chunks ranked near the top of what was retrieved?
+        Low means noisy context. Fix: add a reranker, lower top-k, improve chunking or metadata
+        filters.
+      - **Context recall**: how much of the reference answer can be attributed to the retrieved
+        chunks. Low means missing information. Fix: better chunking, better embeddings, hybrid
+        keyword + vector search, query rewriting, larger top-k.
+
+      All four are usually LLM-judged, so I'd calibrate them against human labels, and remember a
+      faithful answer can still be wrong if the source document is outdated.
+    followUps:
+      - Which of these can you measure on live traffic without references?
+
+  - id: eval-trace-1
+    lesson: 04-tracing-with-langsmith
+    type: mcq
+    level: junior
+    question: In LangSmith, a single user request that calls a retriever, an LLM, and a tool is recorded as...
+    options:
+      - Three separate datasets
+      - One trace containing nested runs for each step
+      - One experiment
+      - One feedback score
+    answer: 1
+    explanation: >-
+      A trace is the tree of runs for one end-to-end request. Each step (retriever, LLM call,
+      tool) is a run. Datasets and experiments are for evaluation, not for recording a request.
+
+  - id: eval-trace-2
+    lesson: 04-tracing-with-langsmith
+    type: mcq
+    level: mid
+    question: You changed a prompt and want to know whether it's better than the current one. Which LangSmith workflow fits?
+    options:
+      - Read a few production traces by hand
+      - Run both versions over the same dataset as experiments with the same evaluators and compare
+      - Turn on tracing and wait for user complaints
+      - Create a new project per prompt
+    answer: 1
+    explanation: >-
+      Experiments on a fixed dataset with fixed evaluators give a fair comparison and a side-by-side
+      view of the examples that changed. Production traces alone aren't a controlled comparison.
+
+  - id: eval-trace-3
+    lesson: 04-tracing-with-langsmith
+    type: open
+    level: mid
+    question: A user reports that your RAG assistant gave a wrong answer yesterday. Using tracing, walk through how you'd debug it and make sure it doesn't happen again.
+    keyPoints:
+      - Find the trace by request id, user, time or negative feedback
+      - Inspect the retriever run - were the right chunks returned?
+      - Inspect the exact prompt and model output in the LLM run
+      - Check tool runs and errors along the way
+      - Add the case to the eval dataset with a correct reference
+      - Fix, then run an experiment to confirm and check for regressions
+    modelAnswer: |
+      Find the trace using the request id, user id and time, or the thumbs-down feedback attached
+      to it. Open the retriever run: did it return the chunk with the right answer? If not, it's a
+      retrieval problem (chunking, embeddings, filters). If it did, open the LLM run and read the
+      exact prompt: was the chunk truncated, buried, or contradicted by another chunk? Did the model
+      ignore it? Also check tool runs for swallowed errors.
+
+      Then add the question to the eval dataset with the correct reference answer, make the fix,
+      and run an experiment over the full dataset to confirm the case now passes and nothing else
+      regressed.
+    followUps:
+      - What metadata would you attach to every trace to make this faster?
+
+  - id: eval-regress-1
+    lesson: 05-regression-testing-prompts-models
+    type: mcq
+    level: mid
+    question: Your production app calls the model through an alias that the provider periodically points at newer versions. What is the main risk?
+    options:
+      - Higher latency
+      - Behavior can change without any change to your code or passing your eval gate
+      - Tool calling stops working
+      - You can't use streaming
+    answer: 1
+    explanation: >-
+      A moving alias means the model can change under you. Pin a specific version in production
+      and upgrade deliberately after running your regression suite.
+
+  - id: eval-regress-2
+    lesson: 05-regression-testing-prompts-models
+    type: open
+    level: mid
+    question: How do you handle the fact that LLM outputs vary between runs when you build a regression gate in CI?
+    keyPoints:
+      - Use low temperature where it suits the task
+      - Run important cases multiple times and use pass rates
+      - Set tolerances based on observed run-to-run variance
+      - Make must-pass checks code-based where possible
+      - Keep dataset and evaluators fixed while comparing versions
+    modelAnswer: |
+      First, measure the noise: run the current version a few times over the dataset and see how
+      much scores move. Set tolerances bigger than that noise, so the gate doesn't flap. Use low
+      temperature where the task allows. For important cases, run several samples and gate on pass
+      rate rather than a single run. Keep must-pass checks code-based (refusal present, required
+      disclaimer, correct tool called) so they are deterministic. And keep the dataset and
+      evaluator versions fixed, so a score change reflects the app, not the measuring stick.
+    followUps:
+      - How big does the dataset need to be to detect a 3-point drop?
+
+  - id: eval-regress-3
+    lesson: 05-regression-testing-prompts-models
+    type: design
+    level: senior
+    question: Design an evaluation and release process that lets your team safely change prompts weekly and upgrade models a few times a year for a customer-facing assistant.
+    keyPoints:
+      - Versioned golden dataset with slices and a must-pass set
+      - Fast PR suite and a full nightly or pre-release suite
+      - Baseline comparison with per-slice tolerances and human review of changed examples
+      - Pinned model versions; upgrades as tracked projects comparing quality, cost and latency
+      - Canary or A/B rollout with online evaluators, feedback and rollback
+      - Record prompt, model, retrieval config and dataset version with every result
+    modelAnswer: |
+      ### Assets
+      - **Golden dataset** (versioned) built from production traces, tagged by slice (billing,
+        technical, account, out-of-scope, adversarial). Grows weekly from reviewed failures.
+      - **Must-pass set**: safety refusals, escalation to humans, compliance wording.
+      - **Evaluators**: code checks first, calibrated LLM judges for groundedness and helpfulness.
+
+      ### Prompt changes (weekly)
+      1. PR edits the prompt (prompts live in the repo, reviewed like code).
+      2. CI runs a fast suite (around 50 cases); must-pass at 100%, no slice drops beyond tolerance.
+      3. Full suite runs before merge to main; reviewer reads the side-by-side diff of changed
+         examples.
+      4. Canary to a small share of traffic; compare online judge scores, feedback, escalation rate.
+
+      ### Model upgrades (few times a year)
+      Pinned model versions in production. An upgrade runs the full suite on both models, compares
+      quality per slice, latency and cost, re-tunes prompts if needed, then A/B tests. The old model
+      stays pinned as the rollback target.
+
+      ### Traceability
+      Every eval result and production trace records prompt version, model id, retrieval config and
+      dataset version. The baseline is updated only when a version ships.
+    followUps:
+      - Who owns the golden dataset, and how do you stop it from going stale?
+      - What do you do when the provider announces your pinned model will be retired?

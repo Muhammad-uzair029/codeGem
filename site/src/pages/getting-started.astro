@@ -1,0 +1,125 @@
+---
+import Base from '../layouts/Base.astro';
+import InstallCommand from '../components/InstallCommand.astro';
+---
+<Base title="Getting started" active="start" description="How to use codeGem: install Claude Code skills, work through the Learn modules, practise for interviews, and get the desktop app.">
+  <div class="wrap narrow">
+    <header class="page-head">
+      <h1>Getting started</h1>
+      <p class="lede">codeGem has three parts plus an optional app. Start with whichever you need; none depends on the others.</p>
+      <ul class="page-jump" aria-label="On this page">
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#learn">Learn</a></li>
+        <li><a href="#interview">Interview prep</a></li>
+        <li><a href="#app">Desktop app</a></li>
+        <li><a href="#options">Install options</a></li>
+        <li><a href="#faq">Questions</a></li>
+      </ul>
+    </header>
+
+    <section class="gs-section" id="skills" aria-labelledby="gs-skills">
+      <h2 id="gs-skills">Skills: your first one in about five minutes</h2>
+      <p class="muted">A skill is a folder of instructions that Claude Code follows when you type a slash command. No GitHub account needed.</p>
+      <ol class="steps timeline">
+        <li>
+          <h3>Check that you have Claude Code</h3>
+          <p>Skills run inside <strong>Claude Code</strong>, Anthropic's coding assistant for the terminal. Check whether it is installed:</p>
+          <pre class="snippet"><code>claude --version</code></pre>
+          <p>If that prints a version number, you are set. If not, follow the official guide at{' '}
+            <a href="https://docs.claude.com/en/docs/claude-code/setup" rel="noopener">docs.claude.com</a>, then sign in by running <code>claude</code> once.</p>
+        </li>
+        <li>
+          <h3>Open a terminal in your project folder</h3>
+          <p>Skills are installed per project, into a hidden <code>.claude/skills/</code> folder at the project's top level.</p>
+          <pre class="snippet"><code>cd path/to/your-project</code></pre>
+          <p class="faint">On Windows, use PowerShell (not the old Command Prompt).</p>
+        </li>
+        <li>
+          <h3>Install a skill</h3>
+          <p>This installs the feature-loop and the skills it uses. To choose others, use <a href="/browse/">Browse</a>.</p>
+          <InstallCommand args={['feature-loop']} label="Install the feature-loop" />
+          <p class="faint">It prints what it added. Skills you already have are skipped, so it is always safe to run again.</p>
+        </li>
+        <li>
+          <h3>Run it in Claude Code</h3>
+          <p>In the same folder, run <code>claude</code>, then type a slash and the skill's name:</p>
+          <pre class="snippet"><code>/feature-loop auth/login</code></pre>
+          <p>If Claude Code was already open when you installed, restart it so it sees the new skills. Each <a href="/skill/">skill's page</a> lists its commands.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="gs-section" id="learn" aria-labelledby="gs-learn">
+      <h2 id="gs-learn">Learn: 10 short modules</h2>
+      <p>The <a href="/learn/">Learn</a> section takes you from how large language models work to RAG (answering from your own documents), agents, evals (testing AI output) and AI system design.</p>
+      <ul>
+        <li>Go in order if you are new; each module builds on the last. Otherwise jump to any topic.</li>
+        <li>Each lesson is a few minutes of reading, with diagrams, and points you to practice questions on the same topic.</li>
+        <li>Your progress is saved in this browser only. No account needed.</li>
+      </ul>
+    </section>
+
+    <section class="gs-section" id="interview" aria-labelledby="gs-interview">
+      <h2 id="gs-interview">Interview prep: practise, then do a mock</h2>
+      <p><a href="/interview/">Interview prep</a> has questions for every Learn topic.</p>
+      <ul>
+        <li><strong>Practice:</strong> multiple-choice questions, open questions where you compare your answer with a model answer, and system design questions.</li>
+        <li><strong>Mock interview:</strong> a timed set of mixed questions, to rehearse under pressure.</li>
+        <li>Stuck on a topic? Each question links back to the lesson that covers it.</li>
+      </ul>
+    </section>
+
+    <section class="gs-section" id="app" aria-labelledby="gs-app">
+      <h2 id="gs-app">The codeGem desktop app (optional)</h2>
+      <p>The app runs the feature-loop in a window instead of the terminal: pick a project, write a brief, press Launch, and watch each stage. It installs the skills for you. You still need Claude Code installed.</p>
+      <p><a class="btn secondary" href="/#download">Download the desktop app</a></p>
+      <p class="faint">The installer file is named Feature-Loop-Manager. On macOS, if the app is blocked as "damaged", move it to Applications and run <code>xattr -cr /Applications/Feature-Loop-Manager.app</code>.</p>
+    </section>
+
+    <h2 id="options">Install options</h2>
+    <h3>Update a skill</h3>
+    <p>Re-run the install command with <code>--force</code> and the skill's name. Your current copy is moved to <code>.claude/skills/.backup/&lt;name&gt;-&lt;time&gt;/</code> first, so any changes you made are kept there.</p>
+    <InstallCommand args={['--force', 'feature-loop']} label="Update the feature-loop" />
+    <div class="note">
+      <p><code>--force</code> only replaces the skills you name. Skills pulled in automatically as dependencies are left alone. To update one of those, name it too.</p>
+    </div>
+
+    <h3>Remove a skill</h3>
+    <p>Delete its folder. That is all there is to it.</p>
+    <pre class="snippet"><code># macOS / Linux
+rm -rf .claude/skills/feature-loop
+
+# Windows PowerShell
+Remove-Item -Recurse -Force .claude\skills\feature-loop</code></pre>
+    <p class="faint">Old backups live in <code>.claude/skills/.backup/</code>; delete that folder whenever you like.</p>
+
+    <h3>All flags</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">macOS / Linux</th><th scope="col">Windows</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>name1 name2</code></td><td><code>name1 name2</code></td><td>Install these skills and the skills they use</td></tr>
+          <tr><td><code>--all</code></td><td><code>-All</code></td><td>Install every skill</td></tr>
+          <tr><td><code>--global</code></td><td><code>-Global</code></td><td>Install to <code>~/.claude/skills/</code> for all projects</td></tr>
+          <tr><td><code>--no-deps</code></td><td><code>-NoDeps</code></td><td>Do not add the skills a skill uses</td></tr>
+          <tr><td><code>--force</code></td><td><code>-Force</code></td><td>Replace the named skills (old copy backed up)</td></tr>
+          <tr><td><code>--list</code></td><td><code>-List</code></td><td>Show the available skills</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="faq">Common questions</h2>
+    <details class="box"><summary>Is it safe to paste a command that downloads a script?</summary>
+      <p>It is a good habit to check first. Open <a href="/install.sh">install.sh</a> or <a href="/install.ps1">install.ps1</a> in your browser to read exactly what runs. The script only downloads files from this site and only writes inside <code>.claude/skills/</code>.</p>
+    </details>
+    <details class="box"><summary>Claude does not see the skill</summary>
+      <p>Make sure you ran the install command in the project's top folder (where you start <code>claude</code>), then restart Claude Code. You should see <code>.claude/skills/&lt;name&gt;/SKILL.md</code> in that folder.</p>
+    </details>
+    <details class="box"><summary>Do I need the codeGem desktop app?</summary>
+      <p>No. The app adds a guided, screen-by-screen flow around the feature-loop, but every skill works on its own in Claude Code.</p>
+    </details>
+    <details class="box"><summary>Do Learn and Interview prep need anything installed?</summary>
+      <p>No. They run in your browser. Progress is stored locally, so clearing your browser data resets it.</p>
+    </details>
+  </div>
+</Base>

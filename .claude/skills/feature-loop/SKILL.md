@@ -20,6 +20,8 @@ The team's senior-engineer-in-a-box. Point it at a rough feature brief; it produ
 | `--dry-learnings <mod>/<feat>` | Stage 5 inspection mode; do not touch skill or template files. |
 | `--max-iters N` | Override build/verify iter cap (default 3). |
 | `--max-heal-iters N` | Override Stage 3 self-healing retry cap (default 3). |
+| `--max-agents N` | Override per-stage sub-agent concurrency (default 6, ceiling 10). See §Multi-agent policy. |
+| `--no-fanout` | Run every stage single-agent (stage-3 phase B runs its sub-skills sequentially). |
 
 ## When to invoke
 
@@ -113,6 +115,8 @@ On `ship` only. Dispatch **learnings** sub-agent (see `agents/learnings.md`). Le
 - `/feature-loop --dry-learnings <mod>/<feat>` — see stage-5 patch plan without applying.
 - `/feature-loop --max-iters N` — override build/verify iter cap.
 - `/feature-loop --max-heal-iters N` — override stage-3 self-healing retry cap.
+- `/feature-loop --max-agents N` — override per-stage sub-agent concurrency.
+- `/feature-loop --no-fanout` — run every stage single-agent.
 - `/feature-loop -y <mod>/<feat>` / `/feature-loop --force-autonomous <mod>/<feat>` — end-to-end unattended run: skip `split-approve` and `approve` gates, auto-resolve non-`BLOCKING` questions with safe defaults.
 
 ## Composition — sub-skills invoked at runtime
@@ -135,6 +139,38 @@ On `ship` only. Dispatch **learnings** sub-agent (see `agents/learnings.md`). Le
 - `dependency-hygiene` — third-party deps (verifier)
 - `adr-writer` — nudged by learnings when a new pattern lands
 - `feature-audit` — orchestrator sibling; `feature-loop` does NOT invoke `feature-audit` to avoid recursion. Verifier composes the same underlying sub-skills directly.
+
+## Multi-agent policy
+
+The loop runs single-threaded by default. Fan out to parallel sub-agents (via the `Agent` tool) **only when the work splits into independent pieces** — then fan out without asking. Bigger or riskier features should use more agents; small ones should use none.
+
+### When to fan out (per stage)
+
+| Stage | Fan out when | One agent per | Coordinator still owns |
+|-------|--------------|---------------|------------------------|
+| 0 · brainstormer | ≥ 3 related features found, OR brief touches ≥ 2 workspaces | Related feature (read its spec + code, return relation + shared contracts with citations), and/or workspace (read-only code survey). For large briefs, also split the 9 edge-case categories across ≤ 3 agents. | Merging into the 4 output files; every claim keeps its citation. |
+| 1 · spec-writer | Feature touches ≥ 2 workspaces | Concern file (`frontend-ui`, `backend-api`, `ai-engine`, `security`, `tests`, `telemetry`, `rollout`, …) | `index.md` + `contracts.md` — written FIRST, single writer, then frozen and handed to every concern agent. Final consistency pass across all concern files. |
+| 2 · implementer | ≥ 2 workspaces AND their `Files touched` sets are disjoint AND `contracts.md` is frozen | Workspace (gets only its slice of the `Files touched` allowlist) | `iter-N-plan.md` / `iter-N-diff.md`, sequencing, and the Orval rule: backend → contract-gen → frontend stays **sequential**; only work after contract-gen may run in parallel. |
+| 3 · verifier | Always (phase B) — already defined in `agents/verifier.md` | Sub-skill | One reconciled verdict. |
+| 3 · verifier (second opinion) | Verdict would be `ship` AND feature touches auth, payments, PII, DB migrations, or ≥ 3 workspaces | One fresh **independent reviewer** given only the spec set + diff — never the verifier's conclusions | If it finds a severity-H gap, verdict becomes `block` with that gap in `gaps[]`. |
+
+### When NOT to fan out
+
+- Feature is small: 1 workspace and ≤ 5 files in `Files touched`.
+- Pieces share files, or one piece needs another's output (sequence them instead).
+- The work is one self-heal retry (keep heal fixes single-agent — `files:` list is narrow by design).
+- `--no-fanout` was passed.
+
+### How to brief a sub-agent
+
+Each sub-agent knows only what its prompt says. Every brief includes: the goal, the exact spec file paths to read, its slice of the `Files touched` allowlist (implementer only), the hard rules that apply (no hallucinated robustness, cite spec lines), and the single output file it must write. Sub-agents write to files; the coordinator reads and reconciles them. Never pass a sub-agent the coordinator's hypothesis to "confirm" — give it the evidence.
+
+### Limits
+
+- **Concurrency ≤ 6** per stage (override with `--max-agents N`, hard ceiling 10).
+- **Nesting depth ≤ 2.** A sub-agent may invoke a composing skill (e.g. `feature-review`), but nothing spawns `feature-loop` or `feature-audit`.
+- A sub-agent that errors or times out is retried once; if it fails again, the coordinator does that piece itself and notes it in the stage's output.
+- Log every fan-out in the stage's paper trail: `fan-out: <N> agents — <one line per agent: scope → output file>`.
 
 ## Templates
 
@@ -161,7 +197,7 @@ Sub-agents copy the template, string-substitute `{{FIELD_NAME}}` placeholders, a
 - **Never add retry/fallback/guard logic without a spec-line citation.** Verifier enforces (severity M).
 - **Never edit an existing skill without going through the learnings sub-agent's safety rails.** Direct edits are forbidden.
 - **Sub-agents cannot spawn `feature-loop`.** Guard against recursion.
-- **Sub-agent concurrency ≤ 6.** Applies to stage-3 fan-out only.
+- **Sub-agent concurrency ≤ 6 per stage** (`--max-agents N` to change, ceiling 10). Fan-out rules for every stage live in §Multi-agent policy.
 - **Two human gates only** (default). `split-approve` and `approve`. No other pauses in the pipeline. Both gates are suppressed under `--force-autonomous` / `-y`; a `BLOCKING` question in stage 0 still halts because assumptions cannot invent missing product intent.
 
 ## Failure modes + recovery

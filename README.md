@@ -6,6 +6,23 @@ Built on Electron + React + node-pty.
 
 codeGem is a desktop app that turns a feature idea into shipped code using Claude Code. You pick a project, write a short feature brief, and codeGem runs the **feature-loop**: it brainstorms, writes a spec, builds, verifies (with self-healing retries), and records what it learned. You watch it live in the app.
 
+### Install skills
+
+Browse every skill and install it into your project with one command from the skills site:
+**https://SKILLS-SITE-URL** <!-- TODO: replace with the deployed site URL -->
+
+```bash
+# macOS / Linux, run in your project folder
+curl -fsSL https://SKILLS-SITE-URL/install.sh | bash -s -- feature-loop   # or --all
+```
+
+```powershell
+# Windows PowerShell
+irm https://SKILLS-SITE-URL/install.ps1 | iex; Install-Skills feature-loop   # or -All
+```
+
+The site lives in [`site/`](site/README.md) and deploys to Vercel or Netlify.
+
 > Click any section below to expand it.
 
 **Contents:** [What is codeGem](#what-is-codegem) · [Quick start](#quick-start) · [Use the skills in another project](#use-the-skills-in-another-project) · [The feature-loop](#the-feature-loop) · [All skills](#all-skills) · [Repo layout](#repo-layout) · [Development](#development)
@@ -26,7 +43,7 @@ Three pieces work together:
 
 ### What the app does
 
-1. **Project selector.** Pick a folder and tag it as a new or existing project, with an optional framework (`REACT_NATIVE_EXPO` or `NEST_JS`). Recent projects are remembered.
+1. **Project selector.** Pick a folder and tag it as a new or existing project, and pick its stack (React Native/Expo, NestJS, Next.js, FastAPI, Go, or Generic). The stack is auto-detected when possible and picks the `CLAUDE.md` template. Recent projects are remembered.
 2. **Skill injection.** Copies all skills, or the ones you choose, into `<project>/.claude/skills/`, plus a `CLAUDE.md` and the `.claude/specs/{inbox,active}/` folders.
 3. **Brief intake.** A form that saves your feature description to `.claude/specs/inbox/`. Paste a Figma URL and it extracts the file key and node ID, and can write `.mcp.json` so Claude can read the design.
 4. **Launch.** Stays disabled until a brief exists, then runs `claude` with `/feature-loop`. The dashboard tracks the current stage live.
@@ -91,7 +108,7 @@ To take only some skills, copy just those folders (for example `feature-loop` an
 
 Then open the project in `claude` and use them as slash commands, for example `/feature-loop -y auth/login`.
 
-> **Note:** `templates/CLAUDE.md` is written for React Native/Expo + NestJS projects (Orval-generated hooks, 42-rule security audit). For other stacks, edit it or leave it out.
+> **Note:** `templates/CLAUDE.md` is written for React Native/Expo + NestJS projects (Orval-generated hooks, 42-rule security audit). For Next.js, FastAPI, Go, or any other stack, copy the matching file from `templates/stacks/` instead (`generic.md` has no stack-specific rules). The app's stack picker does this for you.
 
 </details>
 
@@ -140,6 +157,8 @@ Then open the project in `claude` and use them as slash commands, for example `/
 
 All files for a feature go under `.claude/specs/<module>/<feature>/`.
 
+**Parallel agents:** on bigger features the loop splits work across sub-agents: research in brainstorming, one writer per spec file, one builder per workspace (when their files don't overlap), the verification checks, and an independent second reviewer for risky features (auth, payments, migrations). Small features stay single-agent.
+
 If the build still fails after the retry limits, the loop stops and tags the result `ESCALATE` or `SELF-HEAL-EXHAUSTED` for a human to pick up.
 
 ### Human gates
@@ -160,6 +179,7 @@ By default the loop pauses twice: after splitting a multi-feature PRD (`split-ap
 | `/feature-loop --verify-only <mod>/<feat>` | Run only stage 3 on the current diff |
 | `/feature-loop --dry-learnings <mod>/<feat>` | Preview stage-5 patches without applying them |
 | `--max-iters N` / `--max-heal-iters N` | Change the retry limits (default 3 each) |
+| `--max-agents N` / `--no-fanout` | Change how many sub-agents run in parallel per stage (default 6), or turn parallel agents off |
 
 Full playbook: [`.claude/skills/feature-loop/SKILL.md`](.claude/skills/feature-loop/SKILL.md), with one file per stage in [`agents/`](.claude/skills/feature-loop/agents).
 

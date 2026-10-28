@@ -43,13 +43,14 @@ This project was scaffolded (or adopted) by feature-loop-manager. See
 ## Framework mapping
 
 The manager records the project's framework in its persistent
-`config.json`. Only two enums are supported:
+`config.json`. This template is written for these two enums:
 
 - `REACT_NATIVE_EXPO` — Expo / React Native client stack.
 - `NEST_JS` — NestJS service stack.
 
-Unknown → the manager surfaces the ambiguity in the UI so a human can
-tag it before launch.
+Other stacks (`NEXT_JS`, `FASTAPI`, `GO`, `GENERIC`) get their own template
+from the manager's stack picker. Unknown → the manager surfaces the
+ambiguity in the UI so a human can tag it before launch.
 
 ## Cache discipline
 

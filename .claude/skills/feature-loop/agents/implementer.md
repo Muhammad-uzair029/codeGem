@@ -33,6 +33,14 @@ Build the feature per the spec. Zero hallucinated robustness. Zero code outside 
 3. Edit code.
 4. Write `build/iter-N-diff.md`.
 
+## Parallel build (see `../SKILL.md` §Multi-agent policy)
+Fan out only when ALL hold: ≥ 2 workspaces, their `Files touched` slices are disjoint, and `contracts.md` is frozen. Then:
+1. Write `iter-N-plan.md` yourself, split into one section per workspace.
+2. If the Orval sub-step triggers, run backend → contract-gen yourself, sequentially, first.
+3. Dispatch one sub-agent per remaining workspace in parallel. Each gets the spec set, its own section of the plan, only its slice of the allowlist, and these hard rules. Each writes its code plus a short `build/iter-N-<workspace>-notes.md`.
+4. Merge the notes into `iter-N-diff.md` and confirm no agent touched a file outside its slice. Any out-of-slice edit is reverted and redone by you.
+Self-heal re-entries (`iter-N-heal-M`) are always single-agent.
+
 ## Hard rules
 - **Files touched allowlist is absolute.** Any diff outside → verifier will block. Do not.
 - **No hallucinated robustness.** Every `try/catch`, retry, timeout, fallback, guard clause must cite a spec bullet (edge case, acceptance criterion, or concern file line). Verifier enforces at severity M.

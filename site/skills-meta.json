@@ -1,0 +1,215 @@
+{
+  "$comment": "Hand-maintained. One entry per skill folder in ../.claude/skills/. Fields: group (one of `groups`), summary (one plain-English line), whenToUse (one or two sentences for newcomers), deps (skill folder names this skill calls; followed transitively by the installer), optional commands [{cmd, desc}] to override what is extracted from SKILL.md. Skills missing from this file still appear under group \"Other\". The build fails if a dep is not a real skill folder.",
+  "groups": [
+    { "name": "Build", "blurb": "Create features and UI" },
+    { "name": "Quality gates", "blurb": "Run before you merge" },
+    { "name": "Contracts and data", "blurb": "Keep services in sync" },
+    { "name": "Security", "blurb": "Find secrets and attack paths" },
+    { "name": "Review and design", "blurb": "For team leads and reviewers" },
+    { "name": "Git and docs", "blurb": "Commit, open PRs, write docs" }
+  ],
+  "skills": {
+    "feature-loop": {
+      "group": "Build",
+      "featured": true,
+      "summary": "Turns a rough feature brief into a spec, working code, a verified result, and lessons learned, in six stages.",
+      "whenToUse": "You have a feature idea or a product document and want Claude to plan it, build it, and check it against the plan. Drop the brief in .claude/specs/inbox/ and run it.",
+      "deps": [
+        "figma-to-code-skill",
+        "system-design",
+        "react-native-optimization-and-architecture",
+        "feature-review",
+        "security-audit",
+        "pre-merge-check",
+        "contract-drift-check",
+        "api-mock-parity",
+        "complexity-check",
+        "null-safety-scan",
+        "test-coverage-delta",
+        "perf-budget",
+        "dead-code-scan",
+        "migration-safety",
+        "dependency-hygiene",
+        "adr-writer"
+      ],
+      "commands": [
+        { "cmd": "/feature-loop <mod>/<feat>", "desc": "Start or resume a feature" },
+        { "cmd": "/feature-loop -y <mod>/<feat>", "desc": "Run end to end without stopping for approval" },
+        { "cmd": "/feature-loop --from-doc <path> <mod>/<feat>", "desc": "Use a document from anywhere as the brief" },
+        { "cmd": "/feature-loop split-approve", "desc": "Accept the proposed split of a multi-feature document" },
+        { "cmd": "/feature-loop approve <mod>/<feat>", "desc": "Approve the brainstorm and continue to the spec" },
+        { "cmd": "/feature-loop revise <mod>/<feat> \"<feedback>\"", "desc": "Send the brainstorm back with feedback" },
+        { "cmd": "/feature-loop --from-spec <mod>/<feat>", "desc": "Skip planning and build from an existing spec" },
+        { "cmd": "/feature-loop --verify-only <mod>/<feat>", "desc": "Only check the current changes against the spec" },
+        { "cmd": "/feature-loop --dry-learnings <mod>/<feat>", "desc": "Preview the skill updates without applying them" },
+        { "cmd": "--max-iters N / --max-heal-iters N", "desc": "Change the retry limits (default 3 each)" },
+        { "cmd": "--max-agents N", "desc": "Limit how many helper agents run at the same time" },
+        { "cmd": "--no-fanout", "desc": "Run the checks one after another instead of in parallel" }
+      ]
+    },
+    "figma-to-code": {
+      "group": "Build",
+      "summary": "Turns a Figma link or node into React Native + NativeWind components.",
+      "whenToUse": "You have a Figma URL (or node id) for a screen and want matching React Native code.",
+      "deps": ["figma-to-code-skill"]
+    },
+    "figma-to-code-skill": {
+      "group": "Build",
+      "summary": "The full Figma to React Native playbook: flexbox layout, design tokens first, reusable components.",
+      "whenToUse": "You are turning any design (link, screenshot, or description) into React Native UI and want clean, reusable layout code.",
+      "deps": []
+    },
+    "react-native-optimization-and-architecture": {
+      "group": "Build",
+      "summary": "React Native and Expo best practices: list performance, animations, navigation, native modules.",
+      "whenToUse": "You are building or speeding up a React Native / Expo app and want Claude to follow proven performance rules.",
+      "deps": []
+    },
+    "quality-assurance": {
+      "group": "Quality gates",
+      "summary": "Runs the compile gate (lint, types, tests, contract and null checks) and lets Claude fix failures up to 3 times.",
+      "whenToUse": "You want one command that checks the build is green and, if not, feeds the error back so Claude can fix it.",
+      "deps": ["pre-merge-check", "contract-drift-check", "null-safety-scan"]
+    },
+    "pre-merge-check": {
+      "group": "Quality gates",
+      "summary": "Runs lint, type checks, and tests in parallel (TS/JS and Python) and stops if anything fails.",
+      "whenToUse": "Before you open or merge a pull request, to make sure nothing is broken.",
+      "deps": []
+    },
+    "null-safety-scan": {
+      "group": "Quality gates",
+      "summary": "Finds places where code could crash on a missing value (null, undefined, None).",
+      "whenToUse": "Before merging logic that reads data from APIs, forms, or optional fields.",
+      "deps": []
+    },
+    "complexity-check": {
+      "group": "Quality gates",
+      "summary": "Flags functions and files that are too long, too nested, or too complex.",
+      "whenToUse": "As a merge gate, or when a function feels hard to follow and you want a second opinion.",
+      "deps": []
+    },
+    "test-coverage-delta": {
+      "group": "Quality gates",
+      "summary": "Shows only the new lines in your change that no test covers.",
+      "whenToUse": "You want to know whether a pull request is actually tested, without wading through the whole project's coverage.",
+      "deps": []
+    },
+    "dead-code-scan": {
+      "group": "Quality gates",
+      "summary": "Finds unused exports, unreachable code, and orphan files.",
+      "whenToUse": "Before a cleanup or big refactor, to see what can safely go.",
+      "deps": []
+    },
+    "perf-budget": {
+      "group": "Quality gates",
+      "summary": "Tracks bundle size, API latency, and app startup time against a baseline and blocks regressions.",
+      "whenToUse": "Before merging changes that could make the app bigger or slower.",
+      "deps": []
+    },
+    "contract-drift-check": {
+      "group": "Contracts and data",
+      "summary": "Catches fields that were renamed, removed, or made required on one side of the frontend / backend / AI boundary only.",
+      "whenToUse": "After changing shared types, DTOs, or API schemas, to make sure every service still agrees.",
+      "deps": []
+    },
+    "api-mock-parity": {
+      "group": "Contracts and data",
+      "summary": "Checks that your mock data and fixtures still match the real API.",
+      "whenToUse": "After a backend response shape changes, so the app is not quietly tested against stale mocks.",
+      "deps": []
+    },
+    "migration-safety": {
+      "group": "Contracts and data",
+      "summary": "Flags risky database migrations: data loss, table locks, unsafe backfills.",
+      "whenToUse": "Before merging any change that touches database migrations or the schema.",
+      "deps": []
+    },
+    "dependency-hygiene": {
+      "group": "Contracts and data",
+      "summary": "Finds unused packages, duplicate versions, peer conflicts, and license problems.",
+      "whenToUse": "Before a release or a dependency upgrade, or when node_modules feels too big.",
+      "deps": []
+    },
+    "security-audit": {
+      "group": "Security",
+      "summary": "A 42-rule OWASP security check, single-rule deep dives, API over-sharing audit, and a full pen-test report.",
+      "whenToUse": "Before opening a PR or shipping a release, or whenever you want to know what is left to fix on security.",
+      "deps": []
+    },
+    "security-scan": {
+      "group": "Security",
+      "summary": "Scans your staged changes for leaked secrets and known-vulnerable packages.",
+      "whenToUse": "Right before you commit, so passwords and API keys never reach the repo.",
+      "deps": []
+    },
+    "pentesting": {
+      "group": "Security",
+      "summary": "Thinks like an attacker: maps your attack surface, finds exploitable paths, and can apply fixes with your permission.",
+      "whenToUse": "After a meaningful change that nobody has looked at from an attacker's point of view.",
+      "deps": []
+    },
+    "feature-review": {
+      "group": "Review and design",
+      "summary": "Gives a merge verdict on someone else's PR: what could break, how the approach compares, and which tests are missing.",
+      "whenToUse": "You are reviewing a teammate's branch or PR and want a structured, team-lead-level review.",
+      "deps": ["pre-merge-check", "security-audit", "null-safety-scan", "system-design"]
+    },
+    "feature-audit": {
+      "group": "Review and design",
+      "summary": "Runs every relevant review skill on a feature in parallel and gives one merge verdict.",
+      "whenToUse": "At the end of the day, to audit a feature, PR, or branch with everything at once. Works well as a nightly review.",
+      "deps": [
+        "feature-review",
+        "security-audit",
+        "null-safety-scan",
+        "system-design",
+        "contract-drift-check",
+        "api-mock-parity",
+        "migration-safety",
+        "complexity-check",
+        "test-coverage-delta",
+        "perf-budget",
+        "dead-code-scan",
+        "dependency-hygiene",
+        "adr-writer"
+      ]
+    },
+    "system-design": {
+      "group": "Review and design",
+      "summary": "Audits how your app, backend, and AI service fit together: race conditions, contracts, and production readiness.",
+      "whenToUse": "You want a design opinion on a feature, route, or screen, especially before it goes to production.",
+      "deps": []
+    },
+    "adr-writer": {
+      "group": "Review and design",
+      "summary": "Writes a one-page Architecture Decision Record to docs/adr/ when you add a library or pattern.",
+      "whenToUse": "You are adding a new dependency or architectural pattern and want the reasoning written down.",
+      "deps": []
+    },
+    "git-push": {
+      "group": "Git and docs",
+      "summary": "Reviews your staged files, writes a clear commit message, asks you to confirm, then commits and pushes.",
+      "whenToUse": "You have staged your changes and want a safe, well-described commit pushed in one step.",
+      "deps": []
+    },
+    "pr-open": {
+      "group": "Git and docs",
+      "summary": "Opens a GitHub pull request with the title, summary, and test plan filled in from your changes.",
+      "whenToUse": "Your branch is ready and you want a PR opened without writing the description by hand.",
+      "deps": []
+    },
+    "generate-docs": {
+      "group": "Git and docs",
+      "summary": "Writes readable feature documentation from your recent changes into docs/features/.",
+      "whenToUse": "A feature just landed and you want docs for it without starting from a blank page.",
+      "deps": []
+    },
+    "team-pulse": {
+      "group": "Git and docs",
+      "summary": "A daily or weekly digest of commits, PRs, and reviews across your team's repos.",
+      "whenToUse": "You lead a team and want a quick written summary of who shipped what. Needs a .claude/team.yaml file.",
+      "deps": []
+    }
+  }
+}

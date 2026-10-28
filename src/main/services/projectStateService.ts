@@ -1,7 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type {
-  FrameworkDetection,
   LayoutConfig,
   PersistentConfig,
   ProjectType,
@@ -36,6 +35,7 @@ export function readConfig(): PersistentConfig {
       target_framework: parsed.target_framework ?? null,
       history: Array.isArray(parsed.history) ? parsed.history : [],
       layout: parsed.layout,
+      isolate_runs: parsed.isolate_runs,
     };
   } catch {
     return { ...EMPTY_CONFIG };
@@ -58,6 +58,7 @@ export function setActiveProject(patch: {
     project_type: patch.project_type,
     target_framework: patch.target_framework,
     history: cfg.history,
+    isolate_runs: cfg.isolate_runs,
   };
   const filtered = next.history.filter((h) => h.active_project_path !== patch.active_project_path);
   filtered.unshift({
@@ -86,67 +87,20 @@ export function setLayout(sizes: [number, number, number]): PersistentConfig {
   return writeConfig({ ...cfg, layout });
 }
 
-// Framework detection is a best-effort read of the target project's
-// package.json + a couple of well-known marker files. Restricted to the
-// enums the spec allows; returns null when nothing matches.
-export function detectFramework(targetPath: string): FrameworkDetection {
-  const signals: string[] = [];
-  if (!targetPath || !existsSync(targetPath) || !statSync(targetPath).isDirectory()) {
-    return { framework: null, signals };
-  }
+export function setIsolateRuns(on: boolean): PersistentConfig {
+  const cfg = readConfig();
+  return writeConfig({ ...cfg, isolate_runs: on });
+}
 
-  const pkgPath = join(targetPath, 'package.json');
-  let pkg: {
-    dependencies?: Record<string, string>;
-    devDependencies?: Record<string, string>;
-    peerDependencies?: Record<string, string>;
-    scripts?: Record<string, string>;
-  } = {};
-  if (existsSync(pkgPath)) {
-    try {
-      pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-    } catch {
-      pkg = {};
-    }
-  }
-  const deps = {
-    ...(pkg.dependencies ?? {}),
-    ...(pkg.devDependencies ?? {}),
-    ...(pkg.peerDependencies ?? {}),
-  };
-  const scripts = pkg.scripts ?? {};
+// Isolation is on unless the user explicitly turned it off.
+export function isolateRunsEnabled(): boolean {
+  return readConfig().isolate_runs !== false;
+}
 
-  // React Native / Expo signals.
-  if (deps.expo) signals.push('dependency:expo');
-  if (deps['react-native']) signals.push('dependency:react-native');
-  if (Object.keys(scripts).some((s) => s === 'expo' || scripts[s]?.includes('expo'))) {
-    signals.push('script:expo');
-  }
-  if (existsSync(join(targetPath, 'app.json'))) {
-    try {
-      const appJson = JSON.parse(readFileSync(join(targetPath, 'app.json'), 'utf8'));
-      if (appJson && typeof appJson === 'object' && 'expo' in appJson) {
-        signals.push('file:app.json[expo]');
-      }
-    } catch {
-      /* noop */
-    }
-  }
-  if (existsSync(join(targetPath, 'metro.config.js')) || existsSync(join(targetPath, 'metro.config.cjs'))) {
-    signals.push('file:metro.config');
-  }
-
-  // NestJS signals.
-  if (deps['@nestjs/core']) signals.push('dependency:@nestjs/core');
-  if (deps['@nestjs/common']) signals.push('dependency:@nestjs/common');
-  if (existsSync(join(targetPath, 'nest-cli.json'))) signals.push('file:nest-cli.json');
-
-  const rn = signals.some((s) => s.includes('expo') || s.includes('react-native') || s.includes('metro'));
-  const nest = signals.some((s) => s.includes('@nestjs') || s.includes('nest-cli'));
-
-  // Prefer whichever has more marker signals; ties go to null so the UI
-  // surfaces the ambiguity instead of silently guessing.
-  if (rn && !nest) return { framework: 'REACT_NATIVE_EXPO', signals };
-  if (nest && !rn) return { framework: 'NEST_JS', signals };
-  return { framework: null, signals };
+// Persisted framework for a project path: the active project first, then
+// history. Used by skill injection when the request omits a framework.
+export function persistedFrameworkFor(targetPath: string): TargetFramework | null {
+  const cfg = readConfig();
+  if (cfg.active_project_path === targetPath) return cfg.target_framework ?? null;
+  return cfg.history.find((h) => h.active_project_path === targetPath)?.target_framework ?? null;
 }

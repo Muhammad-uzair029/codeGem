@@ -80,6 +80,9 @@ prompt: >
 - Do not truncate the stack trace. Implementers rely on the exact line numbers.
 - Do not mutate code. Only the implementer edits code; the verifier only diagnoses.
 
+## Independent second opinion (high-risk features)
+Before writing a `ship` verdict, check whether the feature touches auth, payments, PII, DB migrations, or ≥ 3 workspaces. If it does, dispatch one fresh sub-agent as an independent reviewer. Give it only the spec set and the diff, never your phase-B results or your leaning. Ask it for severity-H gaps with spec-line citations. Any confirmed severity-H gap turns the verdict into `block` and goes into `gaps[]`. Record the reviewer's result in `verify/iter-N-verdict.md` under `## Second opinion`. Skipped under `--no-fanout`.
+
 ## Regression enforcement
 For every row in `Related features`, re-run that related feature's `tests.md` targets. Any failure → verdict = `block`.
 

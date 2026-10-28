@@ -1,0 +1,4 @@
+title: Agents and tool calling
+summary: Learn how models call your code, how agent loops work, and how to build multi-agent systems and MCP servers that stay safe, bounded, and debuggable.
+icon: agent
+level: intermediate

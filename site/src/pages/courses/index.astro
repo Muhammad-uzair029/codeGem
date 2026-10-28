@@ -1,0 +1,213 @@
+---
+import Base from '../../layouts/Base.astro';
+import CourseCard from '../../components/learn/CourseCard.astro';
+import { getModules, getCourses } from '../../lib/learn.js';
+import '../../styles/learn.css';
+
+const modules = getModules();
+const catalog = getCourses();
+const all = catalog ? catalog.providers.flatMap((p) => p.courses) : [];
+const LEVELS = ['beginner', 'intermediate', 'advanced'];
+const levels = LEVELS.filter((l) => all.some((c) => c.level === l)).concat([...new Set(all.map((c) => c.level))].filter((l) => l && !LEVELS.includes(l)));
+const formats = [...new Set(all.map((c) => c.format).filter(Boolean))].sort();
+const usedModules = modules.filter((m) => all.some((c) => c.modules.includes(m.bare)));
+const cap = (s: string) => (s === 'certificate' ? 'Certification' : s[0].toUpperCase() + s.slice(1));
+const featured = catalog ? catalog.providers.filter((p) => p.featured) : [];
+const others = catalog ? catalog.providers.filter((p) => !p.featured) : [];
+const fmtDate = (d: string) => {
+  const t = Date.parse(d);
+  return Number.isNaN(t) ? d : new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+};
+---
+<Base title="AI courses" active="courses" description="A hand-checked list of AI engineering courses, led by Anthropic's free courses, filterable by level, format and topic.">
+  <header class="wrap l-hero l-hero-compact">
+    <p class="eyebrow">Courses</p>
+    <h1>Courses worth your time</h1>
+    <p class="lede">A short, hand-checked list of external courses, mostly free. Anthropic's own courses come first. Each one links to the Learn modules it supports.</p>
+    {catalog && <p class="faint">{all.length} courses from {catalog.providers.length} providers{catalog.updated && <> · Last checked: <time datetime={catalog.updated}>{fmtDate(catalog.updated)}</time></>}</p>}
+  </header>
+
+  {!catalog ? (
+    <section class="wrap l-section">
+      <div class="card l-empty l-empty-big">
+        <p class="l-empty-title">Courses coming soon</p>
+        <p class="muted">We're checking every link before we list it. In the meantime, the Learn modules cover the same ground, and you can test yourself in Interview prep.</p>
+        <div class="l-actions">
+          <a class="btn" href="/learn/">Start learning</a>
+          <a class="btn secondary" href="/interview/">Practice interview questions</a>
+        </div>
+      </div>
+    </section>
+  ) : (
+    <>
+      <section class="wrap" aria-label="Filter courses">
+        <form class="filters card" data-course-filters role="search" onsubmit="return false">
+          <label class="f-search">
+            <span class="l-sr">Search courses</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            <input type="search" name="q" placeholder="Search courses, e.g. RAG, MCP, evals" autocomplete="off" />
+          </label>
+          <label class="f-field"><span>Level</span>
+            <select name="level"><option value="">Any level</option>{levels.map((l) => <option value={l}>{cap(l)}</option>)}</select>
+          </label>
+          <label class="f-field"><span>Format</span>
+            <select name="format"><option value="">Any format</option>{formats.map((f) => <option value={f}>{cap(f)}</option>)}</select>
+          </label>
+          <label class="f-field"><span>Related module</span>
+            <select name="module"><option value="">Any module</option>{usedModules.map((m) => <option value={m.slug}>{m.index + 1}. {m.title}</option>)}</select>
+          </label>
+          <label class="f-check"><input type="checkbox" name="free" /> <span>Free only</span></label>
+        </form>
+        <div class="f-status">
+          <p aria-live="polite" data-course-count>Showing all {all.length} courses</p>
+          <button type="button" class="l-textbtn" data-course-clear hidden>Clear filters</button>
+        </div>
+      </section>
+
+      {featured.map((p) => {
+        const regular = p.courses.filter((c) => c.format !== 'certificate');
+        const certs = p.courses.filter((c) => c.format === 'certificate');
+        return (
+          <div class="wrap l-section" data-provider-wrap>
+          <section class="provider provider-featured" data-provider aria-labelledby={`p-${p.id}`}>
+            <div class="provider-head">
+              <span class="provider-badge">Featured</span>
+              <h2 id={`p-${p.id}`} class="l-h2">{p.name}</h2>
+              {p.url && <a class="l-link" href={p.url} target="_blank" rel="noopener">Visit {p.name} <span aria-hidden="true">↗</span><span class="l-sr"> (opens in a new tab)</span></a>}
+            </div>
+            {regular.length > 0 && (
+              <div data-group class:list={{ 'is-collapsed': regular.length > 9 }} data-collapsible={regular.length > 9 ? '' : undefined}>
+                <h3 class="provider-sub">Courses <span class="faint" data-group-count>{regular.length}</span></h3>
+                <ul class="course-grid">{regular.map((c) => <li><CourseCard course={c} provider={p.name} featured modules={modules} /></li>)}</ul>
+                {regular.length > 9 && (
+                  <p class="course-more"><button type="button" class="btn secondary" data-course-more aria-expanded="false">Show all {regular.length} {p.name} courses</button></p>
+                )}
+              </div>
+            )}
+            {certs.length > 0 && (
+              <div data-group>
+                <h3 class="provider-sub">Certifications <span class="faint" data-group-count>{certs.length}</span></h3>
+                <p class="muted provider-note">Paid exams that prove your skills. Check each one's eligibility: some are open only to {p.name} partners.</p>
+                <ul class="course-grid">{certs.map((c) => <li><CourseCard course={c} provider={p.name} featured modules={modules} /></li>)}</ul>
+              </div>
+            )}
+          </section>
+          </div>
+        );
+      })}
+
+      {others.length > 0 && (
+        <div class="wrap l-section" data-others>
+          <h2 class="l-h2">More great courses</h2>
+          {others.map((p) => (
+            <section class="provider" data-provider aria-labelledby={`p-${p.id}`}>
+              <div class="provider-head">
+                <h3 id={`p-${p.id}`} class="provider-name">{p.name}</h3>
+                {p.url && <a class="l-link" href={p.url} target="_blank" rel="noopener">Visit <span aria-hidden="true">↗</span><span class="l-sr"> {p.name} (opens in a new tab)</span></a>}
+              </div>
+              <div data-group>
+                <ul class="course-grid">{p.courses.map((c) => <li><CourseCard course={c} provider={p.name} modules={modules} /></li>)}</ul>
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+
+      <section class="wrap l-section" data-course-empty hidden>
+        <div class="card l-empty">
+          <p class="l-empty-title">No courses match those filters</p>
+          <p class="muted">Try a different level or format, or turn off "Free only".</p>
+          <button type="button" class="btn secondary" data-course-clear>Clear filters</button>
+        </div>
+      </section>
+    </>
+  )}
+
+  <script>
+    const form = document.querySelector<HTMLFormElement>('[data-course-filters]');
+    if (form) {
+      const cards = [...document.querySelectorAll<HTMLElement>('[data-course]')];
+      const count = document.querySelector('[data-course-count]')!;
+      const empty = document.querySelector<HTMLElement>('[data-course-empty]')!;
+      const clears = [...document.querySelectorAll<HTMLButtonElement>('[data-course-clear]')];
+      const el = form.elements as any;
+      const params = new URLSearchParams(location.search);
+      for (const k of ['q', 'level', 'format', 'module']) {
+        const v = params.get(k);
+        if (v && el[k]) {
+          el[k].value = v;
+          if (el[k].value !== v) el[k].value = '';
+        }
+      }
+      if (params.get('free') === '1') el.free.checked = true;
+
+      function apply() {
+        const q = el.q.value.trim().toLowerCase();
+        const terms = q.split(/\s+/).filter(Boolean);
+        const level = el.level.value;
+        const format = el.format.value;
+        const mod = el.module.value;
+        const free = el.free.checked;
+        let shown = 0;
+        for (const c of cards) {
+          const ok =
+            (!level || c.dataset.level === level) &&
+            (!format || c.dataset.format === format) &&
+            (!mod || (c.dataset.modules || '').split(' ').includes(mod)) &&
+            (!free || c.dataset.free === '1') &&
+            terms.every((t) => (c.dataset.search || '').includes(t));
+          (c.parentElement as HTMLElement).hidden = !ok;
+          if (ok) shown++;
+        }
+        document.querySelectorAll<HTMLElement>('[data-group]').forEach((g) => {
+          const n = g.querySelectorAll('li:not([hidden]) [data-course]').length;
+          g.hidden = n === 0;
+          const gc = g.querySelector('[data-group-count]');
+          if (gc) gc.textContent = String(n);
+        });
+        document.querySelectorAll<HTMLElement>('[data-provider]').forEach((p) => (p.hidden = !p.querySelector('[data-group]:not([hidden])')));
+        document.querySelectorAll<HTMLElement>('[data-provider-wrap]').forEach((w) => (w.hidden = !w.querySelector('[data-provider]:not([hidden])')));
+        const others = document.querySelector<HTMLElement>('[data-others]');
+        if (others) others.hidden = !others.querySelector('[data-provider]:not([hidden])');
+        const filtered = Boolean(q || level || format || mod || free);
+        // While filtering, show every match; otherwise respect the "Show all" toggle.
+        document.querySelectorAll<HTMLElement>('[data-collapsible]').forEach((g) => {
+          const btn = g.querySelector<HTMLButtonElement>('[data-course-more]');
+          const expanded = btn?.getAttribute('aria-expanded') === 'true';
+          g.classList.toggle('is-collapsed', !filtered && !expanded);
+          if (btn) btn.parentElement!.hidden = filtered || expanded;
+        });
+        count.textContent = filtered ? `Showing ${shown} of ${cards.length} courses` : `Showing all ${cards.length} courses`;
+        empty.hidden = shown > 0;
+        clears.forEach((b) => (b.hidden = !filtered && b.closest('[data-course-empty]') === null));
+        // Keep the URL shareable without adding history entries.
+        const p = new URLSearchParams();
+        if (q) p.set('q', q);
+        if (level) p.set('level', level);
+        if (format) p.set('format', format);
+        if (mod) p.set('module', mod);
+        if (free) p.set('free', '1');
+        const qs = p.toString();
+        history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+      }
+      document.querySelectorAll<HTMLButtonElement>('[data-course-more]').forEach((b) =>
+        b.addEventListener('click', () => {
+          b.setAttribute('aria-expanded', 'true');
+          apply();
+          // Move focus to the first newly shown course.
+          b.closest('[data-group]')?.querySelector<HTMLElement>('.course-grid > li:nth-child(10) a')?.focus();
+        }),
+      );
+      form.addEventListener('input', apply);
+      form.addEventListener('change', apply);
+      clears.forEach((b) =>
+        b.addEventListener('click', () => {
+          form.reset();
+          apply();
+          el.q.focus();
+        }),
+      );
+      apply();
+    }
+  </script>
+</Base>

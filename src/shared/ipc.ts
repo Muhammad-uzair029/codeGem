@@ -3,7 +3,15 @@
 // via contextBridge.
 
 export type ProjectType = 'NEW_SCAFFOLD' | 'EXISTING_LEGACY';
-export type TargetFramework = 'REACT_NATIVE_EXPO' | 'NEST_JS';
+// GENERIC is never auto-detected — the user picks it for any stack that
+// should get a CLAUDE.md without stack-specific rules.
+export type TargetFramework =
+  | 'REACT_NATIVE_EXPO'
+  | 'NEST_JS'
+  | 'NEXT_JS'
+  | 'FASTAPI'
+  | 'GO'
+  | 'GENERIC';
 
 // Layout panel sizes persisted in config.json.
 export interface LayoutConfig {
@@ -22,6 +30,8 @@ export interface PersistentConfig {
     last_used_at: string;
   }>;
   layout?: LayoutConfig;
+  // Run each feature-loop in its own git worktree. Absent = on.
+  isolate_runs?: boolean;
 }
 
 export interface ExistingWorkspaceValidation {
@@ -94,6 +104,9 @@ export interface SkillInjectionRequest {
   targetPath: string;
   overwrite?: boolean;
   skills?: string[];   // if provided, only inject these skill names; otherwise inject all
+  // Picks the CLAUDE.md stack template. When omitted, the main process uses
+  // the framework persisted for targetPath, else the RN/Nest default.
+  framework?: TargetFramework | null;
 }
 
 export interface SkillInjectionResult {
@@ -108,6 +121,24 @@ export interface LaunchRequest {
   targetPath: string;
   forceAutonomous?: boolean;
   extraArgs?: string[];
+  // Run in a fresh git worktree. Defaults to the persisted isolate_runs.
+  isolate?: boolean;
+  // Re-launch a failed/stopped run in its original cwd (no new worktree).
+  resumeRunId?: string;
+}
+
+// Outcome of preparing a worktree for a run. isolated:false means the
+// loop runs in place and `reason` says why.
+export interface IsolationInfo {
+  isolated: boolean;
+  cwd: string;
+  worktreePath?: string;
+  branch?: string;
+  baseRef?: string;
+  dirty: boolean;
+  uncommitted: string[];
+  copied: string[];
+  reason?: string;
 }
 
 export interface LaunchResult {
@@ -115,6 +146,34 @@ export interface LaunchResult {
   sessionId?: string;
   pid?: number;
   reason?: string;
+  isolation?: IsolationInfo;
+  run?: RunRecord;
+}
+
+export type RunStatus = 'running' | 'succeeded' | 'failed' | 'stopped';
+
+// One entry per launch, persisted in userData/runs.json and mirrored to
+// <cwd>/.claude/feature-loop-run.json.
+export interface RunRecord {
+  id: string;
+  targetPath: string;
+  cwd: string;
+  isolated: boolean;
+  worktreePath: string | null;
+  branch: string | null;
+  baseRef: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  lastStage: LoopStage;
+  exitCode: number | null;
+  signal: string | null;
+  status: RunStatus;
+  args: string[];
+  // Set on resumed runs; chainStartedAt is the first run's start so spec
+  // detection still finds folders written before the resume.
+  resumedFrom?: string;
+  chainStartedAt?: string;
+  fromSpec?: string | null;
 }
 
 export type LoopStage =
@@ -139,6 +198,9 @@ export interface LoopExitEvent {
   code: number | null;
   signal: string | null;
   ts: number;
+  run?: RunRecord;
+  // Worktree review/merge instructions, one command per line.
+  review?: string[];
 }
 
 // Terminal IPC types.
@@ -220,6 +282,7 @@ export interface OrchestratorApi {
     stop: (sessionId: string) => Promise<{ ok: boolean }>;
     onChunk: (cb: (chunk: LoopStreamChunk) => void) => () => void;
     onExit: (cb: (evt: LoopExitEvent) => void) => () => void;
+    latestRun: (targetPath: string) => Promise<RunRecord | null>;
   };
   state: {
     read: () => Promise<PersistentConfig>;
@@ -230,6 +293,7 @@ export interface OrchestratorApi {
     }) => Promise<PersistentConfig>;
     clearActive: () => Promise<PersistentConfig>;
     setLayout: (sizes: [number, number, number]) => Promise<PersistentConfig>;
+    setIsolateRuns: (on: boolean) => Promise<PersistentConfig>;
   };
   shortcuts: {
     onBrowseExisting: (cb: () => void) => () => void;
