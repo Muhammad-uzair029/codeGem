@@ -80,6 +80,7 @@
     },
     "feature-qa": {
       "group": "Quality gates",
+      "featured": true,
       "summary": "Tests a feature end to end on its own: writes a feature doc, designs test cases, writes and runs Playwright tests, triages failures, and hands back a report with a verdict.",
       "whenToUse": "When a feature is built and you want proof it actually works in a real browser or app, without babysitting the testing.",
       "deps": []

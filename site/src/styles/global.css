@@ -858,6 +858,13 @@ pre { overflow-x: auto; max-width: 100%; }
 .courses-ico svg { width: 22px; height: 22px; }
 .courses-text { flex: 1; min-width: 200px; color: var(--text-soft); }
 .courses-text strong { color: var(--text); margin-right: 6px; }
+.new-strip { margin-top: 10px; --pc: var(--g-quality); }
+.new-tag { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--g-quality); background: color-mix(in srgb, var(--g-quality) 15%, transparent); vertical-align: 0.1em; }
+.spotlight { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; border-left: 3px solid var(--g-quality); }
+.spotlight h2 { margin: 0; }
+.spotlight .eyebrow { margin: 0; font-size: 0.85rem; color: var(--text-soft); }
+.spot-steps { margin: 4px 0 6px; padding-left: 1.3rem; display: grid; gap: 4px; color: var(--text-soft); }
+.spot-steps strong { color: var(--text); }
 .get-all .faint { margin-top: -0.25rem; max-width: 44rem; }
 .band-tight { margin-top: 32px; }
 

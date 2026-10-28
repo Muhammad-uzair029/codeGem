@@ -43,6 +43,21 @@ const m = getManifest();
       </div>
     </section>
 
+    <section class="card spotlight" id="feature-qa" aria-labelledby="fqa-h">
+      <p class="eyebrow"><span class="new-tag">New</span> Quality gates</p>
+      <h2 id="fqa-h">feature-qa: test a feature end to end, hands-off</h2>
+      <p class="muted">Point it at a feature, a PR, a branch or a spec. It works like a QA engineer and never stops to ask you anything; open questions go in the report with the default it chose.</p>
+      <ol class="spot-steps">
+        <li><strong>Feature doc</strong> with numbered acceptance criteria</li>
+        <li><strong>Test cases</strong> for every criterion, plus edge cases, mobile, dark mode and keyboard use</li>
+        <li><strong>Playwright tests</strong>, one per case</li>
+        <li><strong>Run and triage</strong>: flaky tests fixed, real bugs documented, 3 clean runs</li>
+        <li><strong>Report</strong> with a PASS / FAIL verdict, bugs with steps and screenshots</li>
+      </ol>
+      <InstallCommand args={['feature-qa']} label="Install feature-qa" />
+      <p class="faint" style="margin:0">Then in Claude Code: <code>/feature-qa the checkout page</code>. The feature-loop runs it automatically when it verifies a feature. <a href="/skill/feature-qa/">Full details</a>.</p>
+    </section>
+
     <section class="card update-card" id="update" aria-labelledby="update-h">
       <h2 id="update-h">Already have skills? Keep them up to date</h2>
       <p class="muted">Run this in the same folder. It checks every codeGem skill you have, updates only the ones that changed (your old copy is backed up first), and tells you about new skills you don't have yet.</p>
