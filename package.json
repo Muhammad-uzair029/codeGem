@@ -1,6 +1,6 @@
 {
   "name": "codegem",
-  "version": "0.2.19",
+  "version": "0.2.20",
   "private": true,
   "description": "codeGem — AI-powered feature orchestrator for Claude Code workflows.",
   "author": {
