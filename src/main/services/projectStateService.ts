@@ -36,6 +36,7 @@ export function readConfig(): PersistentConfig {
       target_framework: parsed.target_framework ?? null,
       history: Array.isArray(parsed.history) ? parsed.history : [],
       layout: parsed.layout,
+      isolate_runs: parsed.isolate_runs,
     };
   } catch {
     return { ...EMPTY_CONFIG };
@@ -58,6 +59,7 @@ export function setActiveProject(patch: {
     project_type: patch.project_type,
     target_framework: patch.target_framework,
     history: cfg.history,
+    isolate_runs: cfg.isolate_runs,
   };
   const filtered = next.history.filter((h) => h.active_project_path !== patch.active_project_path);
   filtered.unshift({
@@ -84,6 +86,16 @@ export function setLayout(sizes: [number, number, number]): PersistentConfig {
   const cfg = readConfig();
   const layout: LayoutConfig = { panel_sizes: sizes };
   return writeConfig({ ...cfg, layout });
+}
+
+export function setIsolateRuns(on: boolean): PersistentConfig {
+  const cfg = readConfig();
+  return writeConfig({ ...cfg, isolate_runs: on });
+}
+
+// Isolation is on unless the user explicitly turned it off.
+export function isolateRunsEnabled(): boolean {
+  return readConfig().isolate_runs !== false;
 }
 
 // Framework detection is a best-effort read of the target project's
