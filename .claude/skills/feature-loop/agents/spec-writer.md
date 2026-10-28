@@ -30,6 +30,9 @@ Turn approved brainstormer outputs into a concern-decomposed spec set. Every con
 
 If the target module folder does not have an `index.md` yet, create one from `templates/module-index.md`.
 
+## Parallel concern writing (see `../SKILL.md` §Multi-agent policy)
+When the feature touches ≥ 2 workspaces: write `index.md` and `contracts.md` yourself first, then treat them as frozen. Dispatch one sub-agent per remaining concern file in parallel, each given the brainstormer outputs, the frozen `index.md` + `contracts.md`, its template, and the single file it must write. Then run one consistency pass yourself: every concern file uses the same contract names, the `Files touched` lists don't overlap without reason, and every `tests.md` row maps to an acceptance criterion. A concern agent may not change `contracts.md`; if it finds a contract gap, it reports it and you fix the contract and re-run the affected agents.
+
 ## Registry update
 Append a row to `.claude/specs/_index.md` using `templates/registry-row.md`. If registry doesn't exist, create it with the header from that template.
 

@@ -140,6 +140,8 @@ Then open the project in `claude` and use them as slash commands, for example `/
 
 All files for a feature go under `.claude/specs/<module>/<feature>/`.
 
+**Parallel agents:** on bigger features the loop splits work across sub-agents: research in brainstorming, one writer per spec file, one builder per workspace (when their files don't overlap), the verification checks, and an independent second reviewer for risky features (auth, payments, migrations). Small features stay single-agent.
+
 If the build still fails after the retry limits, the loop stops and tags the result `ESCALATE` or `SELF-HEAL-EXHAUSTED` for a human to pick up.
 
 ### Human gates
@@ -160,6 +162,7 @@ By default the loop pauses twice: after splitting a multi-feature PRD (`split-ap
 | `/feature-loop --verify-only <mod>/<feat>` | Run only stage 3 on the current diff |
 | `/feature-loop --dry-learnings <mod>/<feat>` | Preview stage-5 patches without applying them |
 | `--max-iters N` / `--max-heal-iters N` | Change the retry limits (default 3 each) |
+| `--max-agents N` / `--no-fanout` | Change how many sub-agents run in parallel per stage (default 6), or turn parallel agents off |
 
 Full playbook: [`.claude/skills/feature-loop/SKILL.md`](.claude/skills/feature-loop/SKILL.md), with one file per stage in [`agents/`](.claude/skills/feature-loop/agents).
 

@@ -18,6 +18,9 @@ Zero-hallucination expansion of the raw brief. Every assumption ties to evidence
 
 For every match, open the related feature's `index.md` and note the relation (extends / overlaps / depends-on / conflicts-with) + shared contracts.
 
+## Parallel research (see `../SKILL.md` §Multi-agent policy)
+If ≥ 3 related features are found or the brief touches ≥ 2 workspaces, dispatch read-only sub-agents in parallel: one per related feature (returns relation + shared contracts, each with a file:line citation) and/or one per workspace (returns the existing modules, patterns, and contracts the feature will meet). For large briefs, split the 9 edge-case categories across ≤ 3 agents. You merge their results into the four outputs; drop any claim that lacks a citation.
+
 ## Edge-case exhaustion (9 categories — ALL mandatory)
 
 Fill `templates/edge-cases.md` completely. Each case gets: **trigger · expected behavior · test hook · source**. A case may be marked `N/A` only with a cited reason (e.g., "backend-only feature — Platform category N/A").
