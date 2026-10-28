@@ -6,6 +6,23 @@ Built on Electron + React + node-pty.
 
 codeGem is a desktop app that turns a feature idea into shipped code using Claude Code. You pick a project, write a short feature brief, and codeGem runs the **feature-loop**: it brainstorms, writes a spec, builds, verifies (with self-healing retries), and records what it learned. You watch it live in the app.
 
+### Install skills
+
+Browse every skill and install it into your project with one command from the skills site:
+**https://SKILLS-SITE-URL** <!-- TODO: replace with the deployed site URL -->
+
+```bash
+# macOS / Linux, run in your project folder
+curl -fsSL https://SKILLS-SITE-URL/install.sh | bash -s -- feature-loop   # or --all
+```
+
+```powershell
+# Windows PowerShell
+irm https://SKILLS-SITE-URL/install.ps1 | iex; Install-Skills feature-loop   # or -All
+```
+
+The site lives in [`site/`](site/README.md) and deploys to Vercel or Netlify.
+
 > Click any section below to expand it.
 
 **Contents:** [What is codeGem](#what-is-codegem) · [Quick start](#quick-start) · [Use the skills in another project](#use-the-skills-in-another-project) · [The feature-loop](#the-feature-loop) · [All skills](#all-skills) · [Repo layout](#repo-layout) · [Development](#development)

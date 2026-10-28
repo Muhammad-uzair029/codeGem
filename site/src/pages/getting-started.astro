@@ -1,0 +1,82 @@
+---
+import Base from '../layouts/Base.astro';
+import InstallCommand from '../components/InstallCommand.astro';
+---
+<Base title="Getting started" active="start" description="Install your first codeGem skill and run it in Claude Code, step by step.">
+  <div class="wrap" style="max-width:820px">
+    <div class="crumbs">&nbsp;</div>
+    <h1>Getting started</h1>
+    <p class="lede">From nothing to your first skill running in about five minutes. No GitHub access needed.</p>
+
+    <ol class="steps" style="margin-top:28px">
+      <li>
+        <h3>Install Claude Code</h3>
+        <p>Skills run inside <strong>Claude Code</strong>, Anthropic's command-line coding assistant. Check whether you have it:</p>
+        <pre class="card" style="padding:12px 14px;margin:0 0 0.75rem;box-shadow:none"><code>claude --version</code></pre>
+        <p>If that prints a version number, you are set. If not, follow the official install guide at
+          <a href="https://docs.claude.com/en/docs/claude-code/setup" rel="noopener">docs.claude.com</a>, then sign in by running <code>claude</code> once.</p>
+      </li>
+      <li>
+        <h3>Open a terminal in your project folder</h3>
+        <p>Skills are installed per project, into a hidden <code>.claude/skills/</code> folder at the project's top level. Go there first:</p>
+        <pre class="card" style="padding:12px 14px;margin:0 0 0.75rem;box-shadow:none"><code>cd path/to/your-project</code></pre>
+        <p class="faint">On Windows, use PowerShell (not the old Command Prompt).</p>
+      </li>
+      <li>
+        <h3>Run the install command</h3>
+        <p>Pick a skill on the <a href="/browse/">Browse</a> page and copy its command, or start with the feature-loop:</p>
+        <InstallCommand args={['feature-loop']} />
+        <p>The installer prints what it added and where. Skills that a skill needs are added too. If a skill is already there it is skipped, so it is always safe to re-run.</p>
+        <p class="faint">Want every skill? Use <code>--all</code>. Want skills available in every project? Add <code>--global</code> to install into <code>~/.claude/skills/</code> instead.</p>
+      </li>
+      <li>
+        <h3>Start Claude Code and use the skill</h3>
+        <p>In the same folder, run <code>claude</code>. Then type a slash and the skill's name:</p>
+        <pre class="card" style="padding:12px 14px;margin:0 0 0.75rem;box-shadow:none"><code>/feature-loop auth/login</code></pre>
+        <p>Claude reads the skill's instructions and follows them. Each skill's page lists its commands and options. If Claude was already open when you installed, restart it so it picks up the new skills.</p>
+      </li>
+    </ol>
+
+    <h2>Update a skill</h2>
+    <p>Re-run the install command with <code>--force</code> and the skill's name. Your current copy is moved to <code>.claude/skills/.backup/&lt;name&gt;-&lt;time&gt;/</code> first, so any changes you made are kept there.</p>
+    <InstallCommand args={['--force', 'feature-loop']} label="Update feature-loop" />
+    <div class="note">
+      <p><code>--force</code> only replaces the skills you name. Skills pulled in automatically as dependencies are left alone. To update one of those, name it too.</p>
+    </div>
+
+    <h2>Remove a skill</h2>
+    <p>Delete its folder. That is all there is to it.</p>
+    <pre class="card" style="padding:12px 14px;box-shadow:none"><code># macOS / Linux
+rm -rf .claude/skills/feature-loop
+
+# Windows PowerShell
+Remove-Item -Recurse -Force .claude\skills\feature-loop</code></pre>
+    <p class="faint">Old backups live in <code>.claude/skills/.backup/</code>; delete that folder whenever you like.</p>
+
+    <h2>Options</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">macOS / Linux</th><th scope="col">Windows</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>name1 name2</code></td><td><code>name1 name2</code></td><td>Install these skills and the skills they use</td></tr>
+          <tr><td><code>--all</code></td><td><code>-All</code></td><td>Install every skill</td></tr>
+          <tr><td><code>--global</code></td><td><code>-Global</code></td><td>Install to <code>~/.claude/skills/</code> for all projects</td></tr>
+          <tr><td><code>--no-deps</code></td><td><code>-NoDeps</code></td><td>Do not add the skills a skill uses</td></tr>
+          <tr><td><code>--force</code></td><td><code>-Force</code></td><td>Replace the named skills (old copy backed up)</td></tr>
+          <tr><td><code>--list</code></td><td><code>-List</code></td><td>Show the available skills</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Common questions</h2>
+    <details class="box"><summary>Is it safe to paste a command that downloads a script?</summary>
+      <p>It is a good habit to check first. Open <a href="/install.sh">install.sh</a> or <a href="/install.ps1">install.ps1</a> in your browser to read exactly what runs. The script only downloads files from this site and only writes inside <code>.claude/skills/</code>.</p>
+    </details>
+    <details class="box"><summary>Claude does not see the skill</summary>
+      <p>Make sure you ran the install command in the project's top folder (where you start <code>claude</code>), then restart Claude Code. You should see <code>.claude/skills/&lt;name&gt;/SKILL.md</code> in that folder.</p>
+    </details>
+    <details class="box"><summary>Do I need the codeGem desktop app?</summary>
+      <p>No. The app adds a guided, screen-by-screen flow around the feature-loop, but every skill works on its own in Claude Code.</p>
+    </details>
+  </div>
+</Base>

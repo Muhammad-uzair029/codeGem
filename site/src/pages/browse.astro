@@ -1,0 +1,154 @@
+---
+import Base from '../layouts/Base.astro';
+import InstallCommand from '../components/InstallCommand.astro';
+import { getManifest } from '../../lib/skills.mjs';
+
+const m = getManifest();
+const groupOrder = m.groups.map((g) => g.name);
+const skills = [...m.skills].sort(
+  (a, b) => Number(b.featured) - Number(a.featured) || groupOrder.indexOf(a.group) - groupOrder.indexOf(b.group) || a.name.localeCompare(b.name),
+);
+const deps = Object.fromEntries(m.skills.map((s) => [s.name, s.allDeps]));
+---
+<Base title="Browse skills" active="browse" description="Search and filter every codeGem skill, tick the ones you want, and copy one install command.">
+  <div class="wrap">
+    <div class="crumbs">&nbsp;</div>
+    <h1>Browse skills</h1>
+    <p class="lede">Search by name or what it does. Tick the skills you want and the install command below updates as you go.</p>
+
+    <div class="toolbar">
+      <label class="sr-only" for="q">Search skills</label>
+      <input id="q" class="search" type="search" placeholder="Search, e.g. security, figma, tests" autocomplete="off" />
+      <div class="chips" role="group" aria-label="Filter by group">
+        <button type="button" class="chip" data-group="" aria-pressed="true">All</button>
+        {m.groups.map((g) => <button type="button" class="chip" data-group={g.name} aria-pressed="false">{g.name}</button>)}
+      </div>
+    </div>
+
+    <p class="faint" id="count" aria-live="polite">{skills.length} skills</p>
+
+    <div class="grid cols-3" id="cards">
+      {skills.map((s) => (
+        <article
+          class="card skill-card"
+          data-name={s.name}
+          data-group={s.group}
+          data-text={`${s.name} ${s.displayName} ${s.summary} ${s.description} ${s.group}`.toLowerCase()}
+        >
+          <div class="top">
+            <h3><a href={`/skill/${s.name}/`}>{s.name}</a></h3>
+            <label class="pick" title={`Add ${s.name} to the install command`}>
+              <input type="checkbox" value={s.name} aria-label={`Select ${s.name}`} /> Add
+            </label>
+          </div>
+          <p>{s.summary}</p>
+          <div class="meta">
+            <span class="pill">{s.group}</span>
+            {s.allDeps.length > 0 && <span>+{s.allDeps.length} it uses</span>}
+          </div>
+        </article>
+      ))}
+    </div>
+    <p class="empty" id="empty" hidden>No skills match. Try a shorter word, or pick "All".</p>
+
+    <div class="picker" id="picker" aria-live="polite">
+      <div class="row">
+        <strong id="picked-label">Tick skills above to build an install command</strong>
+        <span>
+          <button type="button" class="linkish" id="select-visible">Select all shown</button>
+          &nbsp;·&nbsp;
+          <button type="button" class="linkish" id="clear">Clear</button>
+        </span>
+      </div>
+      <div id="picker-cmd" hidden>
+        <InstallCommand args={[]} label="Run in your project folder" />
+        <p class="faint" id="picked-deps" style="margin:0"></p>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" id="deps-data" set:html={JSON.stringify(deps)} />
+</Base>
+
+<script>
+  import { renderCommands } from '../scripts/site.js';
+
+  const q = document.getElementById('q');
+  const cards = Array.from(document.querySelectorAll('#cards .skill-card'));
+  const chips = Array.from(document.querySelectorAll('.chip'));
+  const count = document.getElementById('count');
+  const empty = document.getElementById('empty');
+  const pickerCmd = document.getElementById('picker-cmd');
+  const pickedLabel = document.getElementById('picked-label');
+  const pickedDeps = document.getElementById('picked-deps');
+  const deps = JSON.parse(document.getElementById('deps-data').textContent || '{}');
+  const allNames = cards.map((c) => c.dataset.name);
+  const selected = new Set();
+  let group = new URLSearchParams(location.search).get('group') || '';
+  if (!chips.some((c) => c.dataset.group === group)) group = '';
+
+  function filter() {
+    const terms = (q.value || '').toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const c of cards) {
+      const ok = (!group || c.dataset.group === group) && terms.every((t) => c.dataset.text.includes(t));
+      c.hidden = !ok;
+      if (ok) shown++;
+    }
+    chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.group === group)));
+    count.textContent = `${shown} of ${cards.length} skills${group ? ' in ' + group : ''}`;
+    empty.hidden = shown !== 0;
+  }
+
+  function update() {
+    for (const c of cards) {
+      const on = selected.has(c.dataset.name);
+      c.classList.toggle('selected', on);
+      c.querySelector('input').checked = on;
+    }
+    const names = allNames.filter((n) => selected.has(n));
+    pickerCmd.hidden = names.length === 0;
+    if (!names.length) {
+      pickedLabel.textContent = 'Tick skills above to build an install command';
+      return;
+    }
+    const everything = names.length === allNames.length;
+    const args = everything ? ['--all'] : names;
+    pickerCmd.querySelectorAll('[data-install]').forEach((el) => el.setAttribute('data-args', args.join(' ')));
+    renderCommands(pickerCmd);
+    pickedLabel.textContent = everything ? 'All skills selected' : `${names.length} selected`;
+    const extra = new Set();
+    for (const n of names) for (const d of deps[n] || []) if (!selected.has(d)) extra.add(d);
+    pickedDeps.textContent = extra.size
+      ? `Also installs ${extra.size} skill${extra.size === 1 ? '' : 's'} they use: ${[...extra].join(', ')}. Add --no-deps (Windows: -NoDeps) to skip.`
+      : 'Skills you already have are skipped, never overwritten.';
+  }
+
+  q.addEventListener('input', filter);
+  chips.forEach((c) =>
+    c.addEventListener('click', () => {
+      group = c.dataset.group;
+      const url = new URL(location.href);
+      if (group) url.searchParams.set('group', group);
+      else url.searchParams.delete('group');
+      history.replaceState(null, '', url);
+      filter();
+    }),
+  );
+  cards.forEach((c) =>
+    c.querySelector('input').addEventListener('change', (e) => {
+      if (e.target.checked) selected.add(c.dataset.name);
+      else selected.delete(c.dataset.name);
+      update();
+    }),
+  );
+  document.getElementById('clear').addEventListener('click', () => {
+    selected.clear();
+    update();
+  });
+  document.getElementById('select-visible').addEventListener('click', () => {
+    cards.filter((c) => !c.hidden).forEach((c) => selected.add(c.dataset.name));
+    update();
+  });
+  filter();
+  update();
+</script>
