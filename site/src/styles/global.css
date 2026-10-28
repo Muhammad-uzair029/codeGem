@@ -339,8 +339,17 @@ html[data-os='windows'] .os-ind { transform: translateX(100%); }
 .cmd-line { display: flex; align-items: flex-start; gap: 12px; padding: 12px 12px 14px 16px; }
 .cmd-line code {
   flex: 1; min-width: 0; font-size: 0.87rem; line-height: 1.6; color: var(--term-text);
-  white-space: pre-wrap; word-break: break-all; background: none; padding: 0;
+  /* Wrap only between words so a URL never splits mid-way; an over-long
+     token scrolls inside the box instead. */
+  white-space: pre-wrap; word-break: normal; overflow-wrap: normal; overflow-x: auto;
+  background: none; padding: 0;
 }
+/* Let grid/flex parents shrink so a long command scrolls in its box instead
+   of widening the page. */
+.card, .cmd, .cmd-line { min-width: 0; }
+/* Narrow screens: one scrollable line reads better than a command broken
+   at hyphens and slashes. */
+@media (max-width: 600px) { .cmd-line code { white-space: pre; padding-bottom: 6px; } }
 .cmd-line code::before { content: '$ '; color: var(--term-ok); }
 .cmd-line[data-os-pane='windows'] code::before { content: 'PS> '; }
 .copy {
