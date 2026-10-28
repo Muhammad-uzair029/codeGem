@@ -1,0 +1,141 @@
+---
+import Base from '../../layouts/Base.astro';
+import InstallCommand from '../../components/InstallCommand.astro';
+import LoopDiagram from '../../components/LoopDiagram.astro';
+import { getManifest } from '../../../lib/skills.mjs';
+import { renderMarkdown, renderInline } from '../../lib/markdown.js';
+
+export function getStaticPaths() {
+  return getManifest().skills.map((s) => ({ params: { name: s.name } }));
+}
+
+const m = getManifest();
+const skill = m.skills.find((s) => s.name === Astro.params.name);
+if (!skill) throw new Error(`Unknown skill ${Astro.params.name}`);
+const names = m.skills.map((s) => s.name);
+const bodyHtml = renderMarkdown(skill.body, skill.name, names);
+const directDeps = new Set(skill.deps);
+const fileCount = skill.files.length;
+const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
+---
+<Base title={skill.name} description={skill.summary}>
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/browse/">Browse</a> /
+      <a href={`/browse/?group=${encodeURIComponent(skill.group)}`}>{skill.group}</a>
+    </nav>
+    <header class="skill-head">
+      <h1>{skill.name}</h1>
+      <p class="lede">{skill.summary}</p>
+      <p style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0">
+        <span class="pill">{skill.group}</span>
+        <span class="faint">Type <code>/{skill.name}</code> in Claude Code</span>
+        {skill.displayName !== skill.name && <span class="faint">· also known as <code>{skill.displayName}</code></span>}
+      </p>
+    </header>
+
+    <div class="skill-layout">
+      <div>
+        <h2 style="margin-top:1.5rem">Install</h2>
+        <InstallCommand args={[skill.name]} />
+        {skill.allDeps.length > 0 ? (
+          <p class="muted">
+            This also installs the {skill.allDeps.length} skill{skill.allDeps.length === 1 ? '' : 's'} it uses (listed on the right).
+            Skills you already have are left alone. Add <code>--no-deps</code> (Windows: <code>-NoDeps</code>) to install only this one.
+          </p>
+        ) : (
+          <p class="muted">Installs into <code>.claude/skills/{skill.name}/</code> in the current folder. If it is already there, it is skipped, not overwritten.</p>
+        )}
+        <details class="box">
+          <summary>Update or reinstall</summary>
+          <p class="muted">Gets the latest version. Your current copy is moved to <code>.claude/skills/.backup/{skill.name}-&lt;time&gt;/</code> first, so local edits are never lost. Skills it uses are not replaced.</p>
+          <InstallCommand args={['--force', skill.name]} label="Update in your project folder" />
+        </details>
+
+        <h2>What it does</h2>
+        <p set:html={renderInline(skill.what)} />
+
+        {skill.whenToUse && (
+          <>
+            <h2>When to use it</h2>
+            <p set:html={renderInline(skill.whenToUse)} />
+          </>
+        )}
+
+        {skill.name === 'feature-loop' && (
+          <>
+            <h2>The six stages</h2>
+            <p class="section-lead">Click a stage to see what it does and which files it writes. Everything for one feature lives under <code>.claude/specs/&lt;module&gt;/&lt;feature&gt;/</code>.</p>
+            <LoopDiagram />
+          </>
+        )}
+
+        <h2>Commands</h2>
+        <p class="section-lead">Type these in Claude Code after running <code>claude</code> in your project.</p>
+        <div class="table-wrap">
+          <table class="cmd-table">
+            <thead><tr><th scope="col">Type this</th><th scope="col">What happens</th></tr></thead>
+            <tbody>
+              {skill.commands.map((c) => (
+                <tr>
+                  <td><code>{c.cmd}</code></td>
+                  <td>{c.desc || (c.cmd === `/${skill.name}` ? 'Run the skill' : c.cmd.startsWith('-') ? '' : 'Run with these options')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {skill.phrases.length > 0 && (
+          <p class="muted" style="margin-top:0.75rem">
+            Or just ask in plain words, for example: {skill.phrases.map((p, i) => <>{i > 0 && ', '}<q>{p}</q></>)}.
+          </p>
+        )}
+
+        <h2>Full instructions</h2>
+        <p class="section-lead">The complete <code>SKILL.md</code> that Claude reads. You do not need to read this to use the skill; it is here for reference.</p>
+        <details class="box" open>
+          <summary>SKILL.md</summary>
+          <article class="prose" set:html={bodyHtml} />
+        </details>
+      </div>
+
+      <aside class="skill-aside">
+        <div class="card">
+          <h2>Also installs</h2>
+          {skill.allDeps.length ? (
+            <>
+              <ul class="dep-list">{skill.allDeps.map((d) => <li><a href={`/skill/${d}/`} title={directDeps.has(d) ? 'Used directly' : 'Used by one of its skills'}>{d}</a></li>)}</ul>
+              <p class="faint" style="margin:10px 0 0">Skills it calls while it runs, including the ones those skills need.</p>
+            </>
+          ) : (
+            <p class="faint" style="margin:0">Nothing else. This skill works on its own.</p>
+          )}
+        </div>
+        <div class="card">
+          <h2>Used by</h2>
+          {skill.usedBy.length ? (
+            <>
+              <ul class="dep-list">{skill.usedBy.map((d) => <li><a href={`/skill/${d}/`}>{d}</a></li>)}</ul>
+              <p class="faint" style="margin:10px 0 0">Installing any of these installs {skill.name} too.</p>
+            </>
+          ) : (
+            <p class="faint" style="margin:0">No other skill depends on it.</p>
+          )}
+        </div>
+        <div class="card">
+          <h2>Files ({fileCount})</h2>
+          <p class="faint" style="margin:0 0 8px">Installed to <code>.claude/skills/{skill.name}/</code>{hasExtraFolders ? ', including its subfolders' : ''}.</p>
+          {fileCount <= 12 ? (
+            <ul class="files">{skill.files.map((f) => <li><a href={`/skills/${skill.name}/${f.path}`}>{f.path}</a>{f.exec && ' *'}</li>)}</ul>
+          ) : (
+            <details>
+              <summary class="faint" style="cursor:pointer">Show all files</summary>
+              <ul class="files">{skill.files.map((f) => <li><a href={`/skills/${skill.name}/${f.path}`}>{f.path}</a>{f.exec && ' *'}</li>)}</ul>
+            </details>
+          )}
+          {skill.files.some((f) => f.exec) && <p class="faint" style="margin:8px 0 0">* script, installed as executable</p>}
+        </div>
+      </aside>
+    </div>
+  </div>
+</Base>

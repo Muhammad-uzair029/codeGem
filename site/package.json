@@ -1,0 +1,21 @@
+{
+  "name": "codegem-skills-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Static site to browse and install codeGem's Claude Code skills.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test:install": "bash scripts/smoke-install.sh"
+  },
+  "dependencies": {
+    "astro": "7.3.8",
+    "marked": "18.1.2",
+    "yaml": "2.9.1"
+  }
+}

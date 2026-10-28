@@ -1,0 +1,88 @@
+---
+import Base from '../layouts/Base.astro';
+import InstallCommand from '../components/InstallCommand.astro';
+import LoopDiagram from '../components/LoopDiagram.astro';
+import HeroTerminal from '../components/HeroTerminal.astro';
+import DownloadApp from '../components/DownloadApp.astro';
+import { getManifest } from '../../lib/skills.mjs';
+
+const m = getManifest();
+const loop = m.skills.find((s) => s.name === 'feature-loop');
+---
+<Base title="codeGem Skills" active="home">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow" data-anim style="--d:0">For Claude Code</div>
+        <h1 data-anim style="--d:1">Skills that teach Claude <span>how your team ships</span>.</h1>
+        <p class="lede" data-anim style="--d:2">
+          A skill is a folder of instructions Claude Code follows when you type a slash command like
+          <code>/feature-loop</code> or <code>/pre-merge-check</code>. These {m.skillCount} skills plan and build features,
+          check code before it merges, catch security problems, and handle git chores. Pick the ones you want and
+          install them into your project with one command.
+        </p>
+        <div class="actions" data-anim style="--d:3">
+          <a class="btn" href="/browse/">Browse all {m.skillCount} skills</a>
+          <a class="btn secondary" href="/getting-started/">New here? Start here</a>
+        </div>
+      </div>
+      <div data-anim style="--d:3" class="hero-term">
+        <HeroTerminal />
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="card get-all" data-reveal>
+      <h2>Get everything</h2>
+      <p class="muted">Open a terminal in your project folder and paste this. It adds every skill to <code>.claude/skills/</code> and never overwrites one you already have.</p>
+      <InstallCommand args={['--all']} />
+      <p class="faint" style="margin:0">Want them in every project? Add <code>--global</code> (Windows: <code>-Global</code>).</p>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2 data-reveal>The feature-loop: from brief to shipped code</h2>
+    <p class="section-lead" data-reveal>
+      The headline skill. Write a short brief, run <code>/feature-loop</code>, and Claude works through six stages.
+      It stops twice for your approval (or never, with <code>-y</code>). Click a stage to see what it does and what files it writes.
+    </p>
+    <div data-reveal><LoopDiagram /></div>
+    {loop && (
+      <div data-reveal>
+        <h3>Install just the feature-loop</h3>
+        <p class="muted">This also installs the {loop.allDeps.length} skills it uses while building and checking your feature.</p>
+        <InstallCommand args={['feature-loop']} />
+        <p><a href="/skill/feature-loop/">Read the full feature-loop guide &rarr;</a></p>
+      </div>
+    )}
+  </section>
+
+  <section class="wrap">
+    <h2 data-reveal>Find a skill by what you need</h2>
+    <div class="grid cols-3">
+      {m.groups.map((g, i) => (
+        <a class="card tile" href={`/browse/?group=${encodeURIComponent(g.name)}`} data-reveal style={`--d:${i % 3}`}>
+          <h3>{g.name} <small>{g.skills.length} {g.skills.length === 1 ? 'skill' : 'skills'}</small></h3>
+          <p>{g.blurb}</p>
+          <div class="names">{g.skills.slice(0, 4).map((n) => <code>{n}</code>)}{g.skills.length > 4 && <span class="faint">+{g.skills.length - 4} more</span>}</div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="wrap" id="download">
+    <h2 data-reveal>Prefer a desktop app?</h2>
+    <p class="section-lead" data-reveal>codeGem's app, Feature-Loop-Manager, runs the feature-loop for you in a window instead of the terminal.</p>
+    <div data-reveal><DownloadApp /></div>
+  </section>
+
+  <section class="wrap">
+    <h2 data-reveal>Three steps</h2>
+    <ol class="steps">
+      <li data-reveal style="--d:0"><h3>Install Claude Code</h3><p class="muted">You need the <code>claude</code> command on your computer. <a href="/getting-started/">See how</a>.</p></li>
+      <li data-reveal style="--d:1"><h3>Run one install command in your project folder</h3><p class="muted">Skills land in <code>.claude/skills/</code> inside that project. Nothing else changes.</p></li>
+      <li data-reveal style="--d:2"><h3>Open <code>claude</code> and type <code>/</code> plus the skill name</h3><p class="muted">For example <code>/pre-merge-check</code>. Claude reads the skill and follows it.</p></li>
+    </ol>
+  </section>
+</Base>

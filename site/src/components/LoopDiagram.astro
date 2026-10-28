@@ -1,0 +1,155 @@
+---
+// Interactive feature-loop stage map (-1 to 5). Content mirrors the
+// "Stage map" table in .claude/skills/feature-loop/SKILL.md.
+const F = '.claude/specs/<mod>/<feat>/';
+const stages = [
+  {
+    num: '-1',
+    name: 'PRD splitter',
+    gate: 'Pause: split-approve',
+    when: 'Only when your document describes several features.',
+    does: 'Splits a multi-feature product document into separate features, in the order they depend on each other, so each one goes through the loop on its own.',
+    writes: ['.claude/specs/inbox/_split-<date>.md'],
+    next: 'You review the proposed split and run /feature-loop split-approve (skipped with -y).',
+  },
+  {
+    num: '0',
+    name: 'Brainstormer',
+    gate: 'Pause: approve',
+    when: 'Every feature.',
+    does: 'Reads your brief next to every existing spec, then writes a refined brief, the user journeys, the edge cases, and the open questions. It does not invent facts it cannot find.',
+    writes: [F + 'brief-refined.md', F + 'user-journeys.md', F + 'edge-cases.md', F + 'open-questions.md'],
+    next: 'You read the four files and run /feature-loop approve <mod>/<feat>, or revise with feedback. With -y, safe defaults answer non-blocking questions.',
+  },
+  {
+    num: '1',
+    name: 'Spec writer',
+    gate: '',
+    when: 'After you approve the brainstorm.',
+    does: 'Writes the spec as one file per concern: screens, API, AI engine, shared contracts, security, tests, telemetry, and rollout. It also adds the feature to the spec index.',
+    writes: [F + 'index.md', F + 'frontend-ui.md', F + 'backend-api.md', F + 'ai-engine.md', F + 'contracts.md', F + 'security.md', F + 'code-audit.md', F + 'telemetry.md', F + 'tests.md', F + 'rollout.md'],
+    next: 'Moves straight on to building.',
+  },
+  {
+    num: '2',
+    name: 'Implementer',
+    gate: '',
+    when: 'After the spec, and again on every retry.',
+    does: 'Writes the code the spec asks for, touching only the files the spec allows. For NestJS APIs it regenerates swagger.json and typed client hooks with Orval.',
+    writes: ['Your code changes', F + 'build/iter-N-plan.md', F + 'build/iter-N-diff.md'],
+    next: 'Hands the change to the verifier.',
+  },
+  {
+    num: '3',
+    name: 'Verifier',
+    gate: '',
+    when: 'After every build attempt.',
+    does: 'First the compile gate: lint, types, tests, contract drift and null safety. If that fails, the exact error goes back to the implementer to fix (up to 3 times). Then it runs the review skills in parallel and decides: ship or block.',
+    writes: [F + 'verify/iter-N-verdict.md', F + 'build/iter-N-heal-M.md (when fixing errors)'],
+    next: 'Ship goes to stage 4. Block sends the gaps back to stage 2, up to 3 rounds, then stops and asks a human.',
+  },
+  {
+    num: '4',
+    name: 'Result writer',
+    gate: '',
+    when: 'When the verifier says ship (or the loop gives up).',
+    does: 'Summarises what shipped, what was checked, and anything left over. If the loop ran out of retries, the result is tagged ESCALATE or SELF-HEAL-EXHAUSTED for a person to pick up.',
+    writes: [F + 'results/result.md'],
+    next: 'Moves on to learnings.',
+  },
+  {
+    num: '5',
+    name: 'Learnings',
+    gate: '',
+    when: 'Only after a successful ship.',
+    does: 'Looks at what went wrong or right and makes small, additive improvements to your project\'s copies of the skills and templates, so the next feature goes smoother. Large changes are proposed, not applied.',
+    writes: [F + 'learnings/<date>-learnings.md', '.claude/skills/<skill>/SKILL.md (small patches)'],
+    next: 'Done. The next feature starts at stage 0.',
+  },
+];
+const first = stages[1];
+---
+<div class="loop" data-loop>
+  <div class="loop-track" role="tablist" aria-label="Feature-loop stages">
+    {stages.map((s, i) => (
+      <button
+        type="button"
+        class="stage"
+        role="tab"
+        id={`stage-tab-${i}`}
+        aria-controls="loop-panel"
+        aria-selected={s === first ? 'true' : 'false'}
+        data-stage={i}
+        style={`--i:${i}`}
+      >
+        <span class="num">{s.num}</span>
+        <span>
+          <span class="name">{s.name}</span>
+          {s.gate && <span class="gate"><br />{s.gate}</span>}
+        </span>
+      </button>
+    ))}
+    <div class="heal" aria-hidden="true">
+      <svg class="heal-svg" viewBox="0 0 200 44" preserveAspectRatio="none">
+        <path class="heal-path" d="M150 2 C150 34, 50 34, 50 6" fill="none" vector-effect="non-scaling-stroke" />
+        <path class="heal-head" d="M44 12 L50 3 L56 12" fill="none" vector-effect="non-scaling-stroke" />
+      </svg>
+      <span class="heal-label">self-heal: errors go back to the implementer</span>
+    </div>
+  </div>
+  <p class="loop-retry">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5" /></svg>
+    Stages 2 and 3 repeat until the change passes: up to 3 build rounds, each with up to 3 automatic error fixes.
+  </p>
+  <div class="card loop-panel" id="loop-panel" role="tabpanel" aria-live="polite">
+    <div class="eyebrow" data-f="eyebrow">Stage {first.num}</div>
+    <h3 data-f="name">{first.name}</h3>
+    <p class="faint" data-f="when">{first.when}</p>
+    <p data-f="does">{first.does}</p>
+    <strong>Files it writes</strong>
+    <ul data-f="writes">{first.writes.map((w) => <li><code>{w}</code></li>)}</ul>
+    <p class="muted" style="margin:0.75rem 0 0" data-f="next">{first.next}</p>
+  </div>
+  <script type="application/json" data-loop-data set:html={JSON.stringify(stages).replace(/</g, '\\u003c')} />
+</div>
+
+<script>
+  document.querySelectorAll('[data-loop]').forEach((root) => {
+    const dataEl = root.querySelector('[data-loop-data]');
+    if (!dataEl) return;
+    const stages = JSON.parse(dataEl.textContent || '[]');
+    const panel = root.querySelector('.loop-panel');
+    const tabs = Array.from(root.querySelectorAll('.stage'));
+    const field = (f) => panel.querySelector(`[data-f="${f}"]`);
+    const show = (i) => {
+      const s = stages[i];
+      tabs.forEach((t, j) => t.setAttribute('aria-selected', String(i === j)));
+      field('eyebrow').textContent = `Stage ${s.num}${s.gate ? ' · ' + s.gate : ''}`;
+      field('name').textContent = s.name;
+      field('when').textContent = s.when;
+      field('does').textContent = s.does;
+      field('next').textContent = s.next;
+      const ul = field('writes');
+      ul.replaceChildren(
+        ...s.writes.map((w) => {
+          const li = document.createElement('li');
+          const code = document.createElement('code');
+          code.textContent = w;
+          li.appendChild(code);
+          return li;
+        }),
+      );
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => show(i));
+      t.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        e.preventDefault();
+        const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1;
+        const n = (i + dir + tabs.length) % tabs.length;
+        tabs[n].focus();
+        show(n);
+      });
+    });
+  });
+</script>
