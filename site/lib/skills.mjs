@@ -3,6 +3,7 @@
 // Everything here is plain Node so it can run inside Astro and in scripts.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
 
@@ -196,6 +197,14 @@ export function buildManifest({ siteUrl } = {}) {
       const exec = (st.mode & 0o111) !== 0 || /(^|\/)scripts\/[^/]+\.sh$/.test(rel);
       return { path: rel, size: st.size, exec };
     });
+    // Content fingerprint: changes whenever any file in the skill changes.
+    // The installer stores it in <skill>/.codegem-version so --update can
+    // tell which installed skills are out of date.
+    const hash = createHash('sha256');
+    for (const f of [...files].sort((x, y) => (x.path < y.path ? -1 : 1))) {
+      hash.update(f.path).update('\0').update(fs.readFileSync(path.join(dir, f.path))).update('\0');
+    }
+    const version = hash.digest('hex').slice(0, 12);
 
     skills.push({
       name,
@@ -213,6 +222,7 @@ export function buildManifest({ siteUrl } = {}) {
       allDeps: [],
       usedBy: [],
       files,
+      version,
       body,
     });
   }
@@ -259,13 +269,13 @@ export function publicManifest(manifest) {
 
 /**
  * Tab-separated index for install.sh (stock bash has no JSON parser).
- *   skill <TAB> name <TAB> comma-separated resolved deps or "-"
+ *   skill <TAB> name <TAB> comma-separated resolved deps or "-" <TAB> version
  *   file  <TAB> name <TAB> x|- <TAB> relative path
  */
 export function installIndex(manifest) {
   const lines = ['# codeGem skills install index. Generated at build time; do not edit.'];
   for (const s of manifest.skills) {
-    lines.push(['skill', s.name, s.allDeps.join(',') || '-'].join('\t'));
+    lines.push(['skill', s.name, s.allDeps.join(',') || '-', s.version].join('\t'));
     for (const f of s.files) lines.push(['file', s.name, f.exec ? 'x' : '-', f.path].join('\t'));
   }
   return lines.join('\n') + '\n';

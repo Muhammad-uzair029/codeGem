@@ -2,8 +2,9 @@
 #
 #   irm @@SITE_URL@@/install.ps1 | iex; Install-Skills feature-loop pre-merge-check
 #   irm @@SITE_URL@@/install.ps1 | iex; Install-Skills -All
+#   irm @@SITE_URL@@/install.ps1 | iex; Install-Skills -Update
 #
-# Options (GNU-style --all, --global, --no-deps, --force, --list also work):
+# Options (GNU-style --all, --global, --no-deps, --force, --update, --list also work):
 #   <skill> ...   Skills to install. Skills they use are installed too.
 #   -All          Install every skill.
 #   -Global       Install into ~/.claude/skills (all projects) instead of .\.claude\skills.
@@ -11,6 +12,9 @@
 #   -Force        Replace skills you named that are already installed. The old copy is
 #                 moved to .claude\skills\.backup\<name>-<timestamp>\ first.
 #                 Never applies to skills pulled in as dependencies.
+#   -Update       Update every codeGem skill already installed here to the latest
+#                 version (only the ones that changed; old copies are backed up)
+#                 and list new skills you don't have yet. Name skills to limit it.
 #   -List         List available skills.
 #
 # Files are downloaded only from the skills site, never from GitHub.
@@ -30,6 +34,7 @@ function Install-Skills {
         [switch] $Global,
         [switch] $NoDeps,
         [switch] $Force,
+        [switch] $Update,
         [switch] $List
     )
 
@@ -51,6 +56,7 @@ function Install-Skills {
                 '--global'  { $Global = $true; continue }
                 '--no-deps' { $NoDeps = $true; continue }
                 '--force'   { $Force = $true; continue }
+                '--update'  { $Update = $true; continue }
                 '--list'    { $List = $true; continue }
                 default {
                     if ($n.StartsWith('-')) { Write-Host ("error: " + "Unknown option: $n") -ForegroundColor Red; return }
@@ -85,6 +91,47 @@ function Install-Skills {
             return
         }
 
+        if ($Global) {
+            $target = Join-Path (Join-Path $HOME '.claude') 'skills'
+        } else {
+            $target = Join-Path (Join-Path (Get-Location).ProviderPath '.claude') 'skills'
+        }
+
+        # -Update: work out which installed skills changed on the site.
+        $upToDate = @(); $newAvailable = @()
+        if ($Update) {
+            if ($All) { Write-Host ("error: " + "-Update updates what's installed; use -All on its own to install everything.") -ForegroundColor Red; return }
+            $have = @()
+            foreach ($n in $allNames) {
+                if (Test-Path -LiteralPath (Join-Path $target $n)) { $have += $n } else { $newAvailable += $n }
+            }
+            if ($have.Count -eq 0) {
+                Write-Host "No codeGem skills are installed in $target yet."
+                Write-Host "Install some first, e.g.:  Install-Skills -All"
+                return
+            }
+            if ($skillNames.Count -eq 0) { $skillNames = $have }
+            $outdated = @()
+            foreach ($n in $skillNames) {
+                if ($have -notcontains $n) { Write-Host ("error: " + "$n is not installed in $target; install it without -Update.") -ForegroundColor Red; return }
+                $marker = Join-Path (Join-Path $target $n) '.codegem-version'
+                $cur = ''
+                if (Test-Path -LiteralPath $marker) { $cur = ([System.IO.File]::ReadAllText($marker)).Trim() }
+                if ($byName[$n].version -and $cur -eq $byName[$n].version) { $upToDate += $n } else { $outdated += $n }
+            }
+            if ($outdated.Count -eq 0) {
+                Write-Host "codeGem skills -> $target"
+                Write-Host "  All $($upToDate.Count) installed skills are up to date."
+                if ($newAvailable.Count -gt 0) {
+                    Write-Host "  New skills you don't have yet ($($newAvailable.Count)): $($newAvailable -join ', ')"
+                    Write-Host "    to add them: Install-Skills <name> ...   or   Install-Skills -All"
+                }
+                return
+            }
+            $skillNames = $outdated
+            $Force = $true
+        }
+
         if ($All) { $skillNames = $allNames }
         if ($skillNames.Count -eq 0) {
             Write-Host ("error: " + "Name at least one skill, or use -All. Example: Install-Skills feature-loop") -ForegroundColor Red
@@ -109,11 +156,6 @@ function Install-Skills {
             }
         }
 
-        if ($Global) {
-            $target = Join-Path (Join-Path $HOME '.claude') 'skills'
-        } else {
-            $target = Join-Path (Join-Path (Get-Location).ProviderPath '.claude') 'skills'
-        }
         New-Item -ItemType Directory -Force -Path $target | Out-Null
 
         $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -148,6 +190,8 @@ function Install-Skills {
                     }
                     if ($onUnix -and $f.exec) { & chmod +x $out }
                 }
+                if (-not (Test-Path -LiteralPath $stage)) { New-Item -ItemType Directory -Force -Path $stage | Out-Null }
+                [System.IO.File]::WriteAllText((Join-Path $stage '.codegem-version'), "$($byName[$name].version)`n")
 
                 if (Test-Path -LiteralPath $dest) {
                     $backupRoot = Join-Path $target '.backup'
@@ -178,9 +222,15 @@ function Install-Skills {
             Write-Host "  Skipped, already installed ($($skipped.Count)): $($skipped -join ', ')"
             Write-Host "    to update: Install-Skills -Force $($skipped -join ' ')"
         }
-        if ($skippedDeps.Count -gt 0) {
+        if ($skippedDeps.Count -gt 0 -and -not $Update) {
             Write-Host "  Dependencies already installed, left as is ($($skippedDeps.Count)): $($skippedDeps -join ', ')"
             if ($Force) { Write-Host "    -Force only replaces skills you name; name these to update them." }
+        }
+        if ($upToDate.Count -gt 0) { Write-Host "  Already up to date ($($upToDate.Count)): $($upToDate -join ', ')" }
+        $fresh = @($newAvailable | Where-Object { $installed -notcontains $_ })
+        if ($fresh.Count -gt 0) {
+            Write-Host "  New skills you don't have yet ($($fresh.Count)): $($fresh -join ', ')"
+            Write-Host "    to add them: Install-Skills <name> ...   or   Install-Skills -All"
         }
         if ($installed.Count -eq 0 -and $updated.Count -eq 0) { Write-Host "  Nothing new to install." }
         Write-Host ""

@@ -994,6 +994,8 @@ pre.codeblock code { background: none; padding: 0; font-size: inherit; }
 .skills-intro { display: grid; gap: 18px; margin-top: 8px; }
 @media (min-width: 900px) { .skills-intro { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: stretch; } }
 .skills-intro .card { display: flex; flex-direction: column; }
+.update-card { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; border-left: 3px solid var(--accent, currentColor); }
+.update-card h2 { margin: 0; }
 .skills-intro .card h2 { font-size: 1.25rem; margin: 0 0 6px; }
 .skills-intro .card .cmd { margin-bottom: 0.6rem; }
 .skills-intro .card .btn { align-self: flex-start; margin-top: auto; }

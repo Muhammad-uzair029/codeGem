@@ -77,12 +77,16 @@ import InstallCommand from '../components/InstallCommand.astro';
     </section>
 
     <h2 id="options">Install options</h2>
-    <h3>Update a skill</h3>
-    <p>Re-run the install command with <code>--force</code> and the skill's name. Your current copy is moved to <code>.claude/skills/.backup/&lt;name&gt;-&lt;time&gt;/</code> first, so any changes you made are kept there.</p>
-    <InstallCommand args={['--force', 'feature-loop']} label="Update the feature-loop" />
-    <div class="note">
-      <p><code>--force</code> only replaces the skills you name. Skills pulled in automatically as dependencies are left alone. To update one of those, name it too.</p>
-    </div>
+    <h3 id="update">Update your skills</h3>
+    <p>Skills improve over time, and new ones get added. Run this in your project folder to bring everything you have up to date:</p>
+    <InstallCommand args={['--update']} label="Update all my skills" />
+    <ul class="muted">
+      <li>Only skills that changed are replaced; the rest are left alone.</li>
+      <li>Your old copy is moved to <code>.claude/skills/.backup/&lt;name&gt;-&lt;time&gt;/</code> first, so local edits are never lost.</li>
+      <li>It lists new skills you don't have yet, so you can add them.</li>
+      <li>Skills you wrote yourself (folders the site doesn't know) are never touched.</li>
+    </ul>
+    <p>To update just one skill, name it: <code>--update feature-loop</code>. To reinstall a skill even if it hasn't changed, use <code>--force feature-loop</code>.</p>
 
     <h3>Remove a skill</h3>
     <p>Delete its folder. That is all there is to it.</p>
@@ -102,7 +106,8 @@ Remove-Item -Recurse -Force .claude\skills\feature-loop</code></pre>
           <tr><td><code>--all</code></td><td><code>-All</code></td><td>Install every skill</td></tr>
           <tr><td><code>--global</code></td><td><code>-Global</code></td><td>Install to <code>~/.claude/skills/</code> for all projects</td></tr>
           <tr><td><code>--no-deps</code></td><td><code>-NoDeps</code></td><td>Do not add the skills a skill uses</td></tr>
-          <tr><td><code>--force</code></td><td><code>-Force</code></td><td>Replace the named skills (old copy backed up)</td></tr>
+          <tr><td><code>--update</code></td><td><code>-Update</code></td><td>Update the skills you already have, if they changed (old copies backed up)</td></tr>
+          <tr><td><code>--force</code></td><td><code>-Force</code></td><td>Reinstall the named skills even if unchanged (old copy backed up)</td></tr>
           <tr><td><code>--list</code></td><td><code>-List</code></td><td>Show the available skills</td></tr>
         </tbody>
       </table>

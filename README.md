@@ -21,6 +21,12 @@ curl -fsSL https://SKILLS-SITE-URL/install.sh | bash -s -- feature-loop   # or -
 irm https://SKILLS-SITE-URL/install.ps1 | iex; Install-Skills feature-loop   # or -All
 ```
 
+**Keep them up to date:** run the same command with `--update` (Windows: `-Update`). It updates only the skills that changed, backs up your old copies, and lists new skills you don't have yet.
+
+```bash
+curl -fsSL https://SKILLS-SITE-URL/install.sh | bash -s -- --update
+```
+
 The site lives in [`site/`](site/README.md) and deploys to Vercel or Netlify.
 
 > Click any section below to expand it.

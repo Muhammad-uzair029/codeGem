@@ -81,8 +81,9 @@ for d in $FL_DEPS; do [ -f "$P/.claude/skills/$d/SKILL.md" ] || missing="$missin
 check "all $(echo $FL_DEPS | wc -w | tr -d ' ') dependencies installed${missing:+ (missing:$missing)}" [ -z "$missing" ]
 check "transitive dep via feature-review (pre-merge-check) present" [ -d "$P/.claude/skills/pre-merge-check" ]
 check "no unrelated skills (git-push absent)" [ ! -e "$P/.claude/skills/git-push" ]
-check "feature-loop has all $FL_FILES files" [ "$(find "$P/.claude/skills/feature-loop" -type f | wc -l | tr -d ' ')" -eq "$FL_FILES" ]
-check "files identical to source" diff -r "$SKILLS_SRC/feature-loop" "$P/.claude/skills/feature-loop"
+check "feature-loop has all $FL_FILES files" [ "$(find "$P/.claude/skills/feature-loop" -type f ! -name .codegem-version | wc -l | tr -d ' ')" -eq "$FL_FILES" ]
+check "version marker written" [ -s "$P/.claude/skills/feature-loop/.codegem-version" ]
+check "files identical to source" diff -r -x .codegem-version "$SKILLS_SRC/feature-loop" "$P/.claude/skills/feature-loop"
 check "summary printed" grep -q "Installed (" <<<"$OUT"
 
 echo "2. executable bits preserved"
@@ -133,7 +134,7 @@ P="$WORK/p7"
 install "$P" --all
 check "exit 0" [ "$RC" -eq 0 ]
 check "all $TOTAL skills installed" [ "$(count_dirs "$P/.claude/skills")" -eq "$TOTAL" ]
-check "every skill matches source" diff -r "$SKILLS_SRC" "$P/.claude/skills"
+check "every skill matches source" diff -r -x .codegem-version "$SKILLS_SRC" "$P/.claude/skills"
 check "pentesting script executable" [ -x "$P/.claude/skills/pentesting/scripts/pentest-scope.sh" ]
 
 echo "8. --global"
@@ -172,6 +173,43 @@ set +e
 OUT="$(cd "$P" && CODEGEM_SKILLS_URL="$URL" "$INSTALL_BASH" "$DIST/install.sh" pr-open 2>&1)"; RC=$?
 set -e
 check "CODEGEM_SKILLS_URL override works" [ -f "$P/.claude/skills/pr-open/SKILL.md" ]
+
+echo "11. --update"
+P="$WORK/p11"
+install "$P" feature-loop git-push
+S="$P/.claude/skills"
+mkdir -p "$S/my-own-skill" && echo "custom" >"$S/my-own-skill/SKILL.md"
+install "$P" --update
+check "exit 0 when everything is current" [ "$RC" -eq 0 ]
+check "reports all up to date" grep -q "installed skills are up to date" <<<"$OUT"
+check "lists new skills you don't have" grep -q "New skills you don't have yet" <<<"$OUT"
+check "no backup when nothing changed" [ ! -e "$S/.backup" ]
+# Simulate a newer site version of pre-merge-check, plus a local edit to it.
+echo "stale" >"$S/pre-merge-check/.codegem-version"
+echo "MY EDIT" >>"$S/pre-merge-check/SKILL.md"
+# Simulate a skill installed before version markers existed.
+rm "$S/git-push/.codegem-version"
+install "$P" --update
+check "exit 0" [ "$RC" -eq 0 ]
+check "changed skill updated" grep -q "Updated (2): .*pre-merge-check" <<<"$OUT"
+check "marker-less skill treated as outdated" grep -q "Updated (2): .*git-push" <<<"$OUT"
+check "fresh copy matches source" diff -r -x .codegem-version "$SKILLS_SRC/pre-merge-check" "$S/pre-merge-check"
+check "local edit kept in backup" grep -rq "MY EDIT" "$S/.backup"
+check "unchanged skills left alone" grep -q "Already up to date" <<<"$OUT"
+check "marker refreshed" [ "$(cat "$S/pre-merge-check/.codegem-version")" = "$(awk -F '\t' '$1=="skill" && $2=="pre-merge-check" {print $4}' "$SERVE/install-index.tsv")" ]
+check "custom skill untouched" grep -q "custom" "$S/my-own-skill/SKILL.md"
+check "only 2 backups made" [ "$(find "$S/.backup" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" -eq 2 ]
+install "$P" --update git-push
+check "named update of a current skill: up to date" grep -q "installed skills are up to date" <<<"$OUT"
+install "$P" --update team-pulse
+check "updating a skill that isn't installed fails" [ "$RC" -ne 0 ]
+install "$P" --update --all
+check "--update --all is rejected" [ "$RC" -ne 0 ]
+P="$WORK/p11-empty"
+install "$P" --update
+check "empty project: exit 0" [ "$RC" -eq 0 ]
+check "empty project: says nothing installed" grep -q "No codeGem skills are installed" <<<"$OUT"
+check "empty project: creates nothing" [ ! -e "$P/.claude" ]
 
 echo ""
 echo "install.sh smoke test: $PASS passed, $FAIL failed"

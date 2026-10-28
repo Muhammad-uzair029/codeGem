@@ -2,7 +2,7 @@
 // Used at build time (initial HTML, with the baked URL) and in the browser
 // (rewritten with window.location.origin so copy-paste is always correct).
 
-const PS_FLAGS = { '--all': '-All', '--force': '-Force', '--global': '-Global', '--no-deps': '-NoDeps' };
+const PS_FLAGS = { '--all': '-All', '--force': '-Force', '--global': '-Global', '--no-deps': '-NoDeps', '--update': '-Update' };
 
 /** @param {'unix'|'windows'} os @param {string} origin @param {string[]} args */
 export function installCommand(os, origin, args) {

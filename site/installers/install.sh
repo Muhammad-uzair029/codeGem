@@ -3,6 +3,7 @@
 #
 #   curl -fsSL @@SITE_URL@@/install.sh | bash -s -- feature-loop pre-merge-check
 #   curl -fsSL @@SITE_URL@@/install.sh | bash -s -- --all
+#   curl -fsSL @@SITE_URL@@/install.sh | bash -s -- --update
 #
 # Options:
 #   <skill> ...    Skills to install. Skills they use are installed too.
@@ -12,6 +13,9 @@
 #   --force        Replace skills you named that are already installed. The old copy is
 #                  moved to .claude/skills/.backup/<name>-<timestamp>/ first.
 #                  Never applies to skills pulled in as dependencies.
+#   --update       Update every codeGem skill already installed here to the latest
+#                  version (only the ones that changed; old copies are backed up)
+#                  and list new skills you don't have yet. Name skills to limit it.
 #   --list         List available skills and exit.
 #   -h, --help     Show this help.
 #
@@ -32,6 +36,7 @@ codeGem skills installer
 
 Usage:  install.sh [options] <skill> [<skill> ...]
         install.sh --all
+        install.sh --update
 
 Options:
   --all        Install every skill
@@ -39,6 +44,8 @@ Options:
   --no-deps    Skip the skills a named skill uses
   --force      Replace skills you named that are already installed
                (old copy is backed up to .claude/skills/.backup/<name>-<timestamp>/)
+  --update     Update the skills already installed here (changed ones only,
+               old copies backed up) and show new skills you don't have yet
   --list       List available skills
   -h, --help   Show this help
 USAGE
@@ -65,7 +72,7 @@ cg_join() {
 main() {
   set -euo pipefail
 
-  local want_all=0 global=0 no_deps=0 force=0 list=0
+  local want_all=0 global=0 no_deps=0 force=0 list=0 update=0
   local names=()
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -73,6 +80,7 @@ main() {
       --global|-g) global=1 ;;
       --no-deps) no_deps=1 ;;
       --force|-f) force=1 ;;
+      --update|-u) update=1 ;;
       --list|-l) list=1 ;;
       -h|--help) cg_usage; return 0 ;;
       -*) cg_err "unknown option: $1"; cg_usage >&2; return 2 ;;
@@ -123,6 +131,53 @@ main() {
     return 0
   fi
 
+  local target
+  if [ "$global" -eq 1 ]; then
+    target="$HOME/.claude/skills"
+  else
+    target="$(pwd)/.claude/skills"
+  fi
+
+  # --update: work out which installed skills changed on the site.
+  local up_to_date=() new_available=()
+  if [ "$update" -eq 1 ]; then
+    if [ "$want_all" -eq 1 ]; then
+      cg_err "--update updates what's installed; use --all on its own to install everything."
+      return 2
+    fi
+    local s have=()
+    for s in "${all_skills[@]}"; do
+      if [ -d "$target/$s" ]; then have+=("$s"); else new_available+=("$s"); fi
+    done
+    if [ ${#have[@]} -eq 0 ]; then
+      cg_say "No codeGem skills are installed in $target yet."
+      cg_say "Install some first, e.g.:  install.sh --all"
+      return 0
+    fi
+    if [ ${#names[@]} -eq 0 ]; then names=("${have[@]}"); fi
+    local outdated=() cur latest
+    for s in "${names[@]}"; do
+      if ! cg_in_list "$s" "${have[@]}"; then
+        cg_err "$s is not installed in $target; install it without --update."
+        return 2
+      fi
+      latest="$(awk -F '\t' -v n="$s" '$1=="skill" && $2==n {print $4}' "$index")"
+      cur="$(cat "$target/$s/.codegem-version" 2>/dev/null || true)"
+      if [ -n "$latest" ] && [ "$cur" = "$latest" ]; then up_to_date+=("$s"); else outdated+=("$s"); fi
+    done
+    if [ ${#outdated[@]} -eq 0 ]; then
+      cg_say "codeGem skills -> $target"
+      cg_say "  All ${#up_to_date[@]} installed skills are up to date."
+      if [ ${#new_available[@]} -gt 0 ]; then
+        cg_say "  New skills you don't have yet (${#new_available[@]}): $(cg_join ', ' "${new_available[@]}")"
+        cg_say "    to add them: install.sh <name> ...   or   install.sh --all"
+      fi
+      return 0
+    fi
+    names=("${outdated[@]}")
+    force=1
+  fi
+
   if [ "$want_all" -eq 1 ]; then
     names=("${all_skills[@]}")
   fi
@@ -162,12 +217,6 @@ main() {
     done
   fi
 
-  local target
-  if [ "$global" -eq 1 ]; then
-    target="$HOME/.claude/skills"
-  else
-    target="$(pwd)/.claude/skills"
-  fi
   mkdir -p "$target"
 
   local stamp
@@ -212,6 +261,7 @@ main() {
     fi
     local f
     for f in ${execs[@]+"${execs[@]}"}; do chmod +x "$f"; done
+    awk -F '\t' -v n="$name" '$1=="skill" && $2==n {print $4}' "$index" > "$stage/.codegem-version"
 
     if [ -e "$dest" ]; then
       local backup="$target/.backup/$name-$stamp" i=1
@@ -239,10 +289,21 @@ main() {
     cg_say "  Skipped, already installed (${#skipped[@]}): $(cg_join ', ' "${skipped[@]}")"
     cg_say "    to update: re-run with --force $(cg_join ' ' "${skipped[@]}")"
   fi
-  if [ ${#skipped_deps[@]} -gt 0 ]; then
+  if [ ${#skipped_deps[@]} -gt 0 ] && [ "$update" -eq 0 ]; then
     cg_say "  Dependencies already installed, left as is (${#skipped_deps[@]}): $(cg_join ', ' "${skipped_deps[@]}")"
     if [ "$force" -eq 1 ]; then
       cg_say "    --force only replaces skills you name; name these to update them."
+    fi
+  fi
+  if [ ${#up_to_date[@]} -gt 0 ]; then
+    cg_say "  Already up to date (${#up_to_date[@]}): $(cg_join ', ' "${up_to_date[@]}")"
+  fi
+  if [ ${#new_available[@]} -gt 0 ]; then
+    local fresh=() s
+    for s in "${new_available[@]}"; do cg_in_list "$s" ${installed[@]+"${installed[@]}"} || fresh+=("$s"); done
+    if [ ${#fresh[@]} -gt 0 ]; then
+      cg_say "  New skills you don't have yet (${#fresh[@]}): $(cg_join ', ' "${fresh[@]}")"
+      cg_say "    to add them: install.sh <name> ...   or   install.sh --all"
     fi
   fi
   if [ ${#installed[@]} -eq 0 ] && [ ${#updated[@]} -eq 0 ]; then

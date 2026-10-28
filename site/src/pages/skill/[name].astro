@@ -57,8 +57,8 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
         )}
         <details class="box">
           <summary>Already installed? Update it</summary>
-          <p class="muted">Gets the latest version. Your current copy is moved to <code>.claude/skills/.backup/{skill.name}-&lt;time&gt;/</code> first, so local edits are never lost. Skills it uses are not replaced.</p>
-          <InstallCommand args={['--force', skill.name]} label={`Update ${skill.name}`} />
+          <p class="muted">Gets the latest version if this skill changed (current version <code>{skill.version}</code>). Your old copy is moved to <code>.claude/skills/.backup/{skill.name}-&lt;time&gt;/</code> first, so local edits are never lost. To update every skill you have at once, see <a href="/skill/#update">Keep them up to date</a>.</p>
+          <InstallCommand args={['--update', skill.name]} label={`Update ${skill.name}`} />
         </details>
 
         <h2>What it does</h2>
