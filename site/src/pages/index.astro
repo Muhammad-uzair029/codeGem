@@ -1,44 +1,41 @@
 ---
 import Base from '../layouts/Base.astro';
 import InstallCommand from '../components/InstallCommand.astro';
-import LoopDiagram from '../components/LoopDiagram.astro';
-import QuickStart from '../components/QuickStart.astro';
 import HeroGem from '../components/HeroGem.astro';
-import SkillMap from '../components/SkillMap.astro';
-import GroupIcon from '../components/GroupIcon.astro';
 import DownloadApp from '../components/DownloadApp.astro';
 import { getManifest } from '../../lib/skills.mjs';
-import { groupSlug } from '../lib/groups.js';
 
 const m = getManifest();
-const loop = m.skills.find((s) => s.name === 'feature-loop');
 ---
 <Base title="codeGem" active="home">
-  <section class="hero">
+  <section class="hero hero-hub">
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="hero-kicker" data-anim style="--d:0">
-          <span class="dot" aria-hidden="true"></span>For AI engineers
+          <span class="dot" aria-hidden="true"></span>Free, for AI engineers
         </p>
-        <h1 data-anim style="--d:1">Build with AI. Understand it. Prove it.</h1>
+        <h1 data-anim style="--d:1">Build with AI. Learn how it works. Ace the interview.</h1>
         <p class="lede" data-anim style="--d:2">
-          codeGem brings together Claude Code skills you install with one command, ten interactive
-          AI-engineering modules, and interview practice with a timed mock mode.
+          codeGem is one hub with three parts: Claude Code skills you install with one command,
+          10 short AI-engineering lessons, and interview practice.
         </p>
         <div class="actions" data-anim style="--d:3">
-          <a class="btn" href="#skills">Get the skills</a>
+          <a class="btn" href="/skill/">Get the skills</a>
           <a class="btn secondary" href="/learn/">Start learning</a>
+          <a class="btn secondary" href="/interview/">Practise interviews</a>
         </div>
       </div>
       <div class="hero-art" data-anim style="--d:2">
         <HeroGem />
       </div>
     </div>
+  </section>
 
-    <div class="wrap">
-      <ul class="pillars" aria-label="What is on codeGem">
-        <li data-anim style="--d:4">
-          <a class="pillar" data-p="skills" href="/browse/">
+  <section class="wrap section hub-pillars" aria-labelledby="pillars-h">
+    <h2 id="pillars-h" class="sr-only">What is on codeGem</h2>
+      <ul class="pillars">
+        <li>
+          <a class="pillar" data-p="skills" href="/skill/">
             <svg class="pillar-art" viewBox="0 0 240 110" aria-hidden="true">
               <rect class="pa-panel" x="16" y="14" width="208" height="82" rx="10" />
               <circle class="pa-dim" cx="32" cy="28" r="3.5" /><circle class="pa-dim" cx="44" cy="28" r="3.5" /><circle class="pa-dim" cx="56" cy="28" r="3.5" />
@@ -48,12 +45,12 @@ const loop = m.skills.find((s) => s.name === 'feature-loop');
               <path class="pa-gem-line" d="M186 80 h28 M193 71 l4 9 3 -9 3 9 4 -9 M197 80 l3 16 3 -16" />
             </svg>
             <span class="pillar-meta">{m.skillCount} skills</span>
-            <h2>Skills</h2>
-            <p>Claude Code skills that plan features, check code before merge, and handle git chores. One command installs them.</p>
-            <span class="pillar-go">Browse skills</span>
+            <h3>Skills</h3>
+            <p>Ready-made instructions for Claude Code that plan features, check code before merge, and handle git chores. One command installs them.</p>
+            <span class="pillar-go">Explore skills</span>
           </a>
         </li>
-        <li data-anim style="--d:5">
+        <li>
           <a class="pillar" data-p="learn" href="/learn/">
             <svg class="pillar-art" viewBox="0 0 240 110" aria-hidden="true">
               <path class="pa-wire" d="M52 55 H100 M140 55 H188 M120 35 V20 H188 V40" />
@@ -68,12 +65,12 @@ const loop = m.skills.find((s) => s.name === 'feature-loop');
               <rect class="pa-fill" x="16" y="90" width="124" height="6" rx="3" />
             </svg>
             <span class="pillar-meta">10 modules</span>
-            <h2>Learn</h2>
-            <p>From LLM basics to RAG, agents, evals and AI system design. Short lessons with animated diagrams, and your progress is saved.</p>
+            <h3>Learn</h3>
+            <p>From LLM basics to RAG, agents, evals and AI system design. Short lessons with diagrams; your progress is saved in your browser.</p>
             <span class="pillar-go">Start learning</span>
           </a>
         </li>
-        <li data-anim style="--d:6">
+        <li>
           <a class="pillar" data-p="interview" href="/interview/">
             <svg class="pillar-art" viewBox="0 0 240 110" aria-hidden="true">
               <rect class="pa-panel" x="16" y="16" width="132" height="34" rx="10" />
@@ -86,99 +83,58 @@ const loop = m.skills.find((s) => s.name === 'feature-loop');
               <text class="pa-label" x="192" y="63" text-anchor="middle">12:00</text>
             </svg>
             <span class="pillar-meta">Practice and mock interviews</span>
-            <h2>Interview prep</h2>
-            <p>Questions for every topic: multiple choice, open answers with model responses, and system design. Then try a timed mock interview.</p>
-            <span class="pillar-go">Practise questions</span>
+            <h3>Interview prep</h3>
+            <p>Questions for every topic, with model answers. When you feel ready, try a timed mock interview.</p>
+            <span class="pillar-go">Start practising</span>
           </a>
         </li>
       </ul>
-      <a class="courses-strip" href="/courses/" data-anim style="--d:7">
+      <a class="courses-strip" href="/courses/">
         <span class="courses-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5 12 3l9 3.5-9 3.5z" /><path d="M7 8.3V13c0 1.7 2.2 3 5 3s5-1.3 5-3V8.3" /><path d="M21 6.5V12" /></svg>
         </span>
         <span class="courses-text"><strong>Courses</strong> A checked list of AI courses worth your time, starting with Anthropic's own.</span>
         <span class="pillar-go">See courses</span>
       </a>
-    </div>
   </section>
 
-  <section class="wrap section" id="skills" aria-labelledby="skills-h">
+  <section class="wrap section" aria-labelledby="start-h">
     <header class="section-head" data-reveal>
-      <h2 id="skills-h">Skills: install once, then type a slash command</h2>
-      <p class="section-lead">
-        A skill is a folder of instructions Claude Code follows when you type a command like <code>/feature-loop</code>.
-        Get all {m.skillCount} at once, or <a href="/browse/">pick the ones you want</a>.
-      </p>
+      <h2 id="start-h">Get started in 3 steps</h2>
+      <p class="section-lead">New to all this? The <a href="/getting-started/">Getting started guide</a> walks through each part slowly.</p>
     </header>
-    <div class="get-all" data-reveal>
-      <InstallCommand args={['--all']} label={`Get all ${m.skillCount} skills`} />
-      <p class="faint">Run it in your project folder. Skills you already have are never overwritten. Add <code>--global</code> (Windows: <code>-Global</code>) to use them in every project.</p>
-    </div>
-  </section>
-
-  <section class="band band-tight" aria-labelledby="qs-h">
-    <div class="wrap">
-      <header class="section-head" data-reveal>
-        <h2 id="qs-h">Your first skill in three steps</h2>
-        <p class="section-lead">Click a step to see that part of the run.</p>
-      </header>
-      <div data-reveal><QuickStart /></div>
-    </div>
-  </section>
-
-  <section class="wrap section" aria-labelledby="loop-h">
-    <header class="section-head" data-reveal>
-      <h2 id="loop-h">The feature-loop: from brief to shipped code</h2>
-      <p class="section-lead">
-        The headline skill. Write a short brief, run <code>/feature-loop</code>, and Claude works through six stages.
-        It stops twice for your approval, or never with <code>-y</code>.
-      </p>
-    </header>
-    <div data-reveal><LoopDiagram /></div>
-    {loop && (
-      <div class="loop-install" data-reveal>
-        <div>
-          <h3>Install just the feature-loop</h3>
-          <p class="muted">Also installs the {loop.allDeps.length} skills it uses to build and check your feature. <a href="/skill/feature-loop/">Read the full guide</a>.</p>
+    <ol class="hub-steps" data-reveal>
+      <li class="hub-step hub-step-wide">
+        <span class="hub-num" aria-hidden="true">1</span>
+        <div class="hub-step-body">
+          <h3>Install the skills</h3>
+          <p class="muted">Run this in your project folder. It adds all {m.skillCount} skills to <code>.claude/skills/</code> and changes nothing else.</p>
+          <InstallCommand args={['--all']} label={`Install all ${m.skillCount} skills`} />
+          <p class="faint">Want only some, or the details first? <a href="/skill/">See the Skills page</a>.</p>
         </div>
-        <InstallCommand args={['feature-loop']} />
-      </div>
-    )}
-  </section>
-
-  <section class="band" aria-labelledby="map-h">
-    <div class="wrap">
-      <header class="section-head" data-reveal>
-        <h2 id="map-h">How the skills connect</h2>
-        <p class="section-lead">Some skills call others. Installing one brings along everything it needs. Hover or pick a skill to see both directions.</p>
-      </header>
-      <div data-reveal><SkillMap selected="feature-loop" /></div>
-    </div>
-  </section>
-
-  <section class="wrap section" aria-labelledby="groups-h">
-    <header class="section-head" data-reveal>
-      <h2 id="groups-h">Find a skill by what you need</h2>
-    </header>
-    <div class="grid cols-3 tiles">
-      {m.groups.map((g, i) => (
-        <a class="tile" data-g={groupSlug(g.name)} href={`/browse/?group=${encodeURIComponent(g.name)}`} data-reveal style={`--d:${i % 3}`}>
-          <div class="tile-top">
-            <GroupIcon group={g.name} size={42} />
-            <span class="tile-count">{g.skills.length} {g.skills.length === 1 ? 'skill' : 'skills'}</span>
-          </div>
-          <h3>{g.name}</h3>
-          <p>{g.blurb}</p>
-          <div class="names">{g.skills.slice(0, 4).map((n) => <code>{n}</code>)}{g.skills.length > 4 && <span class="faint">+{g.skills.length - 4} more</span>}</div>
-        </a>
-      ))}
-    </div>
+      </li>
+      <li class="hub-step">
+        <span class="hub-num" aria-hidden="true">2</span>
+        <div class="hub-step-body">
+          <h3>Use one in Claude Code</h3>
+          <p class="muted">Run <code>claude</code> in the same folder, then type <code>/</code> and a skill name, for example <code>/feature-loop</code>.</p>
+          <p class="faint">No Claude Code yet? <a href="/getting-started/#skills">Set it up here</a>.</p>
+        </div>
+      </li>
+      <li class="hub-step">
+        <span class="hub-num" aria-hidden="true">3</span>
+        <div class="hub-step-body">
+          <h3>Learn, then practise</h3>
+          <p class="muted">Work through the <a href="/learn/">Learn modules</a> at your own pace, then test yourself in <a href="/interview/">Interview prep</a>.</p>
+        </div>
+      </li>
+    </ol>
   </section>
 
   <section class="wrap section" id="download" aria-labelledby="dl-h">
     <header class="section-head" data-reveal>
-      <h2 id="dl-h">Prefer a desktop app?</h2>
-      <p class="section-lead">Feature-Loop-Manager runs the feature-loop for you in a window instead of the terminal.</p>
+      <h2 id="dl-h">Get the codeGem desktop app</h2>
+      <p class="section-lead">Optional. It runs the feature-loop skill in a window instead of the terminal, and installs the skills for you.</p>
     </header>
     <div data-reveal><DownloadApp /></div>
   </section>

@@ -1,0 +1,94 @@
+---
+// Skills landing: what a skill is, how to install, the feature-loop, how the
+// skills connect, and the groups. Browse (/browse/) is the searchable list.
+// Lives at /skill/ because /skills/ is reserved for the raw skill files the
+// installers download (dist/skills/<name>/..., served as text/plain).
+import Base from '../../layouts/Base.astro';
+import InstallCommand from '../../components/InstallCommand.astro';
+import LoopDiagram from '../../components/LoopDiagram.astro';
+import SkillMap from '../../components/SkillMap.astro';
+import GroupIcon from '../../components/GroupIcon.astro';
+import { getManifest } from '../../../lib/skills.mjs';
+import { groupSlug } from '../../lib/groups.js';
+
+const m = getManifest();
+---
+<Base title="Skills" active="skills" description={`${m.skillCount} Claude Code skills you install with one command: the feature-loop, quality gates, security checks and more.`}>
+  <div class="wrap">
+    <header class="page-head">
+      <h1>Claude Code skills</h1>
+      <p class="lede">
+        A <strong>skill</strong> is a small folder of instructions that Claude Code follows when you type a slash
+        command, like <code>/feature-loop</code>. Install them once per project and they are ready whenever you run <code>claude</code>.
+      </p>
+      <ul class="page-jump" aria-label="On this page">
+        <li><a href="#install">Install</a></li>
+        <li><a href="#loop">The feature-loop</a></li>
+        <li><a href="#map">How skills connect</a></li>
+        <li><a href="#groups">Skills by task</a></li>
+      </ul>
+    </header>
+
+    <section class="skills-intro" id="install" aria-label="Install skills">
+      <div class="card">
+        <h2>Install every skill</h2>
+        <p class="muted">Run this in your project's top folder. Skills you already have are kept, never overwritten.</p>
+        <InstallCommand args={['--all']} label={`Install all ${m.skillCount} skills`} />
+        <p class="faint" style="margin:0">To use them in every project, add <code>--global</code> (Windows: <code>-Global</code>). More options are in <a href="/getting-started/#options">Getting started</a>.</p>
+      </div>
+      <div class="card">
+        <h2>Or pick only what you need</h2>
+        <p class="muted">Search all {m.skillCount} skills, tick the ones you want, and copy a command that installs just those (plus anything they rely on).</p>
+        <a class="btn" href="/browse/">Browse all skills</a>
+      </div>
+    </section>
+
+    <section class="section" id="loop" aria-labelledby="loop-h">
+      <header class="section-head" data-reveal>
+        <h2 id="loop-h">The feature-loop: from a short brief to shipped code</h2>
+        <p class="section-lead">
+          The main skill. You write a few lines about a feature, type <code>/feature-loop</code>, and Claude plans, builds and
+          checks it in six stages. It pauses twice so you can approve the plan (add <code>-y</code> to skip the pauses).
+        </p>
+      </header>
+      <div data-reveal><LoopDiagram /></div>
+      <p class="muted"><a href="/skill/feature-loop/">Read the feature-loop guide</a> for its commands and options.</p>
+    </section>
+
+    <section class="section" id="map" aria-labelledby="map-h">
+      <header class="section-head" data-reveal>
+        <h2 id="map-h">How the skills connect</h2>
+        <p class="section-lead">Some skills call others while they run, so installing one also installs what it needs. Pick a skill to see both directions.</p>
+      </header>
+      <div data-reveal><SkillMap selected="feature-loop" /></div>
+    </section>
+
+    <section class="section" id="groups" aria-labelledby="groups-h">
+      <header class="section-head" data-reveal>
+        <h2 id="groups-h">Find a skill by what you need</h2>
+        <p class="section-lead">Each card opens Browse filtered to that kind of task.</p>
+      </header>
+      <div class="grid cols-3 tiles">
+        {m.groups.map((g) => (
+          <a class="tile" data-g={groupSlug(g.name)} href={`/browse/?group=${encodeURIComponent(g.name)}`} data-reveal>
+            <div class="tile-top">
+              <GroupIcon group={g.name} size={42} />
+              <span class="tile-count">{g.skills.length} {g.skills.length === 1 ? 'skill' : 'skills'}</span>
+            </div>
+            <h3>{g.name}</h3>
+            <p>{g.blurb}</p>
+            <div class="names">{g.skills.slice(0, 4).map((n) => <code>{n}</code>)}{g.skills.length > 4 && <span class="faint">+{g.skills.length - 4} more</span>}</div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <aside class="cta-band" aria-label="Browse">
+      <div>
+        <h2>See every skill in one list</h2>
+        <p>Search by name or task, and build an install command for just the ones you pick.</p>
+      </div>
+      <a class="btn" href="/browse/">Browse all skills</a>
+    </aside>
+  </div>
+</Base>

@@ -1,12 +1,12 @@
 ---
-// The codeGem mark, drawn large: a cut gem whose six lower facets are the six
-// skill groups (each links to Browse filtered by that group), with every skill
-// as a small stone orbiting it. Static without JavaScript or with reduced motion.
+// The codeGem mark, drawn large: a cut gem whose three lower facets are the
+// three parts of the hub (Skills, Learn, Interview prep). Each facet is a
+// labelled link. Every skill orbits it as a small stone (decoration only).
+// Static without JavaScript or with reduced motion.
 import { getManifest } from '../../lib/skills.mjs';
 import { groupSlug } from '../lib/groups.js';
 
 const m = getManifest();
-const groups = m.groups.slice(0, 6);
 const cx = 220;
 const gy = 168; // girdle
 const bottom = { x: cx, y: 382 };
@@ -25,15 +25,20 @@ const crown = [
   [M, P2, g[4]],
   [P2, g[6], g[4]],
 ].map((tri) => tri.map(pt).join(' '));
-const facets = groups.map((grp, i) => ({
-  name: grp.name,
-  count: grp.skills.length,
-  slug: groupSlug(grp.name),
-  points: [g[i], g[i + 1], bottom].map(pt).join(' '),
-  // label anchor inside the facet
-  lx: (g[i].x + g[i + 1].x + bottom.x) / 3,
-  ly: (g[i].y + g[i + 1].y + bottom.y) / 3,
-}));
+const pillars = [
+  { key: 'skills', label: 'Skills', href: '/skill/', caption: 'Skills: install Claude Code skills with one command' },
+  { key: 'learn', label: 'Learn', href: '/learn/', caption: 'Learn: 10 short AI-engineering modules' },
+  { key: 'interview', label: 'Interview', href: '/interview/', caption: 'Interview prep: practice questions and a mock interview' },
+];
+// Label sits in the wide upper part of each facet, where it fits.
+const facets = pillars.map((p, i) => {
+  const a = g[i * 2];
+  const b = g[i * 2 + 2];
+  const t = 0.2; // how far down from the girdle
+  const l = a.x + (bottom.x - a.x) * t;
+  const r = b.x + (bottom.x - b.x) * t;
+  return { ...p, points: [a, b, bottom].map(pt).join(' '), lx: (l + r) / 2, ly: gy + (bottom.y - gy) * t + 5 };
+});
 const outline = [g[0], P1, P2, g[6], bottom].map(pt).join(' ');
 // Orbiting skills, ordered by group so colours cluster.
 const order = m.groups.map((x) => x.name);
@@ -45,9 +50,10 @@ const place = (t) => {
   const a = t * Math.PI * 2;
   return { x: orbit.cx + orbit.rx * Math.cos(a), y: orbit.cy + orbit.ry * Math.sin(a), front: Math.sin(a) > 0 };
 };
+const defaultCaption = 'Three parts, one hub. Pick a facet to jump in.';
 ---
-<figure class="gem" data-gem data-default-caption={`${groups.length} groups, ${m.skillCount} skills. Each lower facet is a group.`}>
-  <svg viewBox="0 0 440 420" role="group" aria-label="codeGem: skill groups">
+<figure class="gem" data-gem data-default-caption={defaultCaption}>
+  <svg viewBox="0 0 440 420" role="group" aria-label="codeGem: Skills, Learn and Interview prep">
     <defs>
       <linearGradient id="gem-sheen" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#fff" stop-opacity="0.55" />
@@ -75,13 +81,16 @@ const place = (t) => {
     <g class="gem-body">
       {crown.map((pts, i) => <polygon class={`crown c${i}`} points={pts} />)}
       {facets.map((f) => (
-        <a href={`/browse/?group=${encodeURIComponent(f.name)}`} class="facet-link" data-caption={`${f.name}: ${f.count} ${f.count === 1 ? 'skill' : 'skills'}`} aria-label={`Browse ${f.name}, ${f.count} skills`}>
-          <polygon class="facet" data-g={f.slug} points={f.points} />
+        <a href={f.href} class="facet-link" data-caption={f.caption} aria-label={f.caption}>
+          <polygon class="facet" data-p={f.key} points={f.points} />
         </a>
       ))}
       <polygon class="gem-sheen" points={outline} fill="url(#gem-sheen)" />
       <g clip-path="url(#gem-clip)" class="gem-sweep-wrap"><rect class="gem-sweep" x="-160" y="60" width="120" height="340" fill="url(#gem-sweep)" transform="skewX(-18)" /></g>
       <polygon class="gem-outline" points={outline} />
+      <g class="facet-labels" aria-hidden="true">
+        {facets.map((f) => <text class="facet-label" x={f.lx.toFixed(1)} y={f.ly.toFixed(1)} text-anchor="middle">{f.label}</text>)}
+      </g>
     </g>
 
     <g class="gem-stones-front" data-stones-front>
@@ -94,7 +103,7 @@ const place = (t) => {
       <path class="glint g3" d="M262 300 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" />
     </g>
   </svg>
-  <figcaption class="gem-caption" data-gem-caption aria-live="polite">{groups.length} groups, {m.skillCount} skills. Each lower facet is a group.</figcaption>
+  <figcaption class="gem-caption" data-gem-caption aria-live="polite">{defaultCaption}</figcaption>
 </figure>
 
 <script define:vars={{ orbit }}>

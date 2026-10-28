@@ -1,9 +1,10 @@
 ---
-// How skills connect. Skills sit on a ring, grouped by colour; a line runs from
-// a skill to each skill it calls. Picking a skill (hover, click, keyboard, or
-// the list) highlights what it installs and what installs it, and the panel
-// lists both. The panel and list work without the drawing (and without JS
-// they show the starting skill).
+// How skills connect. Skills sit on a ring, grouped by colour. Only the
+// selected skill's lines are drawn: to what it installs and from what needs
+// it. Picking a skill (hover, click, keyboard, or the list) switches it, and
+// the panel lists both directions. On narrow screens the ring is hidden and
+// the panel is the whole view (a plain list). Without JS the panel shows the
+// starting skill.
 import { getManifest } from '../../lib/skills.mjs';
 import { groupSlug } from '../lib/groups.js';
 
@@ -16,7 +17,7 @@ const { selected = 'feature-loop' } = Astro.props;
 const order = m.groups.map((g) => g.name);
 const skills = [...m.skills].sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.name.localeCompare(b.name));
 
-const R = 250;
+const R = 200;
 const GAP = 1.2; // empty slots between groups
 let slots = 0;
 let prev = '';
@@ -26,7 +27,7 @@ const raw = skills.map((s) => {
   return { s, slot: slots++ };
 });
 const total = slots + GAP;
-const short = (n) => (n.length > 24 ? n.slice(0, 22) + '…' : n);
+const short = (n) => (n.length > 20 ? n.slice(0, 18) + '…' : n);
 const nodes = raw.map(({ s, slot }) => {
   const deg = (slot / total) * 360 - 90 + (GAP / total) * 180;
   const rad = (deg * Math.PI) / 180;
@@ -59,7 +60,7 @@ const json = JSON.stringify({ data, edges }).replace(/</g, '\\u003c');
 ---
 <div class="map" data-map data-selected={start.name}>
   <div class="map-figure">
-    <svg class="map-svg" viewBox="-430 -430 860 860" role="group" aria-label="Skill connections">
+    <svg class="map-svg" viewBox="-470 -470 940 940" role="group" aria-label="Skill connections">
       <circle class="map-ring" r={R} />
       <g class="map-edges">
         {edges.map((e) => <path class="edge" data-from={e.from} data-to={e.to} d={edgePath(e.from, e.to)} />)}
@@ -67,11 +68,12 @@ const json = JSON.stringify({ data, edges }).replace(/</g, '\\u003c');
       <g class="map-nodes">
         {nodes.map((n) => (
           <g class="node" data-name={n.name} data-g={n.slug} tabindex="-1" role="button" aria-label={`Show connections for ${n.name}`}>
-            <circle class="node-hit" cx={f(n.x)} cy={f(n.y)} r="14" />
-            <circle class="node-dot" cx={f(n.x)} cy={f(n.y)} r="6.5" />
+            <circle class="node-hit" cx={f(n.x)} cy={f(n.y)} r="16" />
+            <title>{n.name}</title>
+            <circle class="node-dot" cx={f(n.x)} cy={f(n.y)} r="7" />
             <text
               class="node-label"
-              transform={`rotate(${f(n.deg)}) translate(${R + 16} 0)${n.flip ? ' rotate(180)' : ''}`}
+              transform={`rotate(${f(n.deg)}) translate(${R + 18} 0)${n.flip ? ' rotate(180)' : ''}`}
               text-anchor={n.flip ? 'end' : 'start'}
               dy="0.35em"
             >{n.label}</text>
@@ -79,21 +81,21 @@ const json = JSON.stringify({ data, edges }).replace(/</g, '\\u003c');
         ))}
       </g>
       <g class="map-center" aria-hidden="true">
-        <rect class="map-center-bg" x="-135" y="-34" width="270" height="72" rx="16" />
+        <rect class="map-center-bg" x="-150" y="-38" width="300" height="80" rx="18" />
         <text class="map-center-name" data-map-center y="-4" text-anchor="middle">{start.name}</text>
-        <text class="map-center-sub" data-map-center-sub y="22" text-anchor="middle">brings {start.allDeps.length}, needed by {start.usedBy.length}</text>
+        <text class="map-center-sub" data-map-center-sub y="26" text-anchor="middle">brings {start.allDeps.length}, needed by {start.usedBy.length}</text>
       </g>
     </svg>
     <ul class="map-legend" aria-label="Legend">
       <li><i class="lg-self"></i>Selected</li>
-      <li><i class="lg-install"></i>Comes with it</li>
-      <li><i class="lg-used"></i>Needs it</li>
+      <li><i class="lg-install"></i>Comes with it (installed too)</li>
+      <li><i class="lg-used"></i>Needs it (installs this one)</li>
     </ul>
   </div>
 
   <div class="map-panel">
     <label class="map-pick">
-      <span>Pick a skill</span>
+      <span>Pick a skill to see its connections</span>
       <select data-map-select>
         {m.groups.map((g) => (
           <optgroup label={g.name}>

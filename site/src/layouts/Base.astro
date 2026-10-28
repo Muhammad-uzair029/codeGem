@@ -13,7 +13,7 @@ type Section = 'home' | 'skills' | 'browse' | 'learn' | 'interview' | 'courses' 
 const TAGLINE = 'Skills, learning and interview prep for AI engineers';
 // The one place the main navigation is defined. `key` matches the page's `active` prop.
 const NAV: { key: Section; href: string; label: string; cta?: boolean }[] = [
-  { key: 'skills', href: '/browse/', label: 'Skills' },
+  { key: 'skills', href: '/skill/', label: 'Skills' },
   { key: 'learn', href: '/learn/', label: 'Learn' },
   { key: 'interview', href: '/interview/', label: 'Interview prep' },
   { key: 'courses', href: '/courses/', label: 'Courses' },
@@ -94,8 +94,11 @@ const fullTitle = title === 'codeGem' ? `codeGem: ${TAGLINE}` : `${title} | code
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <span class="foot-brand"><strong>codeGem</strong>. {TAGLINE}. {manifest.skillCount} skills built from <code>.claude/skills/</code> on {manifest.generatedAt.slice(0, 10)}.</span>
-        <nav class="foot-links" aria-label="Raw files"><a href="/manifest.json">manifest.json</a><a href="/install.sh">install.sh</a><a href="/install.ps1">install.ps1</a></nav>
+        <span class="foot-brand"><strong>codeGem</strong>. {TAGLINE}. {manifest.skillCount} skills, updated {manifest.generatedAt.slice(0, 10)}.</span>
+        <nav class="foot-links" aria-label="Footer">
+          <a href="/skill/">Skills</a><a href="/learn/">Learn</a><a href="/interview/">Interview prep</a><a href="/courses/">Courses</a><a href="/getting-started/">Getting started</a><a href="/#download">Desktop app</a>
+        </nav>
+        <nav class="foot-links foot-raw" aria-label="Raw files"><a href="/manifest.json">manifest.json</a><a href="/install.sh">install.sh</a><a href="/install.ps1">install.ps1</a></nav>
       </div>
     </footer>
     <script>

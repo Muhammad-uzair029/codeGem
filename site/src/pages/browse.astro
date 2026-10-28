@@ -15,9 +15,13 @@ const usedBy = Object.fromEntries(m.skills.map((s) => [s.name, s.usedBy]));
 ---
 <Base title="Browse skills" active="browse" description="Search and filter every codeGem skill, tick the ones you want, and copy one install command.">
   <div class="wrap">
-    <header class="page-head">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol><li><a href="/skill/">Skills</a></li><li><span aria-current="page">Browse</span></li></ol>
+    </nav>
+    <header class="page-head" style="padding-top:12px">
       <h1>Browse skills</h1>
-      <p class="lede">Search by name or what it does. Tick the skills you want and the install command updates as you go. Hover a skill to see what it brings along.</p>
+      <p class="lede">Search by name or task. Tick <strong>Add</strong> on the skills you want and an install command for just those appears at the bottom.</p>
+      <p class="faint" style="margin:0">Tip: hover a card to highlight the skills it installs with it (green) and the skills that need it (dashed).</p>
     </header>
 
     <div class="toolbar">

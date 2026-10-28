@@ -49,11 +49,18 @@ async function copyText(text) {
 
 /** Fades [data-reveal] elements in as they scroll into view (motion only). */
 function initReveal() {
-  const els = document.querySelectorAll('[data-reveal]');
-  if (!document.documentElement.classList.contains('motion') || !('IntersectionObserver' in window)) {
+  const root = document.documentElement;
+  const els = Array.from(document.querySelectorAll('[data-reveal]'));
+  if (!root.classList.contains('motion') || !('IntersectionObserver' in window)) {
     els.forEach((el) => el.classList.add('in'));
     return;
   }
+  // Anything already on screen stays visible: never hide what has been painted.
+  const vh = window.innerHeight;
+  els.forEach((el) => {
+    if (el.getBoundingClientRect().top < vh) el.classList.add('in');
+  });
+  root.classList.add('reveal');
   const io = new IntersectionObserver(
     (entries) => {
       for (const e of entries) {
@@ -65,7 +72,7 @@ function initReveal() {
     },
     { rootMargin: '0px 0px -8% 0px' },
   );
-  els.forEach((el) => io.observe(el));
+  els.filter((el) => !el.classList.contains('in')).forEach((el) => io.observe(el));
 }
 
 let live;

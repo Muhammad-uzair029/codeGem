@@ -24,8 +24,11 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
 <Base title={skill.name} description={skill.summary} active="skills">
   <div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb">
-      <a href="/browse/">Browse</a> /
-      <a href={`/browse/?group=${encodeURIComponent(skill.group)}`}>{skill.group}</a>
+      <ol>
+        <li><a href="/skill/">Skills</a></li>
+        <li><a href="/browse/">Browse</a></li>
+        <li><span aria-current="page">{skill.name}</span></li>
+      </ol>
     </nav>
     <header class="skill-head" data-g={groupSlug(skill.group)}>
       <div class="skill-title">
@@ -34,7 +37,7 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
       </div>
       <p class="lede">{skill.summary}</p>
       <div class="skill-meta">
-        <span class="pill" data-g={groupSlug(skill.group)}>{skill.group}</span>
+        <a class="pill" data-g={groupSlug(skill.group)} href={`/browse/?group=${encodeURIComponent(skill.group)}`} title={`See all ${skill.group} skills`} style="text-decoration:none">{skill.group}</a>
         <span class="faint">Type <code>/{skill.name}</code> in Claude Code</span>
         {skill.displayName !== skill.name && <span class="faint">Also known as <code>{skill.displayName}</code></span>}
       </div>
@@ -42,20 +45,20 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
 
     <div class="skill-layout">
       <div>
-        <h2 class="first">Install</h2>
-        <InstallCommand args={[skill.name]} />
+        <h2 class="first">Install this skill</h2>
+        <InstallCommand args={[skill.name]} label={`Install ${skill.name}`} />
         {skill.allDeps.length > 0 ? (
           <p class="muted">
-            This also installs the {skill.allDeps.length} skill{skill.allDeps.length === 1 ? '' : 's'} it uses (see "Also installs").
+            This also installs the {skill.allDeps.length} skill{skill.allDeps.length === 1 ? '' : 's'} it uses (listed under "Installed with it").
             Skills you already have are left alone. Add <code>--no-deps</code> (Windows: <code>-NoDeps</code>) to install only this one.
           </p>
         ) : (
           <p class="muted">Installs into <code>.claude/skills/{skill.name}/</code> in the current folder. If it is already there, it is skipped, not overwritten.</p>
         )}
         <details class="box">
-          <summary>Update or reinstall</summary>
+          <summary>Already installed? Update it</summary>
           <p class="muted">Gets the latest version. Your current copy is moved to <code>.claude/skills/.backup/{skill.name}-&lt;time&gt;/</code> first, so local edits are never lost. Skills it uses are not replaced.</p>
-          <InstallCommand args={['--force', skill.name]} label="Update in your project folder" />
+          <InstallCommand args={['--force', skill.name]} label={`Update ${skill.name}`} />
         </details>
 
         <h2>What it does</h2>
@@ -70,7 +73,7 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
 
         {skill.name === 'feature-loop' && (
           <>
-            <h2>The six stages</h2>
+            <h2>The six stages, step by step</h2>
             <p class="section-lead">Everything for one feature lives under <code>.claude/specs/&lt;module&gt;/&lt;feature&gt;/</code>.</p>
             <LoopDiagram />
           </>
@@ -78,13 +81,13 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
 
         {(skill.allDeps.length > 0 || skill.usedBy.length > 0) && (
           <>
-            <h2>Where it fits</h2>
-            <p class="section-lead">Lines run from a skill to the skills it calls. Hover or pick another skill to compare.</p>
+            <h2>Skills it works with</h2>
+            <p class="section-lead">Green lines go to skills installed along with it; dashed lines come from skills that need it. Pick another skill to compare.</p>
             <SkillMap selected={skill.name} />
           </>
         )}
 
-        <h2>Commands</h2>
+        <h2>How to run it</h2>
         <p class="section-lead">Type these in Claude Code after running <code>claude</code> in your project.</p>
         <div class="table-wrap">
           <table class="cmd-table">
@@ -105,9 +108,9 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
           </p>
         )}
 
-        <h2>Full instructions</h2>
+        <h2>Full instructions (for reference)</h2>
         <p class="section-lead">The complete <code>SKILL.md</code> that Claude reads. You do not need to read this to use the skill; it is here for reference.</p>
-        <details class="box" open>
+        <details class="box">
           <summary>SKILL.md</summary>
           <article class="prose" set:html={bodyHtml} />
         </details>
@@ -115,7 +118,7 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
 
       <aside class="skill-aside">
         <div class="card">
-          <h2>Also installs</h2>
+          <h2>Installed with it</h2>
           {skill.allDeps.length ? (
             <>
               <ul class="dep-list">{skill.allDeps.map((d) => <li><a href={`/skill/${d}/`} title={directDeps.has(d) ? 'Used directly' : 'Used by one of its skills'}>{d}</a></li>)}</ul>
@@ -126,7 +129,7 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
           )}
         </div>
         <div class="card">
-          <h2>Used by</h2>
+          <h2>Needed by</h2>
           {skill.usedBy.length ? (
             <>
               <ul class="dep-list">{skill.usedBy.map((d) => <li><a href={`/skill/${d}/`}>{d}</a></li>)}</ul>
