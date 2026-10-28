@@ -9,22 +9,22 @@ codeGem is a desktop app that turns a feature idea into shipped code using Claud
 ### Install skills
 
 Browse every skill and install it into your project with one command from the skills site:
-**https://SKILLS-SITE-URL** <!-- TODO: replace with the deployed site URL -->
+**https://code-gem-eosin.vercel.app**
 
 ```bash
 # macOS / Linux, run in your project folder
-curl -fsSL https://SKILLS-SITE-URL/install.sh | bash -s -- feature-loop   # or --all
+curl -fsSL https://code-gem-eosin.vercel.app/install.sh | bash -s -- feature-loop   # or --all
 ```
 
 ```powershell
 # Windows PowerShell
-irm https://SKILLS-SITE-URL/install.ps1 | iex; Install-Skills feature-loop   # or -All
+irm https://code-gem-eosin.vercel.app/install.ps1 | iex; Install-Skills feature-loop   # or -All
 ```
 
 **Keep them up to date:** run the same command with `--update` (Windows: `-Update`). It updates only the skills that changed, backs up your old copies, and lists new skills you don't have yet.
 
 ```bash
-curl -fsSL https://SKILLS-SITE-URL/install.sh | bash -s -- --update
+curl -fsSL https://code-gem-eosin.vercel.app/install.sh | bash -s -- --update
 ```
 
 The site lives in [`site/`](site/README.md) and deploys to Vercel or Netlify.
