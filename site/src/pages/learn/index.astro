@@ -1,0 +1,151 @@
+---
+import Base from '../../layouts/Base.astro';
+import ModuleIcon from '../../components/learn/ModuleIcon.astro';
+import Progress from '../../components/learn/Progress.astro';
+import { getModules, progressIndex, LEVEL_LABEL } from '../../lib/learn.js';
+import { iconTone } from '../../lib/learn-ui.js';
+import '../../styles/learn.css';
+
+const modules = getModules();
+const lessonCount = modules.reduce((n, m) => n + m.lessons.length, 0);
+const hours = Math.round(modules.reduce((n, m) => n + m.minutes, 0) / 6) / 10;
+const first = modules[0].lessons[0];
+const index = JSON.stringify(progressIndex()).replace(/</g, '\\u003c');
+---
+<Base title="Learn AI engineering" active="learn" description="Ten hands-on modules that take you from LLM basics to designing, securing and shipping AI systems, with interactive diagrams and self-checks.">
+  <section class="l-hero">
+    <div class="wrap">
+      <p class="eyebrow">Learn</p>
+      <h1>Learn AI engineering</h1>
+      <p class="lede">Ten short modules, from how LLMs work to designing and running AI systems in production. Every lesson has a diagram you can click through, real code and a quick self-check.</p>
+      <ul class="l-facts" aria-label="Course size">
+        <li><strong>{modules.length}</strong> modules</li>
+        <li><strong>{lessonCount}</strong> lessons</li>
+        <li><strong>~{hours}</strong> hours reading</li>
+      </ul>
+
+      <div class="l-start" data-start>
+        <a class="btn" href={first.url}>Start with lesson 1</a>
+        <span class="faint">{first.title} · {first.minutes} min</span>
+      </div>
+
+      <div class="card card-featured l-continue" data-continue hidden>
+        <div class="l-continue-main">
+          <p class="l-continue-kicker" data-continue-kicker>Continue where you left off</p>
+          <p class="l-continue-title"><a data-continue-link href="#">…</a></p>
+          <p class="faint" data-continue-meta></p>
+        </div>
+        <div class="l-continue-side">
+          <div class="progress-label"><span>Your progress</span><span data-overall-count>0 of {lessonCount} lessons</span></div>
+          <Progress label="Overall progress" class="l-overall" />
+          <a class="btn" data-continue-btn href="#">Continue</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap l-section" aria-labelledby="path-h">
+    <div class="l-section-head">
+      <h2 id="path-h">Recommended path</h2>
+      <p class="muted">Each module builds on the one before. Jump in anywhere if you already know the basics.</p>
+    </div>
+    <ol class="lpath">
+      {modules.map((m) => (
+        <li class="lpath-node" data-module-progress={m.slug} data-keys={m.lessons.map((l) => l.key).join(' ')} data-state="todo">
+          <a href={m.url}>
+            <span class="lpath-dot" aria-hidden="true">
+              <span class="lpath-n">{m.index + 1}</span>
+              <svg class="lpath-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+            </span>
+            <span class="lpath-text">
+              <span class="lpath-name">{m.short}</span>
+              <span class="lpath-state" data-state-label>Not started</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+    <p class="l-legend" aria-hidden="true">
+      <span><i class="lg lg-todo"></i>Not started</span>
+      <span><i class="lg lg-doing"></i>In progress</span>
+      <span><i class="lg lg-done"></i>Done</span>
+    </p>
+  </section>
+
+  <section class="wrap l-section" aria-labelledby="mods-h">
+    <div class="l-section-head">
+      <h2 id="mods-h">All modules</h2>
+    </div>
+    <ul class="lm-grid">
+      {modules.map((m) => (
+        <li>
+          <a class="card card-link lm-card" href={m.url} data-module-progress={m.slug} data-keys={m.lessons.map((l) => l.key).join(' ')} data-state="todo">
+            <span class="lm-top">
+              <span class="lm-icon" data-g={iconTone(m.icon)}><ModuleIcon name={m.icon} /></span>
+              <span class="lm-num">Module {m.index + 1}</span>
+              <span class="lm-state" data-state-label>Not started</span>
+            </span>
+            <h3>{m.title}</h3>
+            <p class="lm-summary">{m.summary}</p>
+            <span class="tag-row">
+              <span class="tag">{LEVEL_LABEL[m.level]}</span>
+              <span class="tag">{m.lessons.length} lessons</span>
+              <span class="tag">{m.minutes} min</span>
+            </span>
+            <span class="lm-progress">
+              <span class="progress-label"><span data-count>0 of {m.lessons.length} done</span></span>
+              <Progress label={`${m.title} progress`} />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <script type="application/json" id="learn-index" set:html={index} />
+  <script>
+    import { paintProgress, getDone, getLast, setBar } from '../../scripts/learn-store.js';
+    import { nextLesson } from '../../scripts/learn-nav.js';
+
+    paintProgress();
+    let idx: any[] = [];
+    try {
+      idx = JSON.parse(document.getElementById('learn-index')?.textContent || '[]');
+    } catch {}
+    const done = getDone();
+    const all = idx.flatMap((m: any) => m.lessons.map((l: any) => ({ ...l, module: m })));
+    const doneCount = all.filter((l) => done[l.key]).length;
+    const last = getLast();
+
+    // "Next up" marker on the path: the first module that isn't finished.
+    const nextMod = document.querySelector('.lpath-node:not([data-state="done"])');
+    nextMod?.classList.add('is-next');
+
+    if (doneCount > 0 || (last && all.some((l) => l.key === last.key))) {
+      const target = nextLesson(all, done, last?.key);
+      const card = document.querySelector<HTMLElement>('[data-continue]');
+      const start = document.querySelector<HTMLElement>('[data-start]');
+      if (card && start) {
+        start.hidden = true;
+        card.hidden = false;
+        const link = card.querySelector<HTMLAnchorElement>('[data-continue-link]')!;
+        const btn = card.querySelector<HTMLAnchorElement>('[data-continue-btn]')!;
+        if (target) {
+          link.textContent = target.lesson.title;
+          link.href = btn.href = target.lesson.url;
+          card.querySelector('[data-continue-kicker]')!.textContent = target.resume ? 'Continue where you left off' : 'Up next';
+          card.querySelector('[data-continue-meta]')!.textContent = `${target.lesson.module.title} · ${target.lesson.minutes} min`;
+          btn.textContent = target.resume ? 'Continue lesson' : 'Start next lesson';
+        } else {
+          card.querySelector('[data-continue-kicker]')!.textContent = 'All lessons done';
+          link.textContent = 'You finished every lesson. Try a mock interview.';
+          link.href = btn.href = '/interview/?mode=mock';
+          card.querySelector('[data-continue-meta]')!.textContent = 'Practise under time pressure to lock it in.';
+          btn.textContent = 'Start a mock interview';
+        }
+        card.querySelector('[data-overall-count]')!.textContent = `${doneCount} of ${all.length} lessons`;
+        setBar(card.querySelector('.progress'), (doneCount / Math.max(1, all.length)) * 100);
+      }
+    }
+  </script>
+</Base>

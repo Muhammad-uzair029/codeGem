@@ -1,0 +1,7 @@
+---
+// Accessible progress bar using the shared .progress class. Value is filled in
+// on the client from localStorage (see learn-store.js paintProgress).
+interface Props { label: string; value?: number; class?: string }
+const { label, value = 0, class: cls } = Astro.props;
+---
+<div class:list={['progress', cls]} role="progressbar" aria-label={label} aria-valuemin="0" aria-valuemax="100" aria-valuenow={value}><span style={`--v:${value}%`}></span></div>

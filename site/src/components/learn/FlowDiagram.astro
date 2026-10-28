@@ -1,0 +1,198 @@
+---
+// Animated, clickable stepper for a lesson's `flow` frontmatter.
+// Steps light up in sequence (only while visible, never with reduced motion),
+// click or arrow keys pick a step and show its detail, and an optional loop
+// arrow is drawn from `loop.from` back to `loop.to`.
+// Horizontal when there is room, vertical in narrow containers (container query).
+interface Step { label: string; detail: string }
+interface Props {
+  flow: { title: string; steps: Step[]; loop?: { from: number; to: number; label: string } };
+  id?: string;
+}
+const { flow, id = 'flow' } = Astro.props;
+const n = flow.steps.length;
+const loop = flow.loop && flow.loop.from <= n && flow.loop.to <= n ? flow.loop : null;
+const size = n <= 4 ? 's' : n <= 6 ? 'm' : 'l';
+let loopStyle = '';
+if (loop) {
+  const lo = Math.min(loop.from, loop.to);
+  const hi = Math.max(loop.from, loop.to);
+  // Insets from each edge to the centre of the first/last spanned step, as fractions.
+  loopStyle = `--la:${(lo - 0.5) / n};--lb:${(n - hi + 0.5) / n}`;
+}
+const dir = loop ? (loop.to <= loop.from ? 'back' : 'fwd') : '';
+const detailId = `${id}-detail`;
+---
+<figure class="flow" data-flow data-size={size} data-loop-from={loop?.from} data-loop-to={loop?.to} id={id}>
+  <figcaption class="flow-head">
+    <span class="flow-kicker">How it flows</span>
+    <span class="flow-title">{flow.title}</span>
+    <button class="flow-play" type="button" data-flow-play aria-pressed="false" hidden>
+      <svg class="i-play" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" fill="currentColor" /></svg>
+      <svg class="i-pause" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h3.5v16H7zM13.5 4H17v16h-3.5z" fill="currentColor" /></svg>
+      <span data-play-label>Play</span>
+    </button>
+  </figcaption>
+  <div class="flow-track" data-dir={dir || undefined} style={`--n:${n}`}>
+    <ol class="flow-steps" aria-label={`${flow.title}: ${n} steps`}>
+      {flow.steps.map((s, i) => (
+        <li class:list={['flow-step', { 'is-active': i === 0 }]} data-i={i}>
+          <button type="button" data-step={i} tabindex={i === 0 ? 0 : -1} aria-controls={detailId} aria-current={i === 0 ? 'step' : undefined}>
+            <span class="flow-num" aria-hidden="true">{i + 1}</span>
+            <span class="flow-label">{s.label}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+    {loop && (
+      <div class="flow-loop" style={loopStyle} aria-hidden="true">
+        <span class="flow-loop-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+          {loop.label}
+        </span>
+      </div>
+    )}
+  </div>
+  {loop && (
+    <p class="flow-loop-caption">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+      <span><strong>Loop:</strong> step {loop.from} back to step {loop.to}. {loop.label}</span>
+    </p>
+  )}
+  <div class="flow-detail" id={detailId} data-flow-detail aria-live="polite">
+    <p class="flow-detail-step"><span data-flow-pos>Step 1 of {n}</span> · <strong data-flow-label>{flow.steps[0].label}</strong></p>
+    <p class="flow-detail-text" data-flow-text>{flow.steps[0].detail}</p>
+    <p class="flow-hint">Click a step or use the arrow keys to explore.</p>
+  </div>
+  <script type="application/json" data-flow-steps set:html={JSON.stringify(flow.steps).replace(/</g, '\\u003c')} />
+  <details class="flow-all">
+    <summary>Read all steps as text</summary>
+    <ol>
+      {flow.steps.map((s) => <li><strong>{s.label}:</strong> {s.detail}</li>)}
+    </ol>
+    {loop && <p>Then loop from step {loop.from} back to step {loop.to}: {loop.label}.</p>}
+  </details>
+</figure>
+
+<script>
+  const STEP_MS = 1900;
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function init(fig: HTMLElement) {
+    let steps: { label: string; detail: string }[] = [];
+    try {
+      steps = JSON.parse(fig.querySelector('[data-flow-steps]')?.textContent || '[]');
+    } catch {
+      return;
+    }
+    const items = [...fig.querySelectorAll<HTMLElement>('.flow-step')];
+    const buttons = items.map((li) => li.querySelector('button') as HTMLButtonElement);
+    const loopEl = fig.querySelector<HTMLElement>('.flow-loop');
+    const detail = fig.querySelector<HTMLElement>('[data-flow-detail]')!;
+    const pos = fig.querySelector('[data-flow-pos]')!;
+    const label = fig.querySelector('[data-flow-label]')!;
+    const text = fig.querySelector('[data-flow-text]')!;
+    const play = fig.querySelector<HTMLButtonElement>('[data-flow-play]')!;
+    const playLabel = fig.querySelector('[data-play-label]')!;
+    const from = Number(fig.dataset.loopFrom) - 1;
+    const to = Number(fig.dataset.loopTo) - 1;
+    const hasLoop = !Number.isNaN(from) && !Number.isNaN(to) && fig.dataset.loopFrom !== undefined;
+    const n = steps.length;
+    let active = 0;
+    let looped = false;
+    let timer = 0;
+    let playing = false;
+    let inView = false;
+    let userPaused = false;
+
+    function show(i: number, focus = false) {
+      active = i;
+      items.forEach((li, j) => {
+        li.classList.toggle('is-active', j === i);
+        li.classList.toggle('is-past', j < i);
+      });
+      buttons.forEach((b, j) => {
+        b.tabIndex = j === i ? 0 : -1;
+        if (j === i) b.setAttribute('aria-current', 'step');
+        else b.removeAttribute('aria-current');
+      });
+      loopEl?.classList.remove('is-active');
+      pos.textContent = `Step ${i + 1} of ${n}`;
+      label.textContent = steps[i].label;
+      text.textContent = steps[i].detail;
+      if (focus) buttons[i].focus();
+    }
+
+    function tick() {
+      if (hasLoop && active === from && !looped) {
+        looped = true;
+        loopEl?.classList.add('is-active');
+        timer = window.setTimeout(() => {
+          show(to);
+          schedule();
+        }, STEP_MS * 0.8);
+        return;
+      }
+      if (active >= n - 1) {
+        looped = false;
+        show(0);
+      } else show(active + 1);
+      schedule();
+    }
+    function schedule() {
+      clearTimeout(timer);
+      if (playing) timer = window.setTimeout(tick, STEP_MS);
+    }
+    function setPlaying(on: boolean) {
+      playing = on;
+      fig.classList.toggle('is-playing', on);
+      play.setAttribute('aria-pressed', String(on));
+      playLabel.textContent = on ? 'Pause' : 'Play';
+      // Announce only user-driven changes, not every autoplay tick.
+      detail.setAttribute('aria-live', on ? 'off' : 'polite');
+      if (on) schedule();
+      else clearTimeout(timer);
+    }
+
+    buttons.forEach((b, i) =>
+      b.addEventListener('click', () => {
+        userPaused = true;
+        setPlaying(false);
+        show(i);
+      }),
+    );
+    fig.querySelector('.flow-steps')!.addEventListener('keydown', (e: Event) => {
+      const k = (e as KeyboardEvent).key;
+      let next = -1;
+      if (k === 'ArrowRight' || k === 'ArrowDown') next = Math.min(n - 1, active + 1);
+      else if (k === 'ArrowLeft' || k === 'ArrowUp') next = Math.max(0, active - 1);
+      else if (k === 'Home') next = 0;
+      else if (k === 'End') next = n - 1;
+      if (next < 0) return;
+      e.preventDefault();
+      userPaused = true;
+      setPlaying(false);
+      show(next, true);
+    });
+
+    if (reduce()) return; // no autoplay; everything is already visible
+    play.hidden = false;
+    play.addEventListener('click', () => {
+      userPaused = playing;
+      if (!playing && active === n - 1) show(0);
+      setPlaying(!playing);
+    });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(
+        (entries) => {
+          inView = entries[0].isIntersecting;
+          if (inView && !userPaused) setPlaying(true);
+          else if (!inView && playing) setPlaying(false);
+        },
+        { threshold: 0.4 },
+      ).observe(fig);
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-flow]').forEach(init);
+</script>

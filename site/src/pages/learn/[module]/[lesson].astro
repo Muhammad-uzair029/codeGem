@@ -1,0 +1,132 @@
+---
+import Base from '../../../layouts/Base.astro';
+import FlowDiagram from '../../../components/learn/FlowDiagram.astro';
+import SelfCheck from '../../../components/learn/SelfCheck.astro';
+import { getModules, lessonSections, LEVEL_LABEL } from '../../../lib/learn.js';
+import '../../../styles/learn.css';
+
+export function getStaticPaths() {
+  return getModules().flatMap((m) => m.lessons.map((l) => ({ params: { module: m.slug, lesson: l.slug } })));
+}
+
+const modules = getModules();
+const m = modules.find((x) => x.slug === Astro.params.module)!;
+const l = m.lessons.find((x) => x.slug === Astro.params.lesson)!;
+const all = modules.flatMap((x) => x.lessons);
+const at = all.findIndex((x) => x.key === l.key);
+const prev = all[at - 1];
+const next = all[at + 1];
+const moduleOf = (x: { module: string }) => modules.find((mm) => mm.slug === x.module)!;
+const { intro, sections } = lessonSections(l);
+const practiceUrl = `/interview/?lesson=${encodeURIComponent(l.key)}`;
+const toc = [...sections.map((s) => ({ id: s.id, title: s.title })), { id: 'self-check', title: 'Check yourself' }];
+---
+<Base title={l.title} active="learn" description={l.summary}>
+  <div class="read-progress" aria-hidden="true"><span data-read-bar></span></div>
+
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/learn/">Learn</a><span aria-hidden="true">/</span>
+      <a href={m.url}>{m.title}</a><span aria-hidden="true">/</span>
+      <span aria-current="page">Lesson {l.index + 1}</span>
+    </nav>
+  </div>
+
+  <header class="wrap lesson-head">
+    <p class="mod-kicker">Lesson {l.index + 1} of {m.lessons.length} · {m.short}</p>
+    <h1>{l.title}</h1>
+    <p class="lede">{l.summary}</p>
+    <div class="tag-row">
+      <span class="tag">{l.minutes} min read</span>
+      <span class="tag">{LEVEL_LABEL[m.level]}</span>
+      <span class="tag tag-accent lesson-done-tag" data-lesson-done={l.key}><span data-done-label>Not done yet</span></span>
+    </div>
+  </header>
+
+  {l.flow && (
+    <div class="wrap">
+      <FlowDiagram flow={l.flow} id={`flow-${l.slug}`} />
+    </div>
+  )}
+
+  <div class="wrap lesson-layout">
+    <aside class="lesson-toc" aria-label="On this page">
+      <p class="lesson-toc-title">On this page</p>
+      <ol>
+        {toc.map((t) => <li><a href={`#${t.id}`} data-toc={t.id}>{t.title}</a></li>)}
+      </ol>
+      <a class="l-link lesson-toc-practice" href={practiceUrl}>Practice questions <span aria-hidden="true">→</span></a>
+    </aside>
+
+    <article class="lesson-body" data-lesson={l.key}>
+      {intro && <div class="lesson-intro" set:html={intro} />}
+      {sections.map((s) => (
+        <section id={s.id} class:list={['lesson-section', { 'interview-card': s.isInterview }]} data-section>
+          <h2>
+            {s.isInterview && (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></svg>
+            )}
+            {s.title}
+          </h2>
+          <div set:html={s.html} />
+        </section>
+      ))}
+
+      <section id="self-check" class="lesson-section" data-section>
+        <h2>Check yourself</h2>
+        <p class="muted">Quick questions to see if it stuck. Pick an answer to get instant feedback.</p>
+        <SelfCheck checks={l.selfCheck} />
+      </section>
+
+      <section class="card lesson-finish" aria-labelledby="finish-h">
+        <h2 id="finish-h" class="lesson-finish-title">Finished reading?</h2>
+        <p class="muted" data-finish-hint>Mark it as done to track your progress through the module.</p>
+        <div class="lesson-finish-actions">
+          <button class="btn lesson-done-btn" type="button" data-done-toggle aria-pressed="false">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+            <span data-done-text>Mark as done</span>
+          </button>
+          <a class="btn secondary" href={practiceUrl}>Practice questions for this lesson ({l.practice.length})</a>
+        </div>
+      </section>
+
+      <nav class="l-pager" aria-label="Lessons">
+        {prev ? (
+          <a class="card card-link l-pager-link" href={prev.url} rel="prev"><span class="faint">← Previous{prev.module !== l.module ? ` · ${moduleOf(prev).short}` : ''}</span><span>{prev.title}</span></a>
+        ) : <span />}
+        {next ? (
+          <a class="card card-link l-pager-link is-next" href={next.url} rel="next"><span class="faint">Next{next.module !== l.module ? ` · ${moduleOf(next).short}` : ''} →</span><span>{next.title}</span></a>
+        ) : (
+          <a class="card card-link l-pager-link is-next" href="/interview/?mode=mock"><span class="faint">You reached the end →</span><span>Try a mock interview</span></a>
+        )}
+      </nav>
+    </article>
+  </div>
+
+  <script>
+    import { isDone, setDone, setLast, paintProgress } from '../../../scripts/learn-store.js';
+    import { initLessonBody } from '../../../scripts/lesson.js';
+
+    const key = document.querySelector<HTMLElement>('[data-lesson]')?.dataset.lesson || '';
+    setLast(key);
+    paintProgress();
+
+    const btn = document.querySelector<HTMLButtonElement>('[data-done-toggle]');
+    const txt = document.querySelector('[data-done-text]');
+    const hint = document.querySelector('[data-finish-hint]');
+    function render() {
+      const on = isDone(key);
+      btn?.setAttribute('aria-pressed', String(on));
+      btn?.classList.toggle('is-on', on);
+      if (txt) txt.textContent = on ? 'Done (click to undo)' : 'Mark as done';
+      if (hint) hint.textContent = on ? 'Nice work. This lesson counts towards your module progress.' : 'Mark it as done to track your progress through the module.';
+      paintProgress();
+    }
+    btn?.addEventListener('click', () => {
+      setDone(key, !isDone(key));
+      render();
+    });
+    render();
+    initLessonBody();
+  </script>
+</Base>

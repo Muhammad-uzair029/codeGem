@@ -1,0 +1,39 @@
+---
+// One external course. The title is the link (new tab, rel=noopener); related
+// Learn modules are separate internal links. data-* attributes feed the
+// filters on /courses/.
+interface Course { title: string; url: string; summary: string; level: string; format: string; free: boolean; tags: string[]; modules: string[] }
+interface Props { course: Course; provider: string; featured?: boolean; modules: { bare: string; slug: string; short: string; url: string }[] }
+const { course: c, provider, featured = false, modules } = Astro.props;
+const related = c.modules.map((b) => modules.find((m) => m.bare === b)).filter(Boolean) as Props['modules'];
+const partnerOnly = /only (open )?to [^.]*partners/i.test(c.summary);
+const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+const search = [c.title, c.summary, provider, ...c.tags].join(' ').toLowerCase();
+---
+<article
+  class:list={['card', 'course-card', { 'is-featured': featured }]}
+  data-course
+  data-level={c.level}
+  data-format={c.format}
+  data-free={c.free ? '1' : '0'}
+  data-modules={related.map((m) => m.slug).join(' ')}
+  data-search={search}
+>
+  <p class="course-provider">{provider}</p>
+  <h3 class="course-title">
+    <a href={c.url} target="_blank" rel="noopener">{c.title}<span class="l-sr"> (opens in a new tab)</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6" /><path d="M20 4 10 14" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg></a>
+  </h3>
+  {c.summary && <p class="course-summary">{c.summary}</p>}
+  <div class="tag-row">
+    {c.level && <span class="tag">{cap(c.level)}</span>}
+    {c.format && <span class:list={['tag', { 'tag-warn': c.format === 'certificate' }]}>{c.format === 'certificate' ? 'Certification' : cap(c.format)}</span>}
+    {c.free ? <span class="tag tag-accent">Free</span> : <span class="tag">Paid</span>}
+    {partnerOnly && <span class="tag tag-warn">Partners only</span>}
+  </div>
+  {related.length > 0 && (
+    <p class="course-mods">
+      <span class="faint">Learn:</span>
+      {related.map((m) => <a href={m.url}>{m.short}</a>)}
+    </p>
+  )}
+</article>

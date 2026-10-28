@@ -1,0 +1,148 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getModules, getQuestions } from '../../lib/learn.js';
+import '../../styles/learn.css';
+
+const modules = getModules();
+const questions = getQuestions();
+const counts = Object.fromEntries(modules.map((m) => [m.slug, questions.filter((q) => q.module === m.slug).length]));
+const byType = (t: string) => questions.filter((q) => q.type === t).length;
+---
+<Base title="Interview prep" active="interview" description="Practise AI-engineering interview questions by topic, run a timed mock interview, and review what you missed.">
+  <header class="wrap l-hero l-hero-compact iv-hero">
+    <div>
+      <p class="eyebrow">Interview prep</p>
+      <h1>Practise for AI engineering interviews</h1>
+      <p class="lede">{questions.length} questions written by engineers: {byType('mcq')} multiple choice, {byType('open')} open answer and {byType('design')} system design. Every question links back to the lesson that teaches it.</p>
+    </div>
+    <dl class="iv-stats" aria-label="Your stats">
+      <div><dt>Answered</dt><dd data-stat="answered">0</dd></div>
+      <div><dt>Accuracy</dt><dd data-stat="accuracy">–</dd></div>
+      <div><dt>Day streak</dt><dd data-stat="streak">0</dd></div>
+    </dl>
+  </header>
+
+  <div class="wrap">
+    <div class="iv-modes" role="tablist" aria-label="How do you want to practise?">
+      <button type="button" role="tab" id="tab-practice" aria-controls="panel-practice" aria-selected="true" data-mode="practice">
+        <span class="iv-mode-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4" /></svg></span>
+        <span class="iv-mode-text"><span class="iv-mode-title">Practice by topic</span><span class="iv-mode-desc">Pick a module, type or level and go at your own pace.</span></span>
+      </button>
+      <button type="button" role="tab" id="tab-mock" aria-controls="panel-mock" aria-selected="false" tabindex="-1" data-mode="mock">
+        <span class="iv-mode-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2.5M9 2h6" /></svg></span>
+        <span class="iv-mode-text"><span class="iv-mode-title">Mock interview</span><span class="iv-mode-desc">A timed set of mixed questions, then a scorecard.</span></span>
+      </button>
+      <button type="button" role="tab" id="tab-review" aria-controls="panel-review" aria-selected="false" tabindex="-1" data-mode="review">
+        <span class="iv-mode-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z" /></svg></span>
+        <span class="iv-mode-text"><span class="iv-mode-title">Review later <span class="iv-badge" data-review-count hidden>0</span></span><span class="iv-mode-desc">Questions you saved or got wrong.</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Practice by topic -->
+  <section class="wrap iv-panel" id="panel-practice" role="tabpanel" aria-labelledby="tab-practice" data-panel="practice">
+    <form class="filters card" data-practice-filters role="search" onsubmit="return false">
+      <label class="f-search">
+        <span class="l-sr">Search questions</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+        <input type="search" name="q" placeholder="Search questions, e.g. chunking" autocomplete="off" />
+      </label>
+      <label class="f-field"><span>Module</span>
+        <select name="module">
+          <option value="">All modules</option>
+          {modules.map((m) => <option value={m.slug}>{m.index + 1}. {m.title} ({counts[m.slug]})</option>)}
+        </select>
+      </label>
+      <fieldset class="f-seg">
+        <legend>Type</legend>
+        <div class="seg">
+          <label><input type="radio" name="type" value="" checked /><span>All</span></label>
+          <label><input type="radio" name="type" value="mcq" /><span>Multiple choice</span></label>
+          <label><input type="radio" name="type" value="open" /><span>Open</span></label>
+          <label><input type="radio" name="type" value="design" /><span>Design</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="f-seg">
+        <legend>Level</legend>
+        <div class="seg">
+          <label><input type="radio" name="level" value="" checked /><span>Any</span></label>
+          <label><input type="radio" name="level" value="junior" /><span>Junior</span></label>
+          <label><input type="radio" name="level" value="mid" /><span>Mid</span></label>
+          <label><input type="radio" name="level" value="senior" /><span>Senior</span></label>
+        </div>
+      </fieldset>
+    </form>
+    <div class="f-status">
+      <p aria-live="polite" data-practice-count>Loading questions…</p>
+      <span class="iv-lesson-chip" data-lesson-chip hidden></span>
+      <button type="button" class="l-textbtn" data-practice-clear hidden>Clear filters</button>
+      <fieldset class="f-seg f-view">
+        <legend class="l-sr">View</legend>
+        <div class="seg seg-sm">
+          <label><input type="radio" name="view" value="one" checked /><span>One at a time</span></label>
+          <label><input type="radio" name="view" value="list" /><span>List</span></label>
+        </div>
+      </fieldset>
+    </div>
+    <div data-practice-out class="iv-out"><noscript><p class="card l-empty">Interview practice needs JavaScript. The lessons work without it.</p></noscript></div>
+  </section>
+
+  <!-- Mock interview -->
+  <section class="wrap iv-panel" id="panel-mock" role="tabpanel" aria-labelledby="tab-mock" data-panel="mock" hidden>
+    <form class="card mock-setup" data-mock-setup onsubmit="return false">
+      <h2 class="l-h2">Set up your mock interview</h2>
+      <p class="muted">Answer one question at a time, like a real interview. Multiple-choice answers are graded at the end; for open questions you compare your answer with the key points and rate yourself.</p>
+      <fieldset class="mock-group">
+        <legend>Topics</legend>
+        <div class="mock-mods">
+          {modules.map((m) => (
+            <label class="mock-mod"><input type="checkbox" name="modules" value={m.slug} checked /><span>{m.short}</span></label>
+          ))}
+        </div>
+        <p class="mock-mods-actions"><button type="button" class="l-textbtn" data-mods="all">Select all</button> · <button type="button" class="l-textbtn" data-mods="none">Clear</button></p>
+      </fieldset>
+      <div class="mock-row">
+        <fieldset class="f-seg">
+          <legend>Level</legend>
+          <div class="seg">
+            <label><input type="radio" name="mlevel" value="" checked /><span>Mixed</span></label>
+            <label><input type="radio" name="mlevel" value="junior" /><span>Junior</span></label>
+            <label><input type="radio" name="mlevel" value="mid" /><span>Mid</span></label>
+            <label><input type="radio" name="mlevel" value="senior" /><span>Senior</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="f-seg">
+          <legend>Questions</legend>
+          <div class="seg">
+            <label><input type="radio" name="count" value="5" /><span>5</span></label>
+            <label><input type="radio" name="count" value="10" checked /><span>10</span></label>
+            <label><input type="radio" name="count" value="15" /><span>15</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="f-seg">
+          <legend>Timer</legend>
+          <div class="seg">
+            <label><input type="radio" name="timer" value="0" checked /><span>Off</span></label>
+            <label><input type="radio" name="timer" value="20" /><span>20 min</span></label>
+            <label><input type="radio" name="timer" value="45" /><span>45 min</span></label>
+          </div>
+        </fieldset>
+      </div>
+      <div class="mock-start">
+        <button type="submit" class="btn" data-mock-start>Start interview</button>
+        <p class="faint" data-mock-pool aria-live="polite"></p>
+      </div>
+    </form>
+    <div data-mock-out class="iv-out"></div>
+  </section>
+
+  <!-- Review later -->
+  <section class="wrap iv-panel" id="panel-review" role="tabpanel" aria-labelledby="tab-review" data-panel="review" hidden>
+    <div data-review-out class="iv-out"></div>
+  </section>
+
+  <script>
+    import { initInterview } from '../../scripts/interview.js';
+    initInterview();
+  </script>
+</Base>

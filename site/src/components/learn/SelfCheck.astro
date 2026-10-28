@@ -1,0 +1,25 @@
+---
+// Lesson self-check: multiple-choice questions with instant feedback.
+// Behaviour lives in src/scripts/lesson.js (initSelfCheck).
+interface Check { qHtml: string; optionsHtml: string[]; answer: number; whyHtml: string }
+interface Props { checks: Check[] }
+const { checks } = Astro.props;
+---
+<div class="sc-list" data-sc-list>
+  {checks.map((c, i) => (
+    <fieldset class="sc" data-sc data-answer={c.answer}>
+      <legend class="sc-q"><span class="sc-n">{i + 1}</span><span set:html={c.qHtml} /></legend>
+      <ul class="quiz-options">
+        {c.optionsHtml.map((o, j) => (
+          <li><button type="button" class="quiz-option" aria-pressed="false" data-opt={j}><span set:html={o} /></button></li>
+        ))}
+      </ul>
+      <div class="sc-feedback" data-sc-feedback hidden>
+        <p class="sc-verdict" data-sc-verdict></p>
+        <p class="sc-why" set:html={c.whyHtml} />
+        <button type="button" class="l-textbtn" data-sc-retry>Try again</button>
+      </div>
+    </fieldset>
+  ))}
+  <p class="sc-score" data-sc-score aria-live="polite"></p>
+</div>
