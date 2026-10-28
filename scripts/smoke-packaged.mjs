@@ -17,7 +17,10 @@ function findBinary() {
   const dirs = existsSync(dist) ? readdirSync(dist, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name) : [];
   for (const d of dirs) {
     const dir = join(dist, d);
-    if (process.platform === 'darwin' && d.startsWith('mac')) {
+    // electron-builder writes x64 to dist/mac and arm64 to dist/mac-arm64;
+    // test the build for this machine's CPU (an x64 app on an arm64 runner
+    // needs Rosetta and just hangs).
+    if (process.platform === 'darwin' && d === (process.arch === 'arm64' ? 'mac-arm64' : 'mac')) {
       const app = readdirSync(dir).find((f) => f.endsWith('.app'));
       if (app) return join(dir, app, 'Contents', 'MacOS', app.replace(/\.app$/, ''));
     }
