@@ -98,6 +98,8 @@ export interface SkillsCacheStatus {
   count: number;
   skills: string[];
   skipped: boolean;
+  /** Host the skills are downloaded from (the codeGem skills site). */
+  source: string;
 }
 
 export interface SkillInjectionRequest {

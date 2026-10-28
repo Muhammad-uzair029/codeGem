@@ -24,7 +24,9 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync, mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { createServer, type Server } from 'node:http';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outDir = resolve(here, '..', 'test-results');
@@ -61,10 +63,32 @@ async function scaffold(name: string): Promise<{ parent: string; path: string }>
   return { parent, path };
 }
 
+// The app downloads skills from the skills site. Serve the locally built
+// site (site/dist) so the test exercises the real manifest + files.
+const siteDist = resolve(here, '..', 'site', 'dist');
+let siteServer: Server | undefined;
+let siteUrl = '';
+
 test.beforeAll(async () => {
+  if (!existsSync(join(siteDist, 'manifest.json'))) {
+    throw new Error(`site/dist not built — run: cd site && npm run build`);
+  }
+  siteServer = createServer(async (req, res) => {
+    const p = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+    if (p.split('/').includes('..')) { res.writeHead(400); res.end(); return; }
+    try {
+      res.writeHead(200);
+      res.end(await readFile(join(siteDist, p.endsWith('/') ? `${p}index.html` : p)));
+    } catch {
+      res.writeHead(404); res.end();
+    }
+  });
+  await new Promise<void>((r) => siteServer!.listen(0, '127.0.0.1', r));
+  siteUrl = `http://127.0.0.1:${(siteServer.address() as { port: number }).port}`;
+
   app = await electron.launch({
     args: [resolve(here, '..', 'out', 'main', 'index.cjs')],
-    env: { ...process.env, ELECTRON_DISABLE_AUTO_UPDATE: '1' },
+    env: { ...process.env, ELECTRON_DISABLE_AUTO_UPDATE: '1', CODEGEM_SKILLS_URL: siteUrl },
   });
   window = await app.firstWindow();
   await window.waitForLoadState('domcontentloaded');
@@ -82,6 +106,7 @@ test.afterAll(async () => {
     });
   } catch {/* app may already be closed */}
   await app?.close();
+  siteServer?.close();
 });
 
 // ─── 1. NEW PROJECT flow ─────────────────────────────────────────────────────
@@ -270,10 +295,13 @@ test('history grows when a new project is set active', async () => {
   }
 });
 
-// ─── 4b. SKILLS DOWNLOAD from GitHub (real network) ──────────────────────────
+// ─── 4b. SKILLS DOWNLOAD from the skills site ────────────────────────────────
 
-test('skillsRemote.installAll downloads + installs skills from GitHub', async () => {
+test('skillsRemote.installAll downloads every skill from the skills site', async () => {
   test.setTimeout(60_000);
+  const siteManifest = JSON.parse(readFileSync(join(siteDist, 'manifest.json'), 'utf8')) as {
+    skills: { name: string }[];
+  };
   const result = await window.evaluate(async () => {
     const o = (globalThis as unknown as {
       orchestrator: {
@@ -287,10 +315,12 @@ test('skillsRemote.installAll downloads + installs skills from GitHub', async ()
     const status = await o.skillsRemote.status();
     return { install, status };
   });
-  expect(result.install.ok).toBe(true);
-  expect(result.install.count).toBeGreaterThan(0);
+  expect(result.install.ok, result.install.reason).toBe(true);
+  // The cache mirrors the site exactly — same skills, nothing stale left over.
+  expect(result.install.count).toBe(siteManifest.skills.length);
   expect(result.status.installed).toBe(true);
-  expect(result.status.skills.length).toBeGreaterThan(0);
+  expect([...result.status.skills].sort()).toEqual(siteManifest.skills.map((s) => s.name).sort());
+  expect(result.status.skills).toContain('feature-qa');
 });
 
 // ─── 5. SKILLS injection ─────────────────────────────────────────────────────

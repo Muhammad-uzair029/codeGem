@@ -10,7 +10,7 @@ import { registerPersistentStateIpc } from './services/persistentStateController
 import { registerAutoUpdater } from './services/updaterService.js';
 import { registerTerminalIpc } from './services/terminalService.js';
 import { registerExplorerIpc } from './services/explorerService.js';
-import { registerSkillsRemoteIpc } from './services/skillsRemoteService.js';
+import { registerSkillsRemoteIpc, refreshLegacyCache } from './services/skillsRemoteService.js';
 
 const isDev = !app.isPackaged;
 const __dirname_ = join(fileURLToPath(import.meta.url), '..');
@@ -124,6 +124,7 @@ app.whenReady().then(() => {
 
   createWindow();
   registerAutoUpdater(getWin);
+  refreshLegacyCache();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
