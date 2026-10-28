@@ -80,8 +80,7 @@ jobs:
     needs: prepare
     strategy:
       fail-fast: false
-      # Main/preload ship as V8 bytecode, which is tied to the CPU
-      # architecture — so each macOS arch builds on its own runner type.
+      # One job per macOS arch so each build is smoke-tested on its own CPU.
       matrix:
         include:
           - { os: macos-latest, arch: arm64 }
@@ -126,12 +125,6 @@ jobs:
         if: runner.os == 'Windows'
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      # --ignore-scripts skips electron's own postinstall, but the bytecode
-      # step runs Electron to compile main/preload, so fetch the binary.
-      - name: Download Electron binary (Windows)
-        if: runner.os == 'Windows'
-        run: node node_modules/electron/install.js
-
       - name: Install dependencies (macOS + Linux)
         if: runner.os != 'Windows'
         run: pnpm install --frozen-lockfile
@@ -155,6 +148,17 @@ jobs:
       - name: Package · Linux (AppImage + deb)
         if: runner.os == 'Linux'
         run: pnpm exec electron-builder --linux --publish never
+
+      # Launch the packaged app and require the main process's ready line,
+      # so a build that can't start is never uploaded or released.
+      - name: Smoke-test the packaged app
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a node scripts/smoke-packaged.mjs
+          else
+            node scripts/smoke-packaged.mjs
+          fi
 
       # Each macOS arch job writes its own latest-mac.yml; keep them apart so
       # the publish job can merge them (otherwise one would overwrite the

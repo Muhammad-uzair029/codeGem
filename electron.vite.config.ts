@@ -1,24 +1,55 @@
 import { resolve } from 'node:path';
 import { createRequire } from 'node:module';
-import { defineConfig, externalizeDepsPlugin, bytecodePlugin } from 'electron-vite';
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import obfuscator from 'rollup-plugin-obfuscator';
 
 const require = createRequire(import.meta.url);
 const pkg = require('./package.json') as { version: string };
 
-// Installers are public (codeGem-releases) while the source is private.
-// Main + preload ship as V8 bytecode (no readable JS); our own renderer
-// code is obfuscated. Bytecode is tied to the CPU architecture, so each
-// target must be built on (or with an Electron binary for) that arch —
-// see the per-arch macOS jobs in .github/workflows/release.yml.
+// Installers are public (codeGem-releases) while the source is private, so
+// our own code in main, preload and renderer is obfuscated and minified.
 //
-// bytecodePlugin needs CommonJS output, hence the .cjs entry files
-// (package.json is "type": "module").
+// No V8 bytecode: its cache embeds a read-only-snapshot checksum that
+// differs between machines, so bytecode compiled on a CI runner was
+// rejected on users' machines (v0.2.21/0.2.22 failed to start).
+//
+// Main/preload stay CommonJS (.cjs entries; package.json is "type": "module").
+
+// Options that don't change runtime behaviour.
+//   bundle: false → per module, our src/ only (renderer: keeps React etc. as is)
+//   bundle: true  → the finished chunk (main/preload: deps are external, so the
+//                   chunk is our code, and import.meta.url has already been
+//                   turned into CommonJS — obfuscating it per module broke it)
+const ownCodeObfuscator = ({ bundle }: { bundle: boolean }) => ({
+  ...obfuscator({
+    global: bundle,
+    include: ['src/**/*.ts', 'src/**/*.tsx'],
+    exclude: ['node_modules/**'],
+    options: {
+      compact: true,
+      identifierNamesGenerator: 'hexadecimal',
+      renameGlobals: false,
+      stringArray: true,
+      stringArrayEncoding: ['base64'],
+      stringArrayThreshold: 0.75,
+      splitStrings: false,
+      controlFlowFlattening: false,
+      deadCodeInjection: false,
+      selfDefending: false,
+      debugProtection: false,
+      transformObjectKeys: false,
+      unicodeEscapeSequence: false,
+      sourceMap: false,
+    },
+  }),
+  enforce: 'post' as const,
+  apply: 'build' as const,
+});
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin(), bytecodePlugin()],
+    plugins: [externalizeDepsPlugin(), ownCodeObfuscator({ bundle: true })],
     build: {
       outDir: 'out/main',
       minify: true,
@@ -35,7 +66,7 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin(), bytecodePlugin()],
+    plugins: [externalizeDepsPlugin(), ownCodeObfuscator({ bundle: true })],
     build: {
       outDir: 'out/preload',
       minify: true,
@@ -55,33 +86,7 @@ export default defineConfig({
     root: '.',
     plugins: [
       react(),
-      {
-        // Obfuscate only our own modules (not React/xterm etc.): keeps the
-        // bundle fast while making the app's logic unreadable. Options are
-        // the ones that don't change runtime behaviour.
-        ...obfuscator({
-          include: ['src/**/*.ts', 'src/**/*.tsx'],
-          exclude: ['node_modules/**'],
-          options: {
-            compact: true,
-            identifierNamesGenerator: 'hexadecimal',
-            renameGlobals: false,
-            stringArray: true,
-            stringArrayEncoding: ['base64'],
-            stringArrayThreshold: 0.75,
-            splitStrings: false,
-            controlFlowFlattening: false,
-            deadCodeInjection: false,
-            selfDefending: false,
-            debugProtection: false,
-            transformObjectKeys: false,
-            unicodeEscapeSequence: false,
-            sourceMap: false,
-          },
-        }),
-        enforce: 'post',
-        apply: 'build',
-      },
+      ownCodeObfuscator({ bundle: false }),
     ],
     define: {
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),

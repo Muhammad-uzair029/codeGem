@@ -8,7 +8,7 @@
  * Chromium debugging flags, so Playwright can no longer attach to it —
  * that's the point. These tests drive the binary as an attacker would and
  * assert each route is closed, plus that a normal launch still works
- * (which also proves the arch-specific bytecode loads).
+ * (the main process prints its ready line).
  */
 import { test, expect } from '@playwright/test';
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -50,9 +50,14 @@ const portOpen = (port: number) =>
 
 test.describe.configure({ mode: 'serial', timeout: 60_000 });
 
-test('[packaged] normal launch stays up (bytecode loads)', async () => {
-  const { alive, out } = await run(BIN);
-  expect(out).not.toMatch(/cachedData|rejected|Integrity check failed/i);
+test('[packaged] normal launch runs the main process', async () => {
+  // "Alive" alone isn't enough: a main-process crash shows an error dialog
+  // and leaves the process running. The ready line proves our code ran.
+  // ELECTRON_ENABLE_LOGGING makes a packaged app flush stdout; without it
+  // the ready line can be lost when the process is stopped.
+  const { alive, out } = await run(BIN, [], { ELECTRON_ENABLE_LOGGING: '1' });
+  expect(out).toMatch(/\[codegem\] ready v\d+\.\d+\.\d+/);
+  expect(out).not.toMatch(/Integrity check failed|Uncaught|A JavaScript error/i);
   expect(alive).toBe(true);
 });
 

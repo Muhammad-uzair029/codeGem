@@ -46,7 +46,6 @@ function createWindow(): void {
       preload: join(__dirname_, '..', 'preload', 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      // Bytecode preloads need the Node loader, so no renderer sandbox.
       sandbox: false,
       // No DevTools in shipped builds: they'd expose the renderer's code
       // and state to anyone with the installer.
@@ -113,6 +112,9 @@ function registerShortcuts(): void {
 }
 
 app.whenReady().then(() => {
+  // One line on stdout proves the main process actually ran (the packaged
+  // smoke test and CI wait for it).
+  console.log(`[codegem] ready v${app.getVersion()}`);
   registerWorkspaceIpc(getWin);
   registerInboxIpc();
   registerSkillsIpc();

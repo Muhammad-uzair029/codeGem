@@ -156,7 +156,11 @@ async function installAllFromSite(): Promise<SkillsInstallResult> {
 export function refreshLegacyCache(): void {
   const meta = readMeta();
   if (!meta || meta.skipped || /^https?:\/\//.test(meta.ref)) return;
-  void installAllFromSite();
+  console.log(`[skills] refreshing legacy cache (source "${meta.ref}") from ${siteUrl()}`);
+  void installAllFromSite().then((r) => {
+    if (r.ok) console.log(`[skills] cache refreshed: ${r.count} skills`);
+    else console.warn(`[skills] cache refresh failed: ${r.reason}`);
+  });
 }
 
 // ---------------------------------------------------------------------------
