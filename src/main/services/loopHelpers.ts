@@ -12,9 +12,11 @@ export const RUN_RECORD_FILE = '.claude/feature-loop-run.json';
 export const BRANCH_PREFIX = 'feature-loop/';
 
 // Files the loop needs that commonly live outside git. Only copied into
-// the worktree when they exist and are untracked or ignored.
+// the worktree when they exist and are untracked or ignored. The whole
+// specs tree goes (not just the brief) because the brainstormer reads the
+// registry and prior features' specs for related-feature discovery.
 export const ISOLATION_COPY_PATHS = [
-  '.claude/specs/inbox/feature-brief.md',
+  '.claude/specs',
   '.claude/skills',
   'CLAUDE.md',
   '.mcp.json',

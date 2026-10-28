@@ -183,6 +183,7 @@ test.describe('worktree text helpers', () => {
     const lines = [
       ' M src/app.ts',
       '?? .claude/specs/inbox/feature-brief.md',
+      '?? .claude/specs/auth/login/index.md',
       '?? .claude/skills/feature-loop/SKILL.md',
       '?? CLAUDE.md',
       '?? .mcp.json',
