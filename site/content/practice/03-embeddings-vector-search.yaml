@@ -1,0 +1,286 @@
+module: 03-embeddings-vector-search
+questions:
+  - id: vec-basics-1
+    lesson: 01-what-embeddings-are
+    type: mcq
+    level: junior
+    question: What is an embedding?
+    options:
+      - A compressed copy of the original text that can be decoded back
+      - A fixed-length vector of numbers where similar meanings end up close together
+      - A list of the keywords in a document
+      - A hash used to detect duplicate documents
+    answer: 1
+    explanation: An embedding maps content to a point in a vector space so that semantic similarity becomes geometric closeness. It is not reversible like compression, and unlike a hash, small changes in meaning produce small changes in the vector.
+
+  - id: vec-basics-2
+    lesson: 01-what-embeddings-are
+    type: mcq
+    level: junior
+    question: A user searches "how do I get my money back" and the top result is a page titled "Refund policy" with no words in common. What made this possible?
+    options:
+      - Stemming in the keyword index
+      - A synonym dictionary
+      - Semantic search over embeddings
+      - Fuzzy string matching
+    answer: 2
+    explanation: Embedding models place texts with similar meaning near each other even when they share no words. Stemming and fuzzy matching still depend on overlapping characters or word roots.
+
+  - id: vec-basics-3
+    lesson: 01-what-embeddings-are
+    type: open
+    level: mid
+    question: Your team wants to switch to a newer, better embedding model. You have 20 million vectors indexed with the old one. How do you migrate without breaking search?
+    keyPoints:
+      - Vectors from different models live in different spaces and cannot be mixed or compared
+      - The whole corpus must be re-embedded with the new model
+      - Build the new vectors in a separate column, table, or index alongside the old one
+      - Evaluate the new index on a labelled query set before switching
+      - Cut over atomically (switch reads), keep the old index for rollback, then remove it
+      - Store the model name and version with each vector to prevent future mix-ups
+    modelAnswer: |
+      Each embedding model has its own vector space, so a query embedded with the new model can't be compared with documents embedded by the old one. Mixing them silently ruins relevance.
+
+      So I'd re-embed everything. I'd add a new column or index (for example `embedding_v2`) and backfill it with a batched background job that respects the embedding provider's rate limits. New writes get embedded with both models during the migration. When the backfill is done I'd build the ANN index on the new column, run an offline evaluation (recall@k or nDCG on labelled queries), and maybe shadow-test with real traffic. Then I'd switch reads to the new column behind a flag, keep the old one around for rollback, and drop it later. Storing `model_name` and version on every row makes the state of the migration visible and prevents accidental mixing.
+    followUps:
+      - How would you estimate the time and cost of the re-embedding job?
+      - What do you do with documents written during the backfill?
+
+  - id: vec-basics-4
+    lesson: 01-what-embeddings-are
+    type: mcq
+    level: mid
+    question: Which query is pure vector search most likely to handle badly?
+    options:
+      - "laptop won't turn on"
+      - "error code ERR-4021 in checkout"
+      - "cheap flights to warm places"
+      - "how to cancel my subscription"
+    answer: 1
+    explanation: Exact identifiers such as error codes, SKUs, or rare names carry little learned meaning, so embeddings often rank near-misses above the exact match. Keyword search finds them reliably, which is why hybrid search exists.
+
+  - id: vec-metric-1
+    lesson: 02-similarity-metrics
+    type: mcq
+    level: junior
+    question: Your embedding model outputs vectors normalized to length 1. Which metric gives the same ranking as cosine similarity and is cheapest to compute?
+    options:
+      - Dot product
+      - Manhattan (L1) distance
+      - Jaccard similarity
+      - Edit distance
+    answer: 0
+    explanation: For unit vectors, cosine similarity equals the dot product, and squared Euclidean distance equals 2 − 2·cosine, so all three rank identically. The dot product skips the square roots and division.
+
+  - id: vec-metric-2
+    lesson: 02-similarity-metrics
+    type: mcq
+    level: mid
+    question: "A developer writes: SELECT id FROM docs ORDER BY embedding <#> $1 DESC LIMIT 5. What is wrong?"
+    options:
+      - Nothing, it returns the 5 most similar rows
+      - <#> returns the negative inner product, so DESC returns the least similar rows first
+      - <#> is not a valid pgvector operator
+      - LIMIT cannot be used with vector operators
+    answer: 1
+    explanation: pgvector's <#> returns the negative inner product so that smaller means more similar, like the other distance operators. You should sort ascending. DESC returns the worst matches, and it also stops an index from being used.
+
+  - id: vec-metric-3
+    lesson: 02-similarity-metrics
+    type: open
+    level: mid
+    question: Explain the difference between cosine similarity, dot product, and Euclidean distance, and how you'd choose one for a new project.
+    keyPoints:
+      - Cosine measures the angle and ignores length
+      - Dot product depends on angle and length
+      - Euclidean measures straight-line distance and is lower-is-better
+      - For normalized vectors all three give the same ranking
+      - Use the metric the embedding model was trained or documented for
+      - The index must be built for the same metric used in queries
+    modelAnswer: |
+      Cosine similarity is the angle between two vectors, so only direction matters. Dot product multiplies and sums the components, so a longer vector scores higher even at the same angle. Euclidean distance is the straight-line gap between the points; smaller is closer.
+
+      If the vectors are normalized to length 1, they all produce the same ranking: cosine equals the dot product, and squared Euclidean is 2 − 2·cosine. Then I'd use the dot product because it's cheapest.
+
+      To choose, I'd first follow the embedding model's documentation, because that's the geometry it was trained for. I'd only use raw dot product on unnormalized vectors on purpose, when length carries meaning (as in some recommendation models). And I'd make sure the index is built for the same metric, for example `vector_cosine_ops` with `<=>` in pgvector, or the index won't be used.
+    followUps:
+      - Why do databases usually expose distances instead of similarities?
+
+  - id: vec-pg-1
+    lesson: 03-pgvector-indexes-tuning
+    type: mcq
+    level: mid
+    question: Which statement about pgvector's IVFFlat index is correct?
+    options:
+      - It should be created on an empty table so it learns from inserts
+      - It clusters existing rows, so build it after loading representative data
+      - It has no query-time tuning parameter
+      - It always has better recall than HNSW
+    answer: 1
+    explanation: IVFFlat runs k-means over the rows present at build time to create its lists. Built on an empty or tiny table, the clusters are poor. ivfflat.probes is its query-time knob, and HNSW usually has the better speed/recall trade-off.
+
+  - id: vec-pg-2
+    lesson: 03-pgvector-indexes-tuning
+    type: mcq
+    level: mid
+    question: Recall from your HNSW index is too low for the product team. Which change improves recall without rebuilding the index?
+    options:
+      - Increase m
+      - Increase ef_construction
+      - Increase hnsw.ef_search
+      - Increase lists
+    answer: 2
+    explanation: hnsw.ef_search is a query-time setting (default 40) that widens the candidate list during search. m and ef_construction are build-time options that require recreating the index, and lists belongs to IVFFlat.
+
+  - id: vec-pg-3
+    lesson: 03-pgvector-indexes-tuning
+    type: open
+    level: senior
+    question: A multi-tenant SaaS app uses pgvector with an HNSW index. Users of small tenants report that searches asking for 10 results often return only 2 or 3. Diagnose and fix it.
+    keyPoints:
+      - The tenant WHERE filter is applied after the HNSW index returns candidates (post-filtering)
+      - With ef_search at 40 and a selective filter, most candidates are thrown away
+      - Raise hnsw.ef_search for these queries, which trades latency for results
+      - Use iterative index scans (hnsw.iterative_scan, pgvector 0.8.0+)
+      - Partial indexes per large tenant, or partitioning by tenant
+      - For tiny tenants, exact search over their rows may be fast enough and perfectly accurate
+    modelAnswer: |
+      This is the classic filtered-ANN problem. The HNSW scan returns roughly `ef_search` nearest candidates across *all* tenants, and only then does Postgres apply `WHERE tenant_id = $2`. For a small tenant, almost none of those global neighbours belong to them, so the filter leaves 2 or 3 rows.
+
+      Fixes, roughly in order:
+      1. **Iterative index scans** (pgvector 0.8.0+): `SET hnsw.iterative_scan = relaxed_order;` lets the scan keep going until enough rows pass the filter, bounded by `hnsw.max_scan_tuples`.
+      2. **Raise `hnsw.ef_search`** for filtered queries. Simple, but costs latency for every query.
+      3. **Exact search for small tenants.** With a B-tree index on `tenant_id`, scanning a few thousand rows exactly is fast and has perfect recall. The planner may pick this by itself; check with `EXPLAIN ANALYZE`.
+      4. **Partition by tenant, or add partial HNSW indexes** for the biggest tenants, so each index only holds relevant rows.
+
+      I'd confirm the diagnosis with `EXPLAIN ANALYZE` and by comparing result counts and recall against exact search for affected tenants.
+    followUps:
+      - How would you choose between partitioning and partial indexes?
+      - How would you monitor this in production?
+
+  - id: vec-pg-4
+    lesson: 03-pgvector-indexes-tuning
+    type: mcq
+    level: senior
+    question: "You created USING hnsw (embedding vector_cosine_ops), but EXPLAIN shows a sequential scan for: SELECT id, 1 - (embedding <=> $1) AS score FROM docs ORDER BY score DESC LIMIT 10. Why?"
+    options:
+      - HNSW indexes only work with L2 distance
+      - The ORDER BY is on a derived expression, not on embedding <=> $1 ascending, so the index can't serve it
+      - You must run ANALYZE after every insert
+      - LIMIT 10 is too small for the planner to use an index
+    answer: 1
+    explanation: pgvector indexes serve ORDER BY <column> <operator> <value> ascending with a LIMIT. Ordering by 1 - distance DESC is mathematically equivalent but the planner can't match it to the index. Order by embedding <=> $1 and compute the score in the select list.
+
+  - id: vec-pg-5
+    lesson: 03-pgvector-indexes-tuning
+    type: design
+    level: senior
+    question: Design semantic search for a support knowledge base with about 5 million chunks in Postgres, a p95 latency target of 100 ms, and a recall@10 target of 0.95. Explain your schema, index choice, tuning process, and how you'd keep it healthy.
+    keyPoints:
+      - Schema with a vector(n) column matching the model, plus tenant or metadata columns and the model version
+      - HNSW with an operator class matching the query operator, built with suitable maintenance_work_mem
+      - A labelled or exact-search baseline to measure recall@10
+      - Tune hnsw.ef_search (and m or ef_construction if needed) against latency and recall
+      - Handle filters (iterative scans, partitioning) and keep the index in RAM
+      - Monitoring of latency, recall drift, index size, and a re-embedding plan
+    modelAnswer: |
+      ### Schema
+      `chunks(id, doc_id, tenant_id, content, embedding vector(n), embed_model, updated_at)` with `n` equal to the model's dimension. If the model's dimension is above 2,000, use `halfvec` so it can be indexed and to halve memory.
+
+      ### Index
+      HNSW with `vector_cosine_ops` (assuming a cosine model), starting at defaults `m = 16, ef_construction = 64`. Build with `CREATE INDEX CONCURRENTLY` and a raised `maintenance_work_mem` so the graph fits in memory during the build. HNSW over IVFFlat because it needs no training and gives the better speed/recall trade-off under continuous inserts.
+
+      ### Tuning process
+      1. Take a sample of a few hundred real queries. Get the true top 10 with exact search (`SET LOCAL enable_indexscan = off`).
+      2. Sweep `hnsw.ef_search` (40, 80, 120, 200...) and record recall@10 and p95 latency.
+      3. Choose the smallest value that meets 0.95 recall within 100 ms. If none does, rebuild with a higher `m` or `ef_construction`, or add RAM so the index stays cached.
+
+      ### Filters
+      For tenant filters, enable iterative index scans, and consider partitioning by tenant if a few tenants dominate.
+
+      ### Keeping it healthy
+      Dashboards for p95 latency, index size vs RAM, and a weekly recall check against exact search. Store `embed_model` on each row so a future model change becomes a planned re-embed into a new column, not a silent mix.
+    followUps:
+      - What changes if the corpus grows to 200 million chunks?
+      - How do you handle frequent updates to existing chunks?
+
+  - id: vec-db-1
+    lesson: 04-vector-databases-compared
+    type: mcq
+    level: mid
+    question: Which is a genuine operational cost of adding a dedicated vector database alongside your main Postgres database?
+    options:
+      - Vector databases can't store metadata
+      - You have to keep inserts, updates, deletes, and permission changes in sync across two systems
+      - Dedicated vector databases don't support approximate search
+      - You lose the ability to use cosine similarity
+    answer: 1
+    explanation: The hidden cost of a second datastore is synchronisation. Every write path, delete (including account deletion), and permission change must reach both, and you need a way to detect and repair drift. Dedicated engines do support metadata, ANN, and cosine.
+
+  - id: vec-db-2
+    lesson: 04-vector-databases-compared
+    type: open
+    level: mid
+    question: Your startup already runs Postgres and has 300,000 documents to search. A teammate wants to adopt a dedicated vector database. What do you recommend and why?
+    keyPoints:
+      - At this scale pgvector handles the load comfortably
+      - One system means joins, transactions, and existing backups and access control
+      - Avoids dual writes and a second system to operate and pay for
+      - Name concrete triggers for revisiting the choice later
+      - Benchmark on real data before deciding
+    modelAnswer: |
+      I'd start with pgvector. 300,000 vectors is small for an HNSW index in Postgres; latency will be low on a modest instance. Keeping vectors next to the documents gives us joins (permissions, authors, timestamps), transactional updates so a document and its vector never disagree, and the backups, monitoring, and access control we already have.
+
+      A dedicated database adds a second system to run and pay for, plus a sync pipeline for every insert, update, and delete. That's real cost with no clear benefit at our size.
+
+      I'd write down the triggers to revisit: vector count growing to the point that the index doesn't fit in RAM, p95 latency we can't hit with tuning, heavy selective filtering that pgvector handles poorly, or vector load hurting the main database. If those hit, we benchmark Qdrant, Weaviate, or Pinecone on our own data at equal recall.
+    followUps:
+      - How would you stop vector search load from hurting transactional queries?
+
+  - id: vec-db-3
+    lesson: 04-vector-databases-compared
+    type: design
+    level: senior
+    question: You are building search over 500 million product embeddings with heavy per-query filters (category, price, region, in-stock) and thousands of queries per second. Compare at least two storage options and pick one, explaining the trade-offs.
+    keyPoints:
+      - Estimate memory needs from vector count and dimension, and consider quantization
+      - Filtered ANN performance is a key criterion (filtering during search vs after)
+      - Horizontal scaling via sharding and replicas for throughput
+      - Managed vs self-hosted trade-off (ops burden, cost, lock-in, data residency)
+      - Sync pipeline from the source of truth, such as CDC or an outbox
+      - Benchmark at equal recall with real filters before committing
+    modelAnswer: |
+      ### Sizing first
+      500M vectors × 768 dims × 4 bytes is roughly 1.5 TB of raw float32, before index overhead. That rules out "one Postgres box with everything in RAM". Quantization (scalar or binary, with rescoring) or half precision becomes important.
+
+      ### Options
+      - **pgvector, partitioned or sharded (for example with Citus).** Familiar SQL and strong consistency, but filtered ANN at this scale needs careful partitioning, and sharding Postgres for this throughput is significant engineering.
+      - **Qdrant (self-hosted or managed).** Payload filters applied during HNSW traversal suit heavy filters; supports sharding, replicas, and quantization. You run a cluster, or pay for the managed one.
+      - **Pinecone.** Fully managed scaling and metadata filtering. Least ops work, but vendor lock-in, data with a third party, and cost at this volume need modelling.
+
+      ### Pick
+      I'd shortlist a dedicated engine with filter-aware search, such as Qdrant, and benchmark it against a managed option, on a realistic sample with the real filter mix and a fixed recall target. The final choice depends on whether the team prefers to run infrastructure (cheaper at scale, more control) or pay for managed.
+
+      ### Either way
+      Postgres stays the source of truth for products. A CDC or outbox pipeline streams changes (price, stock, deletes) to the vector store, with a reconciliation job. Stock and price change often, so keep them as filterable payload fields that are cheap to update without re-embedding.
+    followUps:
+      - How do you keep in-stock status fresh without re-embedding products?
+      - How would you test failover?
+
+  - id: vec-db-4
+    lesson: 04-vector-databases-compared
+    type: open
+    level: senior
+    question: A vendor benchmark says their vector database is 10x faster than pgvector. How do you evaluate that claim for your own system?
+    keyPoints:
+      - Compare at the same recall@k, since speed without recall is meaningless
+      - Use your own data, dimensions, filters, and query distribution
+      - Check that both systems are configured fairly (index parameters, hardware, warm cache)
+      - Measure p95 or p99 latency and throughput under concurrency, not just a single query
+      - Include total cost, ingest speed, and operational burden
+    modelAnswer: |
+      ANN benchmarks are easy to skew. You can make any engine "fast" by lowering its search effort until recall drops. So the first question is: at what recall? I'd only compare points where both systems hit the same recall@10 on the same queries.
+
+      Then I'd rerun it on our workload: a sample of our real vectors and dimensions, our real filter mix, and realistic concurrency. I'd make sure pgvector was tuned fairly (HNSW, sensible `m`, `ef_search` sweep, index in RAM, same hardware class) and measure p95/p99 latency and throughput, not a single-query average. I'd also measure ingest and index build time, update behaviour, and total cost, including the ops time and sync pipeline a second system brings. A 10x latency win at our scale might be 8 ms vs 2 ms, which may not matter next to a 1-second LLM call.
+    followUps:
+      - Which tools or datasets would you use to run the benchmark?

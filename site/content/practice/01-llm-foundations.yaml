@@ -1,0 +1,341 @@
+module: 01-llm-foundations
+questions:
+  - id: llm-tokens-1
+    lesson: 01-how-llms-work
+    type: mcq
+    level: junior
+    question: What is a token in the context of an LLM?
+    options:
+      - Always exactly one word
+      - A piece of text from the tokenizer's vocabulary, often a sub-word
+      - Always exactly one character
+      - An API key used for authentication
+    answer: 1
+    explanation: >-
+      Tokenizers split text into pieces from a fixed vocabulary. Common words are often one token,
+      but rare words, code and many non-English words split into several. "One word" is the tempting
+      wrong answer; it only holds for common English words.
+
+  - id: llm-tokens-2
+    lesson: 01-how-llms-work
+    type: open
+    level: mid
+    question: Explain to a junior engineer how an LLM turns a prompt into an answer, and name two practical consequences for the systems we build.
+    keyPoints:
+      - Text is split into tokens, and each token is mapped to an embedding vector
+      - Attention layers let each token use context from earlier tokens
+      - The model outputs probabilities for the next token; one is sampled and the loop repeats
+      - Limits and billing are counted in tokens
+      - Output is generated one token at a time, so long answers are slow (hence streaming)
+      - The model is stateless; history must be resent each request
+    modelAnswer: |
+      The prompt is **tokenized** into sub-word pieces, each token becomes an **embedding** vector,
+      and a stack of **attention** layers lets every token mix in information from the tokens before it.
+      The last layer produces a probability for every possible next token. One is **sampled**,
+      appended, and the process repeats until a stop token or `max_tokens`.
+
+      Consequences:
+      - **Tokens are the unit of cost and limits**, so we count tokens, not characters.
+      - **Output latency scales with answer length**, because generation is sequential. We stream
+        responses and keep answers short.
+      - **No memory between calls**: chat history and facts must be in every request.
+    followUps:
+      - Why might the same sentence cost more tokens in Japanese than in English?
+      - What is a KV cache and why does it help?
+
+  - id: llm-tokens-3
+    lesson: 01-how-llms-work
+    type: mcq
+    level: mid
+    question: Why does generating 1,000 output tokens usually take much longer than reading 1,000 input tokens?
+    options:
+      - Output tokens use a bigger model
+      - Input tokens can be processed in parallel, but each output token depends on the previous one
+      - The API throttles output on purpose
+      - Output tokens are longer than input tokens
+    answer: 1
+    explanation: >-
+      The whole prompt is processed in one parallel pass. Generation is a loop: token N+1 can't be
+      computed until token N is chosen. That sequential loop is why output dominates latency.
+
+  - id: llm-context-1
+    lesson: 02-context-windows-and-cost
+    type: mcq
+    level: junior
+    question: A request has a 3,000-token prompt and gets a 500-token answer. How many tokens of the context window does it use?
+    options:
+      - "500"
+      - "3,000"
+      - "3,500"
+      - It depends only on max_tokens
+    answer: 2
+    explanation: >-
+      Input and output share the same context window, so the total is 3,500. Billing usually prices
+      the two parts differently, but both count toward the window.
+
+  - id: llm-context-2
+    lesson: 02-context-windows-and-cost
+    type: open
+    level: mid
+    question: Users complain that your chatbot "forgets" what they said at the start of a long conversation. Explain why and how you'd fix it.
+    keyPoints:
+      - The context window is finite; old turns are truncated to make room
+      - Even when it fits, information in the middle of long context is used less reliably
+      - Summarize older turns into a running summary
+      - Store key facts (name, preferences, decisions) explicitly and re-inject them
+      - Retrieve relevant past turns instead of sending everything
+    modelAnswer: |
+      The model is stateless; the app resends history each turn. Once the conversation exceeds the
+      budget, the oldest turns get dropped, so the model never sees them. Even before that, very long
+      contexts make it easier for the model to miss details buried in the middle.
+
+      Fixes, usually combined:
+      - Keep the last few turns verbatim and replace older ones with a **running summary**.
+      - Extract **durable facts** (user's name, order ID, decisions) into a small structured memory
+        that's always included.
+      - For very long histories, **retrieve** the past turns relevant to the current question.
+
+      This also cuts cost, since each turn no longer pays for the whole history.
+    followUps:
+      - How would you decide what goes into the summary?
+      - How would you test that the fix works?
+
+  - id: llm-context-3
+    lesson: 02-context-windows-and-cost
+    type: design
+    level: senior
+    question: Product wants to launch an AI assistant that answers questions about a customer's uploaded contracts. Estimate and control the monthly LLM cost before launch.
+    keyPoints:
+      - Cost formula with input and output tokens priced separately, output usually higher
+      - Estimate tokens per request from realistic samples, not guesses
+      - Multiply by expected requests and add headroom for retries and growth
+      - Retrieve relevant contract sections instead of sending whole documents
+      - Use a smaller model or routing where quality allows; consider prompt caching for repeated prefixes
+      - Log usage per request and feature; set budgets, alerts and per-user limits
+    modelAnswer: |
+      ### Estimate
+      1. Gather ~50 realistic questions and sample contracts.
+      2. Measure **input tokens** (system prompt + retrieved sections + history) and **output tokens**
+         per request using the provider's token counting or `usage`.
+      3. `monthly cost ≈ requests/month × (avg_in × in_price + avg_out × out_price)`, plus 20–30%
+         headroom for retries, longer outputs and growth. Prices come from config, not memory.
+
+      ### Control
+      - **Don't send whole contracts.** Chunk and retrieve the relevant clauses; this is usually the
+        biggest saving.
+      - **Cap output** with clear length instructions and a sensible `max_tokens`.
+      - **Right-size the model**: run an eval; route simple lookups to a smaller model.
+      - **Cache** the stable prefix (system prompt, tool definitions) if the provider supports it.
+      - **Trim history** with summaries.
+
+      ### Operate
+      - Log `usage`, model and feature on every call; dashboards for cost per request and per user.
+      - Budget alerts and per-tenant rate limits so one heavy user can't blow the budget.
+    followUps:
+      - Costs are 3x your estimate in week one. How do you find out why?
+      - When would you choose to send the whole document anyway?
+
+  - id: llm-sampling-1
+    lesson: 03-sampling
+    type: mcq
+    level: junior
+    question: You're extracting invoice numbers into JSON. Which sampling setup fits best?
+    options:
+      - Temperature 1.5 for creativity
+      - Low temperature, near 0
+      - Very small max_tokens to force accuracy
+      - Top-p 1.0 and temperature 2.0
+    answer: 1
+    explanation: >-
+      Extraction needs consistent, syntactically valid output, so you want the most likely tokens.
+      A tiny max_tokens doesn't improve accuracy; it just truncates the JSON.
+
+  - id: llm-sampling-2
+    lesson: 03-sampling
+    type: mcq
+    level: mid
+    question: A response comes back with stop reason "max_tokens" (or finish reason "length"). What does it mean?
+    options:
+      - The model finished its answer normally
+      - The output was cut off because it hit the token limit
+      - The prompt was too long and was rejected
+      - The model refused to answer
+    answer: 1
+    explanation: >-
+      The model was still writing when it hit the cap. Treat the output as incomplete: don't parse it
+      as finished JSON. Raise the limit or ask for a shorter answer. A too-long prompt is rejected with
+      an error instead.
+
+  - id: llm-sampling-3
+    lesson: 03-sampling
+    type: open
+    level: mid
+    question: Explain temperature and top-p. A teammate sets temperature to 0 and says the model is now deterministic, so tests can compare exact strings. Respond.
+    keyPoints:
+      - Temperature reshapes the probability distribution; low is focused, high is varied
+      - Top-p keeps only the most likely tokens covering probability p
+      - Usually tune one of them, not both
+      - Temperature 0 is near-deterministic but not guaranteed identical across calls
+      - Tests should check structure and meaning, not exact strings
+    modelAnswer: |
+      **Temperature** scales the model's scores before they become probabilities. Low temperature
+      makes the top choice dominate; high temperature gives less likely tokens a chance. **Top-p**
+      keeps only the smallest set of tokens whose probabilities add up to p and samples from those.
+      Providers often recommend adjusting one of them, not both.
+
+      Temperature 0 makes output *close to* deterministic, but providers don't guarantee identical
+      results: batching, hardware and floating-point effects can change a token, and one changed token
+      changes everything after it. Model updates also change output. So tests should validate the
+      **shape** (parses, matches schema) and the **meaning** (right label, contains required facts),
+      or use an eval with a grader instead of exact string matches.
+    followUps:
+      - How would you write a reliable test for a summarization endpoint?
+
+  - id: llm-models-1
+    lesson: 04-choosing-a-model
+    type: mcq
+    level: junior
+    question: Which statement about open-weight models is correct?
+    options:
+      - They are always more accurate than closed models
+      - You can download and run the weights yourself, but the licence may restrict use
+      - Their training data is always public
+      - They need no infrastructure to run
+    answer: 1
+    explanation: >-
+      Open-weight means the weights are downloadable. That gives control over data and deployment,
+      but it isn't the same as open source: training data is often private, licences vary, and you
+      have to run the serving infrastructure.
+
+  - id: llm-models-2
+    lesson: 04-choosing-a-model
+    type: open
+    level: senior
+    question: Your company is debating a hosted closed model API vs self-hosting an open-weight model for an internal document assistant. How do you make the call?
+    keyPoints:
+      - Start from requirements - quality bar, latency, volume, data and compliance constraints
+      - Run the same eval set on both options
+      - Hosted - strongest models, no ops, but data leaves your systems and you depend on vendor pricing and deprecations
+      - Self-hosted - data control and fine-tuning, but GPU cost, scaling and upgrades are on you
+      - Total cost of ownership, including engineering time, not just per-token price
+      - Keep the model behind an interface so you can switch later
+    modelAnswer: |
+      I'd make it a measured decision:
+
+      1. **Requirements**: must data stay on our infrastructure (contracts, regulations)? Expected
+         volume? Latency and quality bar?
+      2. **Eval**: build a set of real questions with good answers and run both candidates.
+      3. **Trade-offs**:
+         - *Hosted API*: usually the strongest quality, zero ops, quick upgrades. Data goes to a
+           vendor (check retention and training terms), and we inherit their rate limits, pricing and
+           deprecation schedule.
+         - *Self-hosted open-weight*: data stays inside, we can fine-tune, cost can be predictable at
+           high steady volume. We own GPUs, autoscaling, monitoring and upgrades, and quality may lag.
+      4. **TCO**: per-token price vs GPU hours + on-call + engineering time. At low or spiky volume,
+         hosted usually wins.
+
+      Either way, hide the model behind one interface and keep the eval set, so we can switch or
+      run both.
+    followUps:
+      - What changes if the volume grows 50x?
+      - How do you handle the vendor deprecating your model?
+
+  - id: llm-models-3
+    lesson: 04-choosing-a-model
+    type: design
+    level: senior
+    question: Design a model-routing layer for a product with a mix of easy requests (classification, short rewrites) and hard ones (multi-step analysis). Goal - cut cost without hurting quality.
+    keyPoints:
+      - Model IDs live in config behind a single client interface
+      - Router by task type or a cheap classifier; small model for easy, large for hard
+      - Cascade - try small first, escalate on validation failure or low confidence
+      - An eval set per task type to prove the small model is good enough
+      - Log model, tokens, latency, cost and escalations; monitor quality per route
+      - Roll out gradually with flags and A/B comparison
+    modelAnswer: |
+      ### Components
+      - **LLM gateway**: one internal client; callers pass a *task type*, not a model name. Model IDs
+        and prices live in config.
+      - **Router**: rules first (task type, input length), optionally a cheap classifier for ambiguous
+        requests. Easy → small model, hard → large model.
+      - **Cascade**: for borderline tasks, call the small model, validate the output (schema, required
+        fields, self-reported confidence, or a quick check); escalate to the large model on failure.
+
+      ### Proving it
+      - An eval set per task type. A route only moves to the small model if it passes the same bar.
+      - Shadow traffic: run the small model in parallel, compare before switching.
+
+      ### Operating it
+      - Log per call: route, model, tokens, latency, cost, escalated yes/no.
+      - Watch escalation rate; if it climbs, the small model isn't good enough for that route.
+      - Feature flags to roll back a route instantly.
+
+      Expected outcome: most volume on the cheap model, the large model reserved for the requests that
+      need it.
+    followUps:
+      - How do you stop the cascade from making slow requests even slower?
+      - What metric tells you the router is mis-classifying?
+
+  - id: llm-halluc-1
+    lesson: 05-hallucinations
+    type: mcq
+    level: junior
+    question: Why do LLMs hallucinate?
+    options:
+      - They deliberately lie to satisfy users
+      - They generate plausible-sounding text and have no built-in fact check
+      - They only hallucinate when the API has an outage
+      - Their context window is always full
+    answer: 1
+    explanation: >-
+      The model predicts likely continuations. When it lacks the facts, a confident-sounding answer is
+      still the likely continuation. There's no intent involved, and no built-in step that checks the
+      answer against reality.
+
+  - id: llm-halluc-2
+    lesson: 05-hallucinations
+    type: mcq
+    level: mid
+    question: Which change does the most to stop a support bot from inventing your company's refund policy?
+    options:
+      - Add "Never make things up" to the prompt
+      - Set temperature to 0
+      - Retrieve the real policy text, require answers from it, and allow "I don't know"
+      - Switch to the largest model available
+    answer: 2
+    explanation: >-
+      The model can't know a private policy, so grounding it in the real text is the main fix.
+      Temperature 0 only makes the same wrong answer repeat, and instructions alone don't supply the
+      missing facts.
+
+  - id: llm-halluc-3
+    lesson: 05-hallucinations
+    type: open
+    level: senior
+    question: You're launching an internal assistant that answers HR questions. How do you reduce hallucinations and how do you measure whether you succeeded?
+    keyPoints:
+      - Ground answers in retrieved HR documents; instruct answer-only-from-sources
+      - Explicit NOT_FOUND or "I don't know" path with escalation to HR
+      - Require citations and verify them in code
+      - Eval set of real questions with known answers, including unanswerable ones
+      - Metrics - accuracy, groundedness, correct refusals; LLM-as-judge plus human spot checks
+      - Production monitoring - user feedback, sampled reviews, regression runs on every prompt or model change
+    modelAnswer: |
+      **Reduce**
+      - Retrieve the relevant policy sections and put them in the prompt.
+      - Instruct: answer only from these documents, cite the document ID per claim, reply NOT_FOUND
+        otherwise. NOT_FOUND routes to an HR contact.
+      - Verify in code that every cited ID exists in the retrieved set; reject answers with no citations.
+      - Low temperature; no fixed-count requests like "list 5 benefits".
+
+      **Measure**
+      - Build an eval set of ~100 real questions with reference answers, including questions the docs
+        *can't* answer (to test refusals).
+      - Score accuracy, groundedness (every claim supported by a cited source) and correct-refusal rate.
+        Use an LLM-as-judge for scale and calibrate it with human-graded samples.
+      - Re-run the eval on every prompt, model or document change.
+      - In production: thumbs up/down, sampled human review, and alerts if refusal or complaint rates
+        jump.
+    followUps:
+      - How do you know your LLM judge is trustworthy?
+      - What do you do when the HR docs themselves contradict each other?

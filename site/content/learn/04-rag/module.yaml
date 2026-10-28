@@ -1,0 +1,4 @@
+title: RAG (retrieval-augmented generation)
+summary: Build a retrieval-augmented generation pipeline end to end, choose chunking and retrieval strategies that actually find the right context, and debug it when answers go wrong.
+icon: rag
+level: intermediate

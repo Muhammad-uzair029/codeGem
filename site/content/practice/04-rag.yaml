@@ -1,0 +1,319 @@
+module: 04-rag
+questions:
+  - id: rag-pipe-1
+    lesson: 01-rag-pipeline
+    type: mcq
+    level: junior
+    question: Which order correctly describes a basic RAG pipeline?
+    options:
+      - Generate, retrieve, embed, chunk
+      - Ingest, chunk, embed, store, retrieve, generate
+      - Embed, generate, chunk, retrieve
+      - Retrieve, ingest, generate, store
+    answer: 1
+    explanation: The offline half prepares the index (ingest, chunk, embed, store) and the online half answers questions (retrieve, generate). Generation always comes last because it needs the retrieved context.
+
+  - id: rag-pipe-2
+    lesson: 01-rag-pipeline
+    type: mcq
+    level: junior
+    question: Your company policies change every month and users need answers with links to the source. Which approach fits best?
+    options:
+      - Fine-tune a model on the policies every month
+      - RAG over the policy documents
+      - A longer system prompt describing the policies from memory
+      - Increase the model's temperature
+    answer: 1
+    explanation: RAG keeps knowledge fresh by re-indexing changed documents, without retraining, and can cite the exact passages used. Fine-tuning is slow to update, can't cite sources, and is better suited to style or format.
+
+  - id: rag-pipe-3
+    lesson: 01-rag-pipeline
+    type: open
+    level: mid
+    question: In a multi-tenant RAG app, how do you make sure users never see content from documents they aren't allowed to access?
+    keyPoints:
+      - Store tenant and access-control metadata on every chunk at ingest
+      - Filter on permissions inside the retrieval query, before results reach the prompt
+      - Never rely on the LLM or prompt instructions to hide content it has been given
+      - Keep chunk permissions in sync when document permissions change
+      - Apply the same filters to every search path (keyword, vector, query variants)
+      - Test with cross-tenant and revoked-access cases
+    modelAnswer: |
+      Permissions have to be enforced at retrieval, not generation. At ingest I copy the document's tenant ID and access list (groups or user IDs) onto every chunk. The retrieval query filters on them, for example `WHERE tenant_id = $1 AND acl && $2` in pgvector or a payload filter in a vector database, so forbidden chunks never become candidates.
+
+      The LLM must never be the security boundary: once text is in the prompt, a clever question or prompt injection can get it out. When a document's permissions change, an update job rewrites the ACL on its chunks (or re-indexes it), and deletes remove chunks right away. Every retrieval path, including keyword search and multi-query variants, gets the same filter. I'd back this with automated tests that query as one tenant and assert nothing from another tenant comes back.
+    followUps:
+      - How fast must a permission revocation take effect, and how do you guarantee it?
+
+  - id: rag-pipe-4
+    lesson: 01-rag-pipeline
+    type: design
+    level: senior
+    question: Design a question-answering assistant over a company's internal knowledge (a wiki, a ticketing system, and shared PDFs) for about 5,000 employees. Cover ingestion, retrieval, generation, permissions, and how you'd measure quality.
+    keyPoints:
+      - Connectors per source with incremental sync (content hashes or updated timestamps) and deletion handling
+      - Clean text extraction, structure-aware chunking, and metadata (source, heading, owner, date, ACL)
+      - Hybrid retrieval with permission filters, plus reranking
+      - Grounded prompt with citations and an explicit "I don't know" path
+      - Evaluation set, retrieval and answer metrics, tracing, and user feedback
+      - Operational concerns such as latency budget, cost, re-embedding on model change, and PII
+    modelAnswer: |
+      ### Ingestion
+      One connector per source (wiki, tickets, PDF storage), each syncing incrementally by `updated_at` or a content hash, and removing chunks when a source item is deleted. Text extraction per format, with special care for PDF tables. Each chunk keeps `source_url`, title, heading path, owner, `updated_at`, and the ACL copied from the source system.
+
+      ### Chunking and indexing
+      Recursive, structure-aware chunking (headings for the wiki, one ticket thread per unit, page and section boundaries for PDFs), a few hundred tokens with overlap, and a contextual header prepended. Store in Postgres with pgvector (HNSW) plus a full-text index, since the scale is modest and permissions join naturally.
+
+      ### Retrieval
+      Condense the chat turn into a standalone question, then hybrid search (BM25 + vector, fused with RRF) with tenant and ACL filters, then a cross-encoder rerank of the top ~30 down to ~6.
+
+      ### Generation
+      A prompt that requires answering only from the sources, citing them, and saying "I don't know" when they don't cover it. Return clickable citations. If reranker scores are all weak, reply that nothing relevant was found and suggest where to ask.
+
+      ### Quality
+      An evaluation set of real employee questions with labelled sources. Track recall@k and MRR for retrieval, faithfulness and correctness for answers. Trace every request (rewrites, chunk IDs, scores). Thumbs up/down feedback feeds new eval cases.
+
+      ### Operations
+      A latency budget per stage, caching for repeated questions, PII handling in logs, and a planned re-embedding path when the embedding model changes.
+    followUps:
+      - How would you handle a document that exists in both an old and a new version?
+      - What would you change at 500,000 employees?
+
+  - id: rag-chunk-1
+    lesson: 02-chunking-strategies
+    type: mcq
+    level: junior
+    question: Why do RAG systems split documents into chunks instead of embedding whole documents?
+    options:
+      - Vector databases only accept short strings
+      - Smaller, focused chunks match queries better, fit model input limits, and let you send only relevant text to the LLM
+      - Chunking makes the embedding model more accurate in general
+      - Whole documents can't be stored as text
+    answer: 1
+    explanation: One vector for a long document blurs many topics together and may exceed the embedding model's input limit (excess text is truncated). Chunks give precise matches and keep the prompt focused.
+
+  - id: rag-chunk-2
+    lesson: 02-chunking-strategies
+    type: mcq
+    level: mid
+    question: How does recursive chunking decide where to split?
+    options:
+      - It splits every N characters exactly
+      - It splits on the coarsest separator first (such as paragraphs) and only uses finer separators (lines, sentences, words) for pieces that are still too large
+      - It embeds every sentence and splits where meaning changes
+      - It asks an LLM to choose the split points
+    answer: 1
+    explanation: Recursive splitting respects document structure by trying big natural boundaries before small ones. Splitting where sentence embeddings change is semantic chunking, and splitting every N characters is fixed-size chunking.
+
+  - id: rag-chunk-3
+    lesson: 02-chunking-strategies
+    type: open
+    level: mid
+    question: Your RAG system answers questions about a 12-step setup procedure, but answers often miss steps or mix them up. What's likely happening with your chunking, and what would you change?
+    keyPoints:
+      - The procedure is being split across several chunks, so retrieval returns only part of it
+      - Use structure-aware splitting that keeps a procedure or section together
+      - Small-to-big (parent document) retrieval, which matches small chunks but returns the full section
+      - Fetch neighbouring chunks of the top hit
+      - Add the heading path to every chunk so the fragments are identifiable
+      - Verify the fix with recall on procedure questions
+    modelAnswer: |
+      The procedure is probably larger than the chunk size, so fixed or naive splitting spreads it over three or four chunks. A question about step 7 retrieves the chunk with step 7, but steps 5 and 6 live in a chunk that doesn't match the query, so the model answers with half the picture.
+
+      Fixes: split on document structure (headings and numbered lists) so a procedure stays whole when it fits, and use small-to-big retrieval, where you embed small chunks for precise matching but send the whole parent section to the LLM. Alternatively, fetch the chunks just before and after the top hit using stored chunk positions. Prepending the heading path ("Setup guide > Installing the agent") also helps retrieval find all the parts. I'd confirm the change with an evaluation set of procedure questions, measuring whether all needed chunks reach the prompt.
+    followUps:
+      - What's the downside of always returning whole parent sections?
+
+  - id: rag-hybrid-1
+    lesson: 03-hybrid-search-reranking
+    type: mcq
+    level: mid
+    question: Using reciprocal rank fusion with k = 60, which document scores highest? Doc A is ranked 1st in keyword search and absent from vector search. Doc B is ranked 4th in both lists.
+    options:
+      - Doc A, because a first place always wins
+      - Doc B, because appearing in both lists adds two contributions
+      - They tie
+      - It can't be computed without the raw scores
+    answer: 1
+    explanation: "Doc A gets 1/61 ≈ 0.0164. Doc B gets 1/64 + 1/64 ≈ 0.0313. RRF rewards agreement between retrievers, and it only needs ranks, not raw scores."
+
+  - id: rag-hybrid-2
+    lesson: 03-hybrid-search-reranking
+    type: mcq
+    level: mid
+    question: What makes a cross-encoder reranker more accurate, but slower, than bi-encoder (embedding) retrieval?
+    options:
+      - It uses a bigger vector dimension
+      - It reads the query and each document together, so it can't precompute document representations
+      - It only uses keyword matching
+      - It runs on the database server
+    answer: 1
+    explanation: A bi-encoder embeds documents ahead of time and compares vectors cheaply. A cross-encoder processes each query-document pair jointly, which captures fine relevance details but needs one model run per pair, so it's only used on a short candidate list.
+
+  - id: rag-hybrid-3
+    lesson: 03-hybrid-search-reranking
+    type: open
+    level: mid
+    question: Support agents complain that searching for exact error codes like "ERR-4021" returns loosely related articles. Your system uses only vector search. What do you change and why?
+    keyPoints:
+      - Embeddings handle exact identifiers poorly because codes carry little learned meaning
+      - Add keyword search (BM25 or full-text) alongside vector search
+      - Merge results with reciprocal rank fusion or a tuned weighted blend
+      - Optionally rerank the fused list with a cross-encoder
+      - Check the tokenizer or text config doesn't mangle codes, and measure on an eval set
+    modelAnswer: |
+      Vector search maps text by meaning, and a code like `ERR-4021` has almost none, so the embedding lands near any article about errors. Keyword search is exactly right for this: an article containing that string should rank first.
+
+      I'd add hybrid search: run BM25 or Postgres full-text search alongside the vector search, take the top 50 or so from each, and merge with reciprocal rank fusion. Then optionally rerank the top candidates with a cross-encoder. I'd also check that the keyword analyzer keeps codes intact (some tokenizers split on hyphens, which can still work but is worth testing). Finally I'd add error-code queries to the evaluation set and confirm recall improves without hurting natural-language queries.
+    followUps:
+      - How would you weight keyword vs vector results if RRF isn't good enough?
+
+  - id: rag-hybrid-4
+    lesson: 03-hybrid-search-reranking
+    type: open
+    level: senior
+    question: Adding a cross-encoder reranker improved answer quality but pushed p95 latency over budget by 300 ms. How do you recover the latency while keeping most of the quality gain?
+    keyPoints:
+      - Rerank fewer candidates and measure the quality vs candidate-count curve
+      - Truncate chunk text fed to the reranker
+      - Use a smaller or distilled reranker, batch pairs, and run on a GPU
+      - Skip reranking when the first-stage result is clearly confident
+      - Cache results for repeated queries and run independent stages in parallel
+      - Validate every change against the evaluation set
+    modelAnswer: |
+      First I'd measure where the time goes. Reranker cost scales with the number of pairs and their length, so the biggest levers are:
+
+      - **Fewer candidates.** Plot nDCG or answer quality against rerank set size (e.g. 50, 30, 20). Often most of the gain comes from the first 20.
+      - **Shorter inputs.** Truncate each chunk to its first few hundred tokens for scoring.
+      - **Cheaper model or hardware.** A smaller cross-encoder, batched inference, GPU serving, or a hosted reranker with lower latency.
+      - **Conditional reranking.** Skip it when the top first-stage result is far ahead or the query is an exact-match lookup.
+      - **Caching and parallelism.** Cache reranked results for popular queries, and overlap other work (like starting the prompt build) with reranking.
+
+      Each change gets checked against the eval set so we keep, say, 90% of the quality gain within the latency budget.
+    followUps:
+      - How would you decide whether the first-stage result is "clearly confident"?
+
+  - id: rag-query-1
+    lesson: 04-query-rewriting
+    type: mcq
+    level: mid
+    question: In a chat-based RAG assistant, the user's third message is "what about for contractors?". What is the most important step before retrieval?
+    options:
+      - Increase k to 100
+      - Condense the message with the chat history into a standalone question
+      - Switch to keyword search
+      - Ask the user to rephrase every time
+    answer: 1
+    explanation: The raw message has no searchable subject. Rewriting it into something like "What is the parental leave policy for contractors?" gives retrieval the context it needs. Raising k just retrieves more irrelevant chunks.
+
+  - id: rag-query-2
+    lesson: 04-query-rewriting
+    type: mcq
+    level: mid
+    question: Why should multi-query retrieval keep the user's original query in the set of queries?
+    options:
+      - The vector database requires at least one unmodified query
+      - So a poor or drifting rewrite can't push out results the original query would have found
+      - The original query is always the most specific
+      - It reduces the number of LLM calls
+    answer: 1
+    explanation: LLM rewrites sometimes change the meaning. Including the original keeps its results in the fused list as a safety net, and reranking against the original keeps the final order anchored to what the user asked.
+
+  - id: rag-query-3
+    lesson: 04-query-rewriting
+    type: open
+    level: senior
+    question: Explain HyDE and multi-query retrieval. When would you use each, and what are the risks?
+    keyPoints:
+      - HyDE embeds an LLM-generated hypothetical answer instead of the question
+      - Multi-query generates several phrasings, retrieves for each, and fuses the results
+      - Both target vocabulary mismatch between questions and documents
+      - Both add an LLM call, so latency and cost go up
+      - HyDE risks a confidently wrong hypothetical answer in unfamiliar domains
+      - Keep the original query, use them conditionally, and measure recall gains
+    modelAnswer: |
+      **HyDE (Hypothetical Document Embeddings)** asks an LLM to write a plausible answer passage for the question and embeds that passage for search. Short questions and long answer passages look different; a fake answer often sits closer to real answers in vector space.
+
+      **Multi-query** asks an LLM for several rephrasings or sub-questions, runs retrieval for each in parallel, and fuses the lists with RRF. It widens coverage when users phrase things differently from the docs or when the question is ambiguous.
+
+      Use HyDE when questions are short and documents are long and descriptive, and the LLM has reasonable general knowledge of the domain. Use multi-query for ambiguous or compound questions. Risks: both add an LLM call before retrieval (latency and cost), and both can drift. HyDE in particular can hallucinate a confident wrong answer in a niche domain and retrieve passages about the wrong thing. Mitigations: keep the original query in the mix, use a fast model with a timeout and fallback, apply them only when first-pass retrieval looks weak, and prove the recall gain on an evaluation set.
+    followUps:
+      - How would you decide at runtime whether to trigger query expansion?
+
+  - id: rag-debug-1
+    lesson: 05-failure-modes-debugging
+    type: mcq
+    level: mid
+    question: A RAG bot answers a question incorrectly. Your trace shows the correct chunk was never in the top-k results. Where should you look first?
+    options:
+      - The generation prompt and temperature
+      - Retrieval-side causes such as chunking, query rewriting, hybrid search, filters, and k
+      - The LLM provider's status page
+      - The answer formatting code
+    answer: 1
+    explanation: If the right information never reached the prompt, no prompt change can fix it. This is a retrieval (or ingestion) failure, so check whether the doc is indexed, how it's chunked, how the query is phrased, and whether filters or k excluded it.
+
+  - id: rag-debug-2
+    lesson: 05-failure-modes-debugging
+    type: mcq
+    level: senior
+    question: You pack 25 retrieved chunks into a long prompt. The relevant chunk is ranked 12th, and the model often ignores it. What is the most likely cause and fix?
+    options:
+      - The embedding model is wrong, so re-embed everything
+      - Models tend to use information in the middle of long contexts less reliably, so rerank and send fewer chunks with the best ones first
+      - The chunk is too short, so double the chunk size
+      - Temperature is too low, so raise it
+    answer: 1
+    explanation: Research on long contexts ("lost in the middle") found that models use information at the beginning and end more reliably than in the middle. Reranking and sending a focused set of chunks, best first, usually works better than packing in more context.
+
+  - id: rag-debug-3
+    lesson: 05-failure-modes-debugging
+    type: open
+    level: mid
+    question: How would you set up evaluation for a RAG system so that you know whether a change (new chunk size, new embedding model, new prompt) made things better or worse?
+    keyPoints:
+      - Build an evaluation set from real questions with labelled relevant sources and reference answers
+      - Measure retrieval separately with recall@k and MRR or nDCG
+      - Measure generation with faithfulness or groundedness and answer correctness
+      - Include unanswerable questions to test "I don't know"
+      - Run it automatically before and after each change, for example in CI
+      - Validate any LLM judge against human labels
+    modelAnswer: |
+      I'd build an evaluation set of real user questions (from logs or experts), each labelled with the chunk or document that contains the answer and ideally a reference answer. I'd include questions the docs can't answer.
+
+      Then I'd measure the two halves separately. For retrieval: recall@k (did a relevant chunk appear in the top k?) and MRR or nDCG (how high was it?). For generation: faithfulness (is every claim supported by the retrieved context?), correctness against the reference, and the "I don't know" rate on unanswerable questions. Generation metrics can be scored with an LLM judge, which I'd spot-check against human ratings.
+
+      The suite runs before and after every change, ideally in CI, so a new chunk size or embedding model ships only if the numbers improve or hold. Separate metrics show *which* stage changed, and every production failure gets added as a new case.
+    followUps:
+      - How many evaluation questions do you need before trusting the numbers?
+
+  - id: rag-debug-4
+    lesson: 05-failure-modes-debugging
+    type: design
+    level: senior
+    question: Your company's RAG assistant has been live for three months. Users report it's "getting worse", but nobody changed the code. Design an approach to find out what's happening and prevent it in future.
+    keyPoints:
+      - Possible causes include corpus drift, stale or duplicate docs, failing connectors, new query patterns, and upstream model or API changes
+      - Per-request tracing (queries, rewrites, chunk IDs, scores, prompt, answer, feedback)
+      - Compare current eval metrics against the launch baseline to locate the stage that regressed
+      - Monitor ingestion health (failed docs, index freshness, chunk counts) and retrieval score distributions
+      - Sample and label recent real queries to catch new topics missing from the corpus
+      - Scheduled evaluation runs with alerts, and pinned model versions where possible
+    modelAnswer: |
+      ### Likely causes when "nothing changed"
+      The code didn't change, but the system did: new and updated documents (including duplicates and outdated versions), broken connectors silently skipping documents, new kinds of questions the corpus doesn't cover, index changes such as an ANN index degrading after heavy updates, or a hosted model or API behaving differently.
+
+      ### Investigation
+      1. **Rerun the launch evaluation set.** If retrieval metrics (recall@k) dropped, the problem is in ingestion or search; if they held but answer metrics dropped, look at generation.
+      2. **Sample recent real queries** with negative feedback and classify each failure by stage: not in corpus, not retrieved, not in prompt, or misused by the model.
+      3. **Check ingestion health:** documents failing extraction, last successful sync per source, chunk counts over time, duplicates of the same doc with different versions.
+      4. **Check retrieval stats:** distribution of top reranker scores over time. A shift down suggests queries the corpus no longer covers.
+
+      ### Prevention
+      - Trace every request and keep user feedback linked to traces.
+      - Run the evaluation suite on a schedule (not only on deploys), with alerts on regressions.
+      - Ingestion monitoring: freshness per source, failure counts, dedupe and version handling.
+      - Grow the evaluation set continually from new real queries and failures.
+      - Pin model versions where the provider allows it, and evaluate before upgrading.
+    followUps:
+      - How would you prioritise fixes once you know the failure breakdown?

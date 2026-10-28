@@ -1,0 +1,4 @@
+title: Embeddings and vector search
+summary: Understand what embeddings are, how similarity search finds "close" meaning, and how to run it in production with pgvector or a dedicated vector database.
+icon: vector
+level: intermediate

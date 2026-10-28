@@ -1,0 +1,4 @@
+title: Prompt engineering
+summary: Write prompts that behave the same way every time, get machine-readable output back, and run them in production with versioning and caching that keep quality up and cost down.
+icon: prompt
+level: beginner

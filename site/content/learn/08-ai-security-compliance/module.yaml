@@ -1,0 +1,4 @@
+title: Security and compliance for AI apps
+summary: Defend LLM features against prompt injection, handle personal data responsibly, and give agents only the access they need. You'll be able to walk an interviewer through the OWASP LLM risks and the GDPR questions an AI feature raises.
+icon: shield
+level: advanced
