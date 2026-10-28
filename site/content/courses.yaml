@@ -1,0 +1,617 @@
+# Curated AI course catalog for the "Courses" section.
+# Every url below was fetched and link-checked on the `updated` date.
+# modules: site module slugs (without number prefix) this course supports.
+updated: 2026-10-28
+providers:
+  - id: anthropic
+    name: Anthropic
+    url: https://academy.claude.com/
+    featured: true
+    courses:
+      # ---- Claude Academy (anthropic.com/learn redirects here) ----
+      - title: Building with the Claude API
+        url: https://academy.claude.com/courses/building-with-the-claude-api
+        summary: Anthropic's flagship developer course, about 9 hours. It covers the whole Claude API, including prompting, tool use, RAG, agents, MCP, and production patterns.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-api, prompting, tool-use, rag, agents, mcp]
+        modules: [llm-foundations, prompt-engineering, rag, agents-tool-calling, evaluation-observability, production-ai-architecture]
+      - title: Claude Platform 101
+        url: https://academy.claude.com/courses/claude-platform-101
+        summary: Teaches developers to build on the Claude Platform from scratch. It suits people who have made only a few API calls, or have only used Claude in the chat window.
+        level: beginner
+        format: video
+        free: true
+        tags: [claude-api, platform, getting-started]
+        modules: [llm-foundations]
+      - title: Claude with Amazon Bedrock
+        url: https://academy.claude.com/courses/claude-with-amazon-bedrock
+        summary: Shows how to integrate and deploy Claude through Amazon Bedrock, covering API calls, tool use, RAG pipelines, agents, and production-ready apps on AWS.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-api, aws, bedrock, rag, agents]
+        modules: [rag, agents-tool-calling, production-ai-architecture]
+      - title: Claude on Google Cloud
+        url: https://academy.claude.com/courses/claude-with-google-cloud-s-vertex-ai
+        summary: Covers working with Claude through Google Cloud's Vertex AI / Agent Platform. Topics include setup, prompting, tool use, RAG, agents, and production deployment patterns.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-api, google-cloud, vertex-ai, rag, agents]
+        modules: [rag, agents-tool-calling, production-ai-architecture]
+      - title: Introduction to Model Context Protocol
+        url: https://academy.claude.com/courses/introduction-to-model-context-protocol
+        summary: Build MCP servers and clients from scratch with the Python SDK. Covers the three core primitives (tools, resources, and prompts) that connect Claude to external services.
+        level: intermediate
+        format: video
+        free: true
+        tags: [mcp, tool-use, python]
+        modules: [agents-tool-calling]
+      - title: "Model Context Protocol: Advanced topics"
+        url: https://academy.claude.com/courses/model-context-protocol-advanced-topics
+        summary: Goes past the MCP basics into sampling, notifications, and roots, with interactive walkthroughs of each protocol flow.
+        level: advanced
+        format: video
+        free: true
+        tags: [mcp, tool-use, protocols]
+        modules: [agents-tool-calling, ai-system-design]
+      - title: Claude Code 101
+        url: https://academy.claude.com/courses/claude-code-101
+        summary: Explains what Claude Code is and how it works, then teaches the core workflows for getting real work done with it in your terminal and editor.
+        level: beginner
+        format: video
+        free: true
+        tags: [claude-code, agentic-coding, developer-tools]
+        modules: []
+      - title: Claude Code in action
+        url: https://academy.claude.com/courses/claude-code-in-action
+        summary: Shows how to run long, hands-off Claude Code sessions you can trust by steering, configuring, automating, and verifying the agent's work.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-code, agentic-coding, automation]
+        modules: [agents-tool-calling]
+      - title: Introduction to agent skills
+        url: https://academy.claude.com/courses/introduction-to-agent-skills
+        summary: Build, configure, and share Claude Code skills, which are reusable markdown instructions that Claude applies automatically to matching tasks. Goes from your first skill through team distribution and troubleshooting.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-code, agent-skills, agents]
+        modules: [agents-tool-calling]
+      - title: Introduction to subagents
+        url: https://academy.claude.com/courses/introduction-to-subagents
+        summary: Split complex tasks across parallel Claude subagents and orchestrate them deterministically.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-code, subagents, multi-agent, orchestration]
+        modules: [agents-tool-calling, ai-system-design]
+      - title: AI capabilities and limitations
+        url: https://academy.claude.com/courses/ai-capabilities-and-limitations
+        summary: Builds an accurate mental model of what large language models can and can't do. Covers next-token prediction, knowledge, working memory, steerability, and context limits.
+        level: beginner
+        format: video
+        free: true
+        tags: [llm-basics, mental-models, context-windows]
+        modules: [llm-foundations]
+      - title: Claude 101
+        url: https://academy.claude.com/courses/claude-101
+        summary: Learn to use Claude for everyday work, from your first conversation and effective prompting through projects, artifacts, skills, and connected tools.
+        level: beginner
+        format: video
+        free: true
+        tags: [claude-app, prompting, productivity]
+        modules: [prompt-engineering]
+      - title: Introduction to Claude Cowork
+        url: https://academy.claude.com/courses/introduction-to-claude-cowork
+        summary: Shows how to hand multi-step work to Claude in Cowork. Covers setting up workspaces, giving context, running task loops, and using plugins for research, documents, and browser tasks.
+        level: beginner
+        format: video
+        free: true
+        tags: [claude-cowork, delegation, agents]
+        modules: []
+      - title: Introduction to Claude Tag
+        url: https://academy.claude.com/courses/introduction-to-claude-tag
+        summary: Claude Tag (beta) brings Claude into your team's Slack workspace. This course teaches where to hand it work, how to steer and correct it, and habits that help your team get more from it.
+        level: beginner
+        format: video
+        free: true
+        tags: [claude-tag, slack, collaboration]
+        modules: []
+      - title: Building effective human-agent teams (beta)
+        url: https://academy.claude.com/courses/building-effective-human-agent-teams
+        summary: Explores what changes when a team moves from single-player to multiplayer AI use, and how to prepare your team for that shift.
+        level: beginner
+        format: video
+        free: true
+        tags: [teams, agents, change-management]
+        modules: [leading-ai-teams]
+      - title: "Deploying Claude Enterprise with confidence: The five decisions that shape your rollout"
+        url: https://academy.claude.com/courses/deploying-claude-enterprise-with-confidence
+        summary: Walks admins through the five decisions behind an enterprise Claude rollout (structure and identity, access, governance, spend, and visibility) and records them in a rollout plan.
+        level: intermediate
+        format: video
+        free: true
+        tags: [enterprise, governance, rollout, admin]
+        modules: [ai-security-compliance, leading-ai-teams]
+      - title: "AI Fluency: Framework and foundations"
+        url: https://academy.claude.com/courses/ai-fluency-framework-foundations
+        summary: Teaches you to work with AI effectively, efficiently, ethically, and safely using the 4D framework (Delegation, Description, Discernment, and Diligence).
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, 4d-framework, responsible-ai]
+        modules: [prompt-engineering, leading-ai-teams]
+      - title: AI Fluency for builders
+        url: https://academy.claude.com/courses/ai-fluency-for-builders
+        summary: Helps builders develop AI fluency so they ship more, faster, while still owning the full arc from problem to shipped solution.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, builders, 4d-framework]
+        modules: [prompt-engineering]
+      - title: AI Fluency for creative work
+        url: https://academy.claude.com/courses/ai-fluency-for-creative-work
+        summary: Helps creative professionals make deliberate, reasoned choices about using AI in their practice while protecting what makes their work theirs.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, creative, 4d-framework]
+        modules: []
+      - title: AI Fluency for educators
+        url: https://academy.claude.com/courses/ai-fluency-for-educators
+        summary: Helps faculty, instructional designers, and education leaders apply the 4D AI Fluency framework to course design, learning materials, and teaching.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, education, 4d-framework]
+        modules: []
+      - title: AI Fluency for pK–12 educators
+        url: https://academy.claude.com/courses/ai-fluency-for-k-12-educators
+        summary: Helps pK-12 educators build practical AI fluency through the 4D Framework to support student learning. Created with Teach For America.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, k-12, education]
+        modules: []
+      - title: AI Fluency for pK-12 Train the Trainer
+        url: https://academy.claude.com/courses/ai-fluency-for-pk-12-train-the-trainer
+        summary: Prepares pK-12 educators to lead AI fluency training for colleagues, using a ready-to-run workshop kit built on the 4D Framework.
+        level: intermediate
+        format: video
+        free: true
+        tags: [ai-fluency, k-12, training]
+        modules: []
+      - title: AI Fluency for nonprofits
+        url: https://academy.claude.com/courses/ai-fluency-for-nonprofits
+        summary: Builds practical AI collaboration skills for nonprofit research, writing, data analysis, and organization-wide adoption, using the 4D Framework.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, nonprofits, 4d-framework]
+        modules: []
+      - title: AI Fluency for small businesses
+        url: https://academy.claude.com/courses/ai-fluency-for-small-businesses
+        summary: Applies the 4D Framework to everyday small-business tasks such as research, customer data, and operations.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, small-business, 4d-framework]
+        modules: []
+      - title: AI Fluency for students
+        url: https://academy.claude.com/courses/ai-fluency-for-students
+        summary: Helps students use AI responsibly for learning, career planning, and academic success, using the 4D framework.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-fluency, students, 4d-framework]
+        modules: []
+      - title: Teaching AI Fluency
+        url: https://academy.claude.com/courses/teaching-ai-fluency
+        summary: Prepares academic faculty and instructional designers to teach and assess AI fluency in instructor-led settings, with strategies for assessment and assignment design.
+        level: intermediate
+        format: video
+        free: true
+        tags: [ai-fluency, education, assessment]
+        modules: []
+      # ---- Claude certifications (Anthropic Partner Academy; partner-only, paid) ----
+      - title: Claude Certified Developer – Foundations Certification
+        url: https://anthropic-partners.skilljar.com/claude-certified-developer-foundations-certification
+        summary: A paid exam ($125) for engineers building with the Claude API, Claude Code, and MCP, covering first integration through production agents. Open only to Anthropic partners.
+        level: intermediate
+        format: certificate
+        free: false
+        tags: [certification, claude-api, claude-code, mcp, agents]
+        modules: [agents-tool-calling, production-ai-architecture]
+      - title: Claude Certified Architect – Foundations Certification
+        url: https://anthropic-partners.skilljar.com/claude-certified-architect-foundations-certification
+        summary: A paid exam ($125) checking that you can make sound tradeoffs when designing Claude solutions, including deployment platforms, agentic architectures, evaluation, cost, and safety. Open only to Anthropic partners.
+        level: advanced
+        format: certificate
+        free: false
+        tags: [certification, architecture, claude-api, agent-sdk, mcp]
+        modules: [ai-system-design, production-ai-architecture, evaluation-observability]
+      - title: Claude Certified Architect – Professional Certification
+        url: https://anthropic-partners.skilljar.com/claude-certified-architect-professional-certification
+        summary: The advanced architect exam ($175) after Architect Foundations, for partners who design Claude solutions end to end. Open only to Anthropic partners.
+        level: advanced
+        format: certificate
+        free: false
+        tags: [certification, architecture]
+        modules: [ai-system-design, production-ai-architecture]
+      - title: Claude Certified Associate – Foundations Certification
+        url: https://anthropic-partners.skilljar.com/claude-certified-associate-foundations-certification
+        summary: A paid exam ($99) for consultants, sellers, and delivery leads who help customers choose the right Claude use cases. Open only to Anthropic partners.
+        level: beginner
+        format: certificate
+        free: false
+        tags: [certification, use-cases, consulting]
+        modules: [leading-ai-teams]
+      # ---- Anthropic courses on Coursera that are not on Claude Academy ----
+      - title: The AI-Native SDLC Playbook
+        url: https://www.coursera.org/learn/the-ai-native-sdlc-playbook
+        summary: Anthropic course for engineering, platform, and security leads at organizations that already use Claude Code. It offers twelve plays for bringing AI into the software development lifecycle.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-code, sdlc, engineering-leadership, coursera]
+        modules: [leading-ai-teams, ai-security-compliance]
+      - title: AI Fundamentals with Claude
+        url: https://www.coursera.org/learn/ai-for-everyone-ai-fundamentals-with-claude
+        summary: The first course in the Real-World AI for Everyone specialization, made by Anthropic and Advancing Women in Tech. It builds confidence with AI basics using Claude, for any background.
+        level: beginner
+        format: video
+        free: true
+        tags: [ai-basics, claude-app, coursera]
+        modules: [llm-foundations]
+      - title: AI Collaboration with Claude
+        url: https://www.coursera.org/learn/ai-for-everyone-ai-collaboration-with-claude
+        summary: The second course in Real-World AI for Everyone. It takes you past the basics and teaches you to collaborate with Claude on communication and everyday work.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-app, collaboration, prompting, coursera]
+        modules: [prompt-engineering]
+      - title: AI Automation with Claude
+        url: https://www.coursera.org/learn/ai-for-everyone-ai-automation-with-claude
+        summary: The third course in Real-World AI for Everyone. It turns Claude into a productivity engine by designing Claude Projects and automated workflows.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-app, automation, projects, coursera]
+        modules: []
+      # ---- anthropics/courses GitHub repo (Jupyter notebook courses) ----
+      - title: Anthropic API fundamentals
+        url: https://github.com/anthropics/courses/tree/master/anthropic_api_fundamentals
+        summary: Notebook tutorials on the essentials of the Claude SDK, including API keys, the messages format, model choice, parameters, streaming, and vision prompts.
+        level: beginner
+        format: interactive
+        free: true
+        tags: [claude-api, sdk, python, notebooks]
+        modules: [llm-foundations]
+      - title: Prompt engineering interactive tutorial
+        url: https://github.com/anthropics/courses/tree/master/prompt_engineering_interactive_tutorial
+        summary: A step-by-step course in prompting techniques, from basic prompt structure to common failure modes, with hands-on exercises in each chapter.
+        level: beginner
+        format: interactive
+        free: true
+        tags: [prompting, claude-api, notebooks]
+        modules: [prompt-engineering]
+      - title: Real world prompting
+        url: https://github.com/anthropics/courses/tree/master/real_world_prompting
+        summary: Five lessons on applying prompting techniques to complex, real prompts, such as medical, call-summary, and customer-support examples.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [prompting, claude-api, notebooks]
+        modules: [prompt-engineering]
+      - title: Prompt evaluations
+        url: https://github.com/anthropics/courses/tree/master/prompt_evaluations
+        summary: Nine lessons on writing production prompt evaluations, covering human-graded, code-graded, classification, and model-graded evals, plus promptfoo.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [evals, promptfoo, prompting, notebooks]
+        modules: [evaluation-observability, prompt-engineering]
+      - title: Tool use
+        url: https://github.com/anthropics/courses/tree/master/tool_use
+        summary: Six lessons on putting tool use into practice with Claude, from a first simple tool through forced JSON output and tool choice to a chatbot with several tools.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [tool-use, function-calling, structured-output, notebooks]
+        modules: [agents-tool-calling]
+      - title: Claude Cookbooks
+        url: https://github.com/anthropics/claude-cookbooks
+        summary: Anthropic's collection of runnable notebooks and recipes for building with Claude. Covers RAG, tool use, agents, multimodal, prompt caching, and evals.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [claude-api, recipes, rag, tool-use, agents, notebooks]
+        modules: [rag, agents-tool-calling, embeddings-vector-search, production-ai-architecture]
+      # ---- Partner-hosted: DeepLearning.AI short courses built with Anthropic ----
+      - title: Building toward Computer Use with Anthropic
+        url: https://www.deeplearning.ai/courses/building-toward-computer-use-with-anthropic
+        summary: A DeepLearning.AI short course taught by Anthropic's Colt Steele. It builds up the API skills (requests and parameters, multimodal prompting, prompt caching, and tool use) that lead to a computer-use agent demo.
+        level: beginner
+        format: video
+        free: true
+        tags: [computer-use, claude-api, tool-use, multimodal]
+        modules: [agents-tool-calling, prompt-engineering]
+      - title: "MCP: Build Rich-Context AI Apps with Anthropic"
+        url: https://www.deeplearning.ai/courses/mcp-build-rich-context-ai-apps-with-anthropic
+        summary: A DeepLearning.AI short course on building AI apps that reach tools, data, and prompts through the Model Context Protocol, including writing MCP servers and clients.
+        level: intermediate
+        format: video
+        free: true
+        tags: [mcp, tool-use, agents]
+        modules: [agents-tool-calling]
+      - title: "Claude Code: A Highly Agentic Coding Assistant"
+        url: https://www.deeplearning.ai/courses/claude-code-a-highly-agentic-coding-assistant
+        summary: A DeepLearning.AI short course taught by Anthropic's Elie Schoppik on exploring, building, and refining codebases with Claude Code. Covers CLAUDE.md memory, subagents, hooks, MCP servers, and parallel sessions with git worktrees.
+        level: intermediate
+        format: video
+        free: true
+        tags: [claude-code, agentic-coding, mcp]
+        modules: [agents-tool-calling]
+      - title: Agent Skills with Anthropic
+        url: https://www.deeplearning.ai/courses/agent-skills-with-anthropic
+        summary: A DeepLearning.AI short course with Anthropic on giving agents on-demand expert knowledge through skills, for reliable coding, research, and data-analysis workflows.
+        level: beginner
+        format: video
+        free: true
+        tags: [agent-skills, claude-code, agents]
+        modules: [agents-tool-calling]
+
+  - id: deeplearning-ai
+    name: DeepLearning.AI
+    url: https://www.deeplearning.ai/courses/
+    featured: false
+    courses:
+      - title: ChatGPT Prompt Engineering for Developers
+        url: https://www.deeplearning.ai/courses/chatgpt-prompt-eng
+        summary: The classic short course by Andrew Ng and Isa Fulford on prompting LLMs for summarizing, inferring, transforming, and expanding text. The ideas apply to any model.
+        level: beginner
+        format: video
+        free: true
+        tags: [prompting, llm-apps]
+        modules: [prompt-engineering]
+      - title: Retrieval Augmented Generation (RAG)
+        url: https://www.deeplearning.ai/courses/retrieval-augmented-generation
+        summary: A full course (about 26 hours) on building production RAG systems, from architecture and retrieval to deployment and evaluation. It's free to audit, and the certificate is paid.
+        level: intermediate
+        format: video
+        free: true
+        tags: [rag, retrieval, vector-search, evaluation]
+        modules: [rag, embeddings-vector-search, evaluation-observability]
+      - title: Building and Evaluating Advanced RAG
+        url: https://www.deeplearning.ai/courses/building-evaluating-advanced-rag
+        summary: Advanced retrieval methods such as sentence-window and auto-merging retrieval, plus how to evaluate and iterate on a RAG pipeline.
+        level: advanced
+        format: video
+        free: true
+        tags: [rag, retrieval, evaluation]
+        modules: [rag, evaluation-observability]
+      - title: "Vector Databases: from Embeddings to Applications"
+        url: https://www.deeplearning.ai/courses/vector-databases-embeddings-applications
+        summary: Explains how embeddings and vector databases work, then builds practical apps with them, including hybrid and multilingual search.
+        level: intermediate
+        format: video
+        free: true
+        tags: [embeddings, vector-databases, search]
+        modules: [embeddings-vector-search]
+      - title: Agentic AI
+        url: https://www.deeplearning.ai/courses/agentic-ai
+        summary: Andrew Ng's course on agentic design patterns (reflection, tool use, planning, and multi-agent) for building systems that act through iterative, multi-step workflows. Free to audit.
+        level: intermediate
+        format: video
+        free: true
+        tags: [agents, design-patterns, tool-use, evaluation]
+        modules: [agents-tool-calling, ai-system-design, evaluation-observability]
+      - title: AI Agents in LangGraph
+        url: https://www.deeplearning.ai/courses/ai-agents-in-langgraph
+        summary: Builds an agent from scratch, then rebuilds it with LangGraph and agentic search. Covers persistence, human-in-the-loop, and agent workflows.
+        level: intermediate
+        format: video
+        free: true
+        tags: [agents, langgraph, tool-use]
+        modules: [agents-tool-calling]
+      - title: Evaluating AI Agents
+        url: https://www.deeplearning.ai/courses/evaluating-ai-agents
+        summary: Shows how to evaluate, trace, and improve AI agents step by step with structured evaluations and observability.
+        level: beginner
+        format: video
+        free: true
+        tags: [evals, agents, observability, tracing]
+        modules: [evaluation-observability]
+      - title: Red Teaming LLM Applications
+        url: https://www.deeplearning.ai/courses/red-teaming-llm-applications
+        summary: Shows how to find and evaluate vulnerabilities such as prompt injection and data leakage in LLM applications, using red-teaming techniques and tools.
+        level: beginner
+        format: video
+        free: true
+        tags: [security, red-teaming, prompt-injection]
+        modules: [ai-security-compliance]
+
+  - id: hugging-face
+    name: Hugging Face
+    url: https://huggingface.co/learn
+    featured: false
+    courses:
+      - title: LLM Course
+        url: https://huggingface.co/learn/llm-course
+        summary: Hugging Face's free course on transformers and large language models, covering tokenizers, fine-tuning, datasets, and using models with the Hugging Face ecosystem.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [transformers, llms, fine-tuning, open-models]
+        modules: [llm-foundations, embeddings-vector-search]
+      - title: AI Agents Course
+        url: https://huggingface.co/learn/agents-course
+        summary: A free, certified course that takes you from agent fundamentals to building agents with frameworks such as smolagents, LlamaIndex, and LangGraph.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [agents, tool-use, smolagents, langgraph]
+        modules: [agents-tool-calling]
+      - title: Model Context Protocol (MCP) Course
+        url: https://huggingface.co/learn/mcp-course
+        summary: A free, certified course co-developed with Anthropic. It covers MCP concepts and architecture, then hands-on building of AI apps that connect to external tools and data.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [mcp, tool-use, agents]
+        modules: [agents-tool-calling]
+
+  - id: microsoft
+    name: Microsoft
+    url: https://github.com/microsoft/generative-ai-for-beginners
+    featured: false
+    courses:
+      - title: Generative AI for Beginners
+        url: https://github.com/microsoft/generative-ai-for-beginners
+        summary: 21 free lessons on building generative AI apps, covering prompting, RAG, vector databases, function calling, fine-tuning, responsible AI, and security.
+        level: beginner
+        format: reading
+        free: true
+        tags: [generative-ai, prompting, rag, function-calling, responsible-ai]
+        modules: [llm-foundations, prompt-engineering, rag, embeddings-vector-search, ai-security-compliance]
+      - title: AI Agents for Beginners
+        url: https://github.com/microsoft/ai-agents-for-beginners
+        summary: 18 free lessons with code samples on building AI agents, including tool use, agentic RAG, planning, multi-agent patterns, and production concerns.
+        level: beginner
+        format: reading
+        free: true
+        tags: [agents, tool-use, multi-agent, agentic-rag]
+        modules: [agents-tool-calling, ai-system-design]
+
+  - id: google
+    name: Google
+    url: https://developers.google.com/machine-learning
+    featured: false
+    courses:
+      - title: Machine Learning Crash Course
+        url: https://developers.google.com/machine-learning/crash-course
+        summary: Google's free, fast-paced ML introduction with videos, visualizations, and exercises. It covers core ML, embeddings, and modules on LLMs and production ML systems.
+        level: beginner
+        format: interactive
+        free: true
+        tags: [machine-learning, embeddings, llms, fundamentals]
+        modules: [llm-foundations, embeddings-vector-search]
+
+  - id: fast-ai
+    name: fast.ai
+    url: https://course.fast.ai/
+    featured: false
+    courses:
+      - title: Practical Deep Learning for Coders
+        url: https://course.fast.ai/
+        summary: A free, code-first course for people with some programming experience who want to apply deep learning and machine learning to practical problems.
+        level: intermediate
+        format: video
+        free: true
+        tags: [deep-learning, pytorch, fundamentals]
+        modules: [llm-foundations]
+
+  - id: karpathy
+    name: Andrej Karpathy
+    url: https://karpathy.ai/zero-to-hero.html
+    featured: false
+    courses:
+      - title: "Neural Networks: Zero to Hero"
+        url: https://karpathy.ai/zero-to-hero.html
+        summary: A free video series that builds neural networks from scratch in code, ending with building a GPT and its tokenizer. It's the best way to understand how LLMs actually work.
+        level: intermediate
+        format: video
+        free: true
+        tags: [neural-networks, transformers, gpt, tokenization]
+        modules: [llm-foundations]
+
+  - id: openai
+    name: OpenAI
+    url: https://developers.openai.com/cookbook
+    featured: false
+    courses:
+      - title: OpenAI Cookbook
+        url: https://developers.openai.com/cookbook
+        summary: Runnable examples and guides for building with OpenAI models, including embeddings, RAG, function calling, agents, and evals. Many of the patterns carry over to other providers.
+        level: intermediate
+        format: interactive
+        free: true
+        tags: [recipes, embeddings, rag, function-calling, evals]
+        modules: [embeddings-vector-search, rag, agents-tool-calling, evaluation-observability]
+
+  - id: langchain
+    name: LangChain Academy
+    url: https://academy.langchain.com/
+    featured: false
+    courses:
+      - title: Introduction to LangGraph
+        url: https://academy.langchain.com/courses/intro-to-langgraph
+        summary: A free course on LangGraph, LangChain's framework for building controllable agentic and multi-agent applications with state, memory, and human-in-the-loop.
+        level: intermediate
+        format: video
+        free: true
+        tags: [langgraph, agents, multi-agent, memory]
+        modules: [agents-tool-calling, ai-system-design]
+
+  - id: full-stack-deep-learning
+    name: The Full Stack
+    url: https://fullstackdeeplearning.com/
+    featured: false
+    courses:
+      - title: LLM Bootcamp
+        url: https://fullstackdeeplearning.com/llm-bootcamp/
+        summary: Free recorded bootcamp on best practices and tools for building LLM-powered apps, from prompt engineering and augmentation to UX, LLMOps, and deployment.
+        level: intermediate
+        format: video
+        free: true
+        tags: [llm-apps, llmops, deployment, prompting]
+        modules: [production-ai-architecture, prompt-engineering, rag]
+
+  - id: vector-db-learning
+    name: Vector database learning
+    url: https://academy.weaviate.io/
+    featured: false
+    courses:
+      - title: Weaviate Academy
+        url: https://academy.weaviate.io/
+        summary: Free hands-on courses on semantic search, vector embeddings, RAG, and AI agents with the Weaviate vector database.
+        level: beginner
+        format: interactive
+        free: true
+        tags: [vector-databases, semantic-search, rag]
+        modules: [embeddings-vector-search, rag]
+      - title: Qdrant Essentials Course
+        url: https://qdrant.tech/course/essentials/
+        summary: Qdrant's free, self-paced video course on vector search in production. It covers embeddings, chunking, HNSW indexing, hybrid sparse+dense search, quantization, and scaling, and ends with a documentation search engine project.
+        level: beginner
+        format: video
+        free: true
+        tags: [vector-databases, vector-search, hybrid-search]
+        modules: [embeddings-vector-search]
+      - title: Pinecone Learn
+        url: https://www.pinecone.io/learn/
+        summary: Pinecone's free library of articles and guides on embeddings, vector search, chunking, and RAG.
+        level: beginner
+        format: reading
+        free: true
+        tags: [vector-search, embeddings, rag]
+        modules: [embeddings-vector-search, rag]
+
+  - id: owasp
+    name: OWASP Gen AI Security Project
+    url: https://genai.owasp.org/
+    featured: false
+    courses:
+      - title: OWASP Top 10 for LLM Applications
+        url: https://genai.owasp.org/llm-top-10/
+        summary: The industry-standard list of the most critical security risks for LLM apps, such as prompt injection and excessive agency, with mitigations for each. Required reading for anyone shipping AI.
+        level: intermediate
+        format: reading
+        free: true
+        tags: [security, prompt-injection, owasp, risk]
+        modules: [ai-security-compliance]
