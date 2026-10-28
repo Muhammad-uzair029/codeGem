@@ -1,16 +1,12 @@
 name: Release · SkillFacet
 
-# Fires on every human push to main that touches the desktop app.
-# Skips bot-pushed version-bump commits ([skip ci]) to prevent loops.
-# Website, content and docs changes deploy via Vercel/Netlify only and
-# don't cut an app release.
+# Runs only when started by hand: GitHub → Actions → "Release · SkillFacet"
+# → Run workflow (branch: main), or `gh workflow run release.yml`.
+# A release costs ~92 of the free plan's 2,000 Actions minutes/month (macOS
+# minutes count 10×), so pushes no longer release automatically. Website,
+# content and skills deploy through Vercel on every push and use no
+# Actions minutes.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'site/**'
-      - 'docs/**'
-      - '**/*.md'
   workflow_dispatch:
 
 concurrency:

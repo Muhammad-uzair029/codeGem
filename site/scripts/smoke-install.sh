@@ -166,7 +166,8 @@ mkdir -p "$P"
 set +e
 OUT="$(cd "$P" && "$INSTALL_BASH" "$DIST/install.sh" pr-open 2>&1)"; RC=$?
 set -e
-if grep -q "SET-SITE_URL-AT-BUILD-TIME" "$DIST/install.sh"; then
+# Only when the build itself baked the placeholder (no SITE_URL at build time).
+if grep -q '^CODEGEM_BAKED_URL=".*SET-SITE_URL-AT-BUILD-TIME' "$DIST/install.sh"; then
   check "placeholder build refuses to run without a URL" [ "$RC" -ne 0 ]
 fi
 set +e

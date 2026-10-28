@@ -37,7 +37,28 @@ export function emit(outDir, manifest) {
   fs.writeFileSync(path.join(outDir, 'manifest.json'), JSON.stringify(publicManifest(manifest), null, 2) + '\n');
   fs.writeFileSync(path.join(outDir, 'install-index.tsv'), installIndex(manifest));
   writeInstallers(outDir, manifest.siteUrl);
+  writeSitemap(outDir, manifest.siteUrl);
   verify(outDir, manifest);
+}
+
+/** sitemap.xml (every built page) and robots.txt, using the real site URL. */
+export function writeSitemap(outDir, siteUrl) {
+  const pages = [];
+  const walk = (dir, rel) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) {
+        if (rel === '' && (e.name === 'skills' || e.name.startsWith('_'))) continue; // raw skill files, assets
+        walk(path.join(dir, e.name), `${rel}${e.name}/`);
+      } else if (e.name === 'index.html') pages.push(`/${rel}`);
+    }
+  };
+  walk(outDir, '');
+  pages.sort();
+  const base = String(siteUrl || '').replace(/\/+$/, '');
+  const xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...pages.map((p) => `  <url><loc>${base}${p}</loc></url>`), '</urlset>', ''].join('\n');
+  fs.writeFileSync(path.join(outDir, 'sitemap.xml'), xml);
+  fs.writeFileSync(path.join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${base}/sitemap.xml\n`);
 }
 
 /** Fails the build if anything in .claude/skills/ did not make it into dist. */

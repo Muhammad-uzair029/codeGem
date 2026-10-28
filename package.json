@@ -2,7 +2,7 @@
   "name": "codegem",
   "version": "0.2.26",
   "private": true,
-  "description": "SkillFacet — AI-powered feature orchestrator for Claude Code workflows.",
+  "description": "SkillFacet \u2014 AI-powered feature orchestrator for Claude Code workflows.",
   "author": {
     "name": "Muhammad-uzair029",
     "email": "muhammaduzair0299@gmail.com"
@@ -144,6 +144,11 @@
       "owner": "Muhammad-uzair029",
       "repo": "codeGem-releases",
       "releaseType": "release"
+    }
+  },
+  "pnpm": {
+    "overrides": {
+      "js-yaml@>=4.0.0 <4.3.2": "4.3.2"
     }
   }
 }

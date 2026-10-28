@@ -12,7 +12,8 @@
     "prebuild": "node scripts/validate-content.mjs",
     "build": "astro build",
     "preview": "astro preview",
-    "test:install": "bash scripts/smoke-install.sh"
+    "test:install": "bash scripts/smoke-install.sh",
+    "check:links": "node scripts/check-links.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "5.3.0",
