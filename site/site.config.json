@@ -1,4 +1,4 @@
 {
   "$comment": "Site settings. releasesRepo is the GitHub repo (owner/name) whose Releases hold the Feature-Loop-Manager desktop app. The RELEASES_REPO env var overrides it at build time.",
-  "releasesRepo": "Muhammad-uzair029/codeGem"
+  "releasesRepo": "Muhammad-uzair029/codeGem-releases"
 }

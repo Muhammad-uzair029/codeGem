@@ -39,7 +39,7 @@ export function resolveReleasesRepo(env = process.env) {
   } catch {
     /* optional file */
   }
-  const repo = String(env.RELEASES_REPO || fromFile || 'Muhammad-uzair029/codeGem').trim();
+  const repo = String(env.RELEASES_REPO || fromFile || 'Muhammad-uzair029/codeGem-releases').trim();
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
     throw new SkillsBuildError([`RELEASES_REPO / site.config.json releasesRepo must look like "owner/repo", got "${repo}".`]);
   }

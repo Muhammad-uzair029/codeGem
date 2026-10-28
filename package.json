@@ -150,7 +150,7 @@
     "publish": {
       "provider": "github",
       "owner": "Muhammad-uzair029",
-      "repo": "codeGem",
+      "repo": "codeGem-releases",
       "releaseType": "release"
     }
   }

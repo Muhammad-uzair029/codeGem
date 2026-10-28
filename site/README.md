@@ -54,7 +54,7 @@ A skill missing from `skills-meta.json` still shows up, under "Other", using its
 | Setting | Where | Used for |
 |---|---|---|
 | Site URL baked into the installers | `SITE_URL` env, else `VERCEL_PROJECT_PRODUCTION_URL` (Vercel, `https://` added), else `URL` (Netlify), else the placeholder `https://SET-SITE_URL-AT-BUILD-TIME.invalid` | `curl ... \| bash` cannot know where it came from, so the URL is written into the script |
-| Desktop app releases repo | `RELEASES_REPO` env, else `releasesRepo` in `site.config.json` (default `Muhammad-uzair029/codeGem`) | The "Download app" section |
+| Desktop app releases repo | `RELEASES_REPO` env, else `releasesRepo` in `site.config.json` (default `Muhammad-uzair029/codeGem-releases`) | The "Download app" section |
 
 On Vercel and Netlify the site URL is picked up automatically; you only need
 `SITE_URL` for a custom domain. Commands shown on the web pages always use the
