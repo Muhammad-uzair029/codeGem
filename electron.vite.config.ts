@@ -11,6 +11,9 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       outDir: 'out/main',
+      // Installers are public (codeGem-releases) while the source is
+      // private, so don't ship readable main/preload code.
+      minify: true,
       lib: {
         entry: resolve(__dirname, 'src/main/index.ts'),
       },
@@ -26,6 +29,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       outDir: 'out/preload',
+      minify: true,
       lib: {
         entry: resolve(__dirname, 'src/main/preload.ts'),
       },
