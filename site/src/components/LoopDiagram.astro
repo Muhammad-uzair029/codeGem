@@ -70,6 +70,14 @@ const stages = [
 const first = stages[1];
 ---
 <div class="loop" data-loop>
+  <div class="loop-bar">
+    <p class="loop-hint">Pick a stage to see what it does and which files it writes.</p>
+    <button type="button" class="loop-play" data-loop-play aria-pressed="true" hidden>
+      <svg class="i-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+      <svg class="i-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5v14l12-7z" /></svg>
+      <span data-loop-play-label>Pause animation</span>
+    </button>
+  </div>
   <div class="loop-track" role="tablist" aria-label="Feature-loop stages">
     {stages.map((s, i) => (
       <button
@@ -79,59 +87,73 @@ const first = stages[1];
         id={`stage-tab-${i}`}
         aria-controls="loop-panel"
         aria-selected={s === first ? 'true' : 'false'}
+        tabindex={s === first ? 0 : -1}
         data-stage={i}
         style={`--i:${i}`}
       >
         <span class="num">{s.num}</span>
-        <span>
+        <span class="stage-text">
           <span class="name">{s.name}</span>
-          {s.gate && <span class="gate"><br />{s.gate}</span>}
+          {s.gate && <span class="gate">Waits for your OK</span>}
         </span>
       </button>
     ))}
     <div class="heal" aria-hidden="true">
-      <svg class="heal-svg" viewBox="0 0 200 44" preserveAspectRatio="none">
-        <path class="heal-path" d="M150 2 C150 34, 50 34, 50 6" fill="none" vector-effect="non-scaling-stroke" />
+      <svg class="heal-svg" viewBox="0 0 200 48" preserveAspectRatio="none">
+        <path class="heal-track" d="M150 2 C150 40, 50 40, 50 4" fill="none" vector-effect="non-scaling-stroke" />
+        <path class="heal-path" d="M150 2 C150 40, 50 40, 50 4" fill="none" vector-effect="non-scaling-stroke" />
         <path class="heal-head" d="M44 12 L50 3 L56 12" fill="none" vector-effect="non-scaling-stroke" />
       </svg>
-      <span class="heal-label">self-heal: errors go back to the implementer</span>
+      <span class="heal-label">
+        <svg class="heal-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5" /></svg>
+        Self-heal: errors go back to the implementer
+      </span>
     </div>
   </div>
-  <p class="loop-retry">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5" /></svg>
-    Stages 2 and 3 repeat until the change passes: up to 3 build rounds, each with up to 3 automatic error fixes.
-  </p>
-  <div class="card loop-panel" id="loop-panel" role="tabpanel" aria-live="polite">
-    <div class="eyebrow" data-f="eyebrow">Stage {first.num}</div>
+  <p class="loop-retry">Stages 2 and 3 repeat until the change passes: up to 3 build rounds, each with up to 3 automatic error fixes.</p>
+  <div class="loop-panel" id="loop-panel" role="tabpanel" aria-live="polite">
+    <p class="loop-kicker" data-f="eyebrow">Stage {first.num}{first.gate ? ', then waits for your OK' : ''}</p>
     <h3 data-f="name">{first.name}</h3>
-    <p class="faint" data-f="when">{first.when}</p>
+    <p class="loop-when" data-f="when">{first.when}</p>
     <p data-f="does">{first.does}</p>
-    <strong>Files it writes</strong>
-    <ul data-f="writes">{first.writes.map((w) => <li><code>{w}</code></li>)}</ul>
-    <p class="muted" style="margin:0.75rem 0 0" data-f="next">{first.next}</p>
+    <div class="loop-files">
+      <strong>Files it writes</strong>
+      <ul data-f="writes">{first.writes.map((w) => <li><code>{w}</code></li>)}</ul>
+    </div>
+    <p class="loop-next" data-f="next">{first.next}</p>
   </div>
   <script type="application/json" data-loop-data set:html={JSON.stringify(stages).replace(/</g, '\\u003c')} />
 </div>
 
 <script>
-  document.querySelectorAll('[data-loop]').forEach((root) => {
+  // Stage index: 0 splitter, 1 brainstorm, 2 spec, 3 implement, 4 verify, 5 result, 6 learnings.
+  // The run visits verify, fails once, heals back to implement, then ships.
+  const SEQ = [0, 1, 2, 3, 4, 3, 4, 5, 6];
+  const HEAL_AT = 5; // SEQ position where the loop goes back
+
+  document.querySelectorAll<HTMLElement>('[data-loop]').forEach((root) => {
     const dataEl = root.querySelector('[data-loop-data]');
     if (!dataEl) return;
     const stages = JSON.parse(dataEl.textContent || '[]');
-    const panel = root.querySelector('.loop-panel');
-    const tabs = Array.from(root.querySelectorAll('.stage'));
-    const field = (f) => panel.querySelector(`[data-f="${f}"]`);
-    const show = (i) => {
+    const panel = root.querySelector<HTMLElement>('.loop-panel')!;
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('.stage'));
+    const field = (f: string) => panel.querySelector<HTMLElement>(`[data-f="${f}"]`)!;
+    const playBtn = root.querySelector<HTMLButtonElement>('[data-loop-play]')!;
+    const playLabel = root.querySelector<HTMLElement>('[data-loop-play-label]')!;
+
+    const show = (i: number) => {
       const s = stages[i];
-      tabs.forEach((t, j) => t.setAttribute('aria-selected', String(i === j)));
-      field('eyebrow').textContent = `Stage ${s.num}${s.gate ? ' · ' + s.gate : ''}`;
+      tabs.forEach((t, j) => {
+        t.setAttribute('aria-selected', String(i === j));
+        t.tabIndex = i === j ? 0 : -1;
+      });
+      field('eyebrow').textContent = `Stage ${s.num}${s.gate ? ', then waits for your OK' : ''}`;
       field('name').textContent = s.name;
       field('when').textContent = s.when;
       field('does').textContent = s.does;
       field('next').textContent = s.next;
-      const ul = field('writes');
-      ul.replaceChildren(
-        ...s.writes.map((w) => {
+      field('writes').replaceChildren(
+        ...s.writes.map((w: string) => {
           const li = document.createElement('li');
           const code = document.createElement('code');
           code.textContent = w;
@@ -139,17 +161,84 @@ const first = stages[1];
           return li;
         }),
       );
+      panel.classList.remove('swap');
+      void panel.offsetWidth;
+      panel.classList.add('swap');
     };
+
+    // ---- autoplay: stages light up in order (visual only, panel untouched)
+    const motion = document.documentElement.classList.contains('motion');
+    let pos = -1;
+    let timer = 0;
+    let playing = false;
+    let visible = false;
+    const paint = () => {
+      const now = pos >= 0 ? SEQ[pos] : -1;
+      const seen = new Set(SEQ.slice(0, Math.max(pos, 0)));
+      tabs.forEach((t, j) => {
+        t.classList.toggle('is-now', j === now);
+        t.classList.toggle('is-done', seen.has(j) && j !== now);
+      });
+      root.classList.toggle('is-healing', pos === HEAL_AT);
+      root.classList.toggle('is-failing', pos === HEAL_AT - 1);
+    };
+    const tick = () => {
+      pos = pos + 1;
+      if (pos >= SEQ.length) pos = -1;
+      paint();
+      const wait = pos === -1 ? 1400 : pos === HEAL_AT - 1 ? 1700 : 1250;
+      timer = window.setTimeout(tick, wait);
+    };
+    const stop = () => {
+      window.clearTimeout(timer);
+      timer = 0;
+    };
+    const setPlaying = (on: boolean) => {
+      playing = on;
+      playBtn.setAttribute('aria-pressed', String(on));
+      playLabel.textContent = on ? 'Pause animation' : 'Play animation';
+      root.classList.toggle('is-paused', !on);
+      stop();
+      if (on && visible) tick();
+      if (!on) {
+        pos = -1;
+        paint();
+      }
+    };
+
     tabs.forEach((t, i) => {
-      t.addEventListener('click', () => show(i));
+      t.addEventListener('click', () => {
+        show(i);
+        if (playing) setPlaying(false);
+      });
       t.addEventListener('keydown', (e) => {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        const keys: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+        let n = -1;
+        if (e.key in keys) n = (i + keys[e.key] + tabs.length) % tabs.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = tabs.length - 1;
+        if (n < 0) return;
         e.preventDefault();
-        const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1;
-        const n = (i + dir + tabs.length) % tabs.length;
         tabs[n].focus();
         show(n);
+        if (playing) setPlaying(false);
       });
     });
+
+    if (!motion) return;
+    playBtn.hidden = false;
+    playBtn.addEventListener('click', () => setPlaying(!playing));
+    playing = true;
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((entries) => {
+        visible = entries.some((e) => e.isIntersecting);
+        if (!playing) return;
+        if (visible && !timer) tick();
+        else if (!visible) stop();
+      }, { threshold: 0.3 }).observe(root);
+    } else {
+      visible = true;
+      tick();
+    }
   });
 </script>

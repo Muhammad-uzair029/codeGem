@@ -1,0 +1,219 @@
+---
+// How skills connect. Skills sit on a ring, grouped by colour; a line runs from
+// a skill to each skill it calls. Picking a skill (hover, click, keyboard, or
+// the list) highlights what it installs and what installs it, and the panel
+// lists both. The panel and list work without the drawing (and without JS
+// they show the starting skill).
+import { getManifest } from '../../lib/skills.mjs';
+import { groupSlug } from '../lib/groups.js';
+
+interface Props {
+  selected?: string;
+  heading?: string;
+}
+const m = getManifest();
+const { selected = 'feature-loop' } = Astro.props;
+const order = m.groups.map((g) => g.name);
+const skills = [...m.skills].sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.name.localeCompare(b.name));
+
+const R = 250;
+const GAP = 1.2; // empty slots between groups
+let slots = 0;
+let prev = '';
+const raw = skills.map((s) => {
+  if (prev && s.group !== prev) slots += GAP;
+  prev = s.group;
+  return { s, slot: slots++ };
+});
+const total = slots + GAP;
+const short = (n) => (n.length > 24 ? n.slice(0, 22) + '…' : n);
+const nodes = raw.map(({ s, slot }) => {
+  const deg = (slot / total) * 360 - 90 + (GAP / total) * 180;
+  const rad = (deg * Math.PI) / 180;
+  const flip = deg > 90 && deg < 270;
+  return {
+    name: s.name,
+    label: short(s.name),
+    slug: groupSlug(s.group),
+    x: R * Math.cos(rad),
+    y: R * Math.sin(rad),
+    deg,
+    flip,
+  };
+});
+const at = Object.fromEntries(nodes.map((n) => [n.name, n]));
+const edges = [];
+for (const s of skills) for (const d of s.deps) if (at[d]) edges.push({ from: s.name, to: d });
+const f = (v) => v.toFixed(1);
+const edgePath = (a, b) => {
+  const A = at[a];
+  const B = at[b];
+  const r = 0.86; // stop just inside the dots
+  return `M${f(A.x * r)} ${f(A.y * r)} Q${f((A.x + B.x) * 0.22)} ${f((A.y + B.y) * 0.22)} ${f(B.x * r)} ${f(B.y * r)}`;
+};
+const data = Object.fromEntries(
+  m.skills.map((s) => [s.name, { g: s.group, slug: groupSlug(s.group), sum: s.summary, deps: s.deps, all: s.allDeps, by: s.usedBy }]),
+);
+const start = m.skills.find((s) => s.name === selected) || m.skills[0];
+const json = JSON.stringify({ data, edges }).replace(/</g, '\\u003c');
+---
+<div class="map" data-map data-selected={start.name}>
+  <div class="map-figure">
+    <svg class="map-svg" viewBox="-430 -430 860 860" role="group" aria-label="Skill connections">
+      <circle class="map-ring" r={R} />
+      <g class="map-edges">
+        {edges.map((e) => <path class="edge" data-from={e.from} data-to={e.to} d={edgePath(e.from, e.to)} />)}
+      </g>
+      <g class="map-nodes">
+        {nodes.map((n) => (
+          <g class="node" data-name={n.name} data-g={n.slug} tabindex="-1" role="button" aria-label={`Show connections for ${n.name}`}>
+            <circle class="node-hit" cx={f(n.x)} cy={f(n.y)} r="14" />
+            <circle class="node-dot" cx={f(n.x)} cy={f(n.y)} r="6.5" />
+            <text
+              class="node-label"
+              transform={`rotate(${f(n.deg)}) translate(${R + 16} 0)${n.flip ? ' rotate(180)' : ''}`}
+              text-anchor={n.flip ? 'end' : 'start'}
+              dy="0.35em"
+            >{n.label}</text>
+          </g>
+        ))}
+      </g>
+      <g class="map-center" aria-hidden="true">
+        <rect class="map-center-bg" x="-135" y="-34" width="270" height="72" rx="16" />
+        <text class="map-center-name" data-map-center y="-4" text-anchor="middle">{start.name}</text>
+        <text class="map-center-sub" data-map-center-sub y="22" text-anchor="middle">brings {start.allDeps.length}, needed by {start.usedBy.length}</text>
+      </g>
+    </svg>
+    <ul class="map-legend" aria-label="Legend">
+      <li><i class="lg-self"></i>Selected</li>
+      <li><i class="lg-install"></i>Comes with it</li>
+      <li><i class="lg-used"></i>Needs it</li>
+    </ul>
+  </div>
+
+  <div class="map-panel">
+    <label class="map-pick">
+      <span>Pick a skill</span>
+      <select data-map-select>
+        {m.groups.map((g) => (
+          <optgroup label={g.name}>
+            {g.skills.map((n) => <option value={n} selected={n === start.name}>{n}</option>)}
+          </optgroup>
+        ))}
+      </select>
+    </label>
+    <div class="map-detail" aria-live="polite">
+      <h3><a data-map-link href={`/skill/${start.name}/`}>{start.name}</a></h3>
+      <p class="map-sum" data-map-sum>{start.summary}</p>
+      <div class="map-rel rel-install">
+        <h4 data-map-install-h>Comes with it ({start.allDeps.length})</h4>
+        <div class="map-chips" data-map-install>{start.allDeps.length ? start.allDeps.map((n) => <button type="button" class="mchip" data-pick={n}>{n}</button>) : <span class="faint">Nothing else. It works on its own.</span>}</div>
+      </div>
+      <div class="map-rel rel-used">
+        <h4 data-map-used-h>Needed by ({start.usedBy.length})</h4>
+        <div class="map-chips" data-map-used>{start.usedBy.length ? start.usedBy.map((n) => <button type="button" class="mchip" data-pick={n}>{n}</button>) : <span class="faint">No other skill needs it.</span>}</div>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" data-map-data set:html={json} />
+</div>
+
+<script>
+  type Info = { g: string; slug: string; sum: string; deps: string[]; all: string[]; by: string[] };
+  document.querySelectorAll<HTMLElement>('[data-map]').forEach((root) => {
+    const { data, edges: _e } = JSON.parse(root.querySelector('[data-map-data]')!.textContent || '{}') as { data: Record<string, Info>; edges: unknown };
+    const nodes = Array.from(root.querySelectorAll<SVGGElement>('.node'));
+    const edges = Array.from(root.querySelectorAll<SVGPathElement>('.edge'));
+    const select = root.querySelector<HTMLSelectElement>('[data-map-select]')!;
+    const q = (s: string) => root.querySelector<HTMLElement>(s)!;
+    const link = q('[data-map-link]') as HTMLAnchorElement;
+    let current = root.dataset.selected || select.value;
+
+    const chips = (box: HTMLElement, names: string[], empty: string) => {
+      if (!names.length) {
+        const sp = document.createElement('span');
+        sp.className = 'faint';
+        sp.textContent = empty;
+        box.replaceChildren(sp);
+        return;
+      }
+      box.replaceChildren(
+        ...names.map((n) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'mchip';
+          b.dataset.pick = n;
+          b.textContent = n;
+          return b;
+        }),
+      );
+    };
+
+    // Highlight in the drawing only (used for hover previews too).
+    const paint = (name: string) => {
+      const info = data[name];
+      if (!info) return;
+      const inst = new Set(info.all);
+      const by = new Set(info.by);
+      root.classList.add('has-focus');
+      nodes.forEach((n) => {
+        const nm = n.dataset.name!;
+        n.classList.toggle('is-self', nm === name);
+        n.classList.toggle('is-install', inst.has(nm));
+        n.classList.toggle('is-used', by.has(nm));
+      });
+      edges.forEach((e) => {
+        const f = e.dataset.from!;
+        const t = e.dataset.to!;
+        const down = (f === name || inst.has(f)) && inst.has(t);
+        const up = by.has(f) && (t === name || by.has(t));
+        e.classList.toggle('is-install', down);
+        e.classList.toggle('is-used', up && !down);
+      });
+      q('[data-map-center]').textContent = name.length > 22 ? name.slice(0, 20) + '…' : name;
+      q('[data-map-center-sub]').textContent = `brings ${info.all.length}, needed by ${info.by.length}`;
+    };
+
+    const choose = (name: string) => {
+      const info = data[name];
+      if (!info) return;
+      current = name;
+      select.value = name;
+      link.textContent = name;
+      link.href = `/skill/${name}/`;
+      q('[data-map-sum]').textContent = info.sum;
+      q('[data-map-install-h]').textContent = `Comes with it (${info.all.length})`;
+      q('[data-map-used-h]').textContent = `Needed by (${info.by.length})`;
+      chips(q('[data-map-install]'), info.all, 'Nothing else. It works on its own.');
+      chips(q('[data-map-used]'), info.by, 'No other skill needs it.');
+      nodes.forEach((n) => (n.tabIndex = n.dataset.name === name ? 0 : -1));
+      paint(name);
+    };
+
+    nodes.forEach((n, i) => {
+      const nm = n.dataset.name!;
+      n.addEventListener('mouseenter', () => paint(nm));
+      n.addEventListener('mouseleave', () => paint(current));
+      n.addEventListener('click', () => choose(nm));
+      n.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          choose(nm);
+          return;
+        }
+        const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+        if (!dir) return;
+        e.preventDefault();
+        const next = nodes[(i + dir + nodes.length) % nodes.length];
+        choose(next.dataset.name!);
+        next.focus();
+      });
+    });
+    select.addEventListener('change', () => choose(select.value));
+    root.addEventListener('click', (e) => {
+      const b = (e.target as Element).closest<HTMLElement>('[data-pick]');
+      if (b) choose(b.dataset.pick!);
+    });
+    choose(current);
+  });
+</script>

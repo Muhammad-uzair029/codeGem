@@ -1,0 +1,140 @@
+---
+// The codeGem mark, drawn large: a cut gem whose six lower facets are the six
+// skill groups (each links to Browse filtered by that group), with every skill
+// as a small stone orbiting it. Static without JavaScript or with reduced motion.
+import { getManifest } from '../../lib/skills.mjs';
+import { groupSlug } from '../lib/groups.js';
+
+const m = getManifest();
+const groups = m.groups.slice(0, 6);
+const cx = 220;
+const gy = 168; // girdle
+const bottom = { x: cx, y: 382 };
+const left = 56;
+const right = 384;
+const step = (right - left) / 6;
+const g = Array.from({ length: 7 }, (_, i) => ({ x: left + step * i, y: gy }));
+const P1 = { x: 142, y: 92 };
+const M = { x: cx, y: 92 };
+const P2 = { x: 298, y: 92 };
+const pt = (p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+const crown = [
+  [g[0], P1, g[2]],
+  [P1, M, g[2]],
+  [M, g[2], g[4]],
+  [M, P2, g[4]],
+  [P2, g[6], g[4]],
+].map((tri) => tri.map(pt).join(' '));
+const facets = groups.map((grp, i) => ({
+  name: grp.name,
+  count: grp.skills.length,
+  slug: groupSlug(grp.name),
+  points: [g[i], g[i + 1], bottom].map(pt).join(' '),
+  // label anchor inside the facet
+  lx: (g[i].x + g[i + 1].x + bottom.x) / 3,
+  ly: (g[i].y + g[i + 1].y + bottom.y) / 3,
+}));
+const outline = [g[0], P1, P2, g[6], bottom].map(pt).join(' ');
+// Orbiting skills, ordered by group so colours cluster.
+const order = m.groups.map((x) => x.name);
+const stones = [...m.skills]
+  .sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group))
+  .map((s, i, all) => ({ name: s.name, slug: groupSlug(s.group), t: i / all.length }));
+const orbit = { cx, cy: 250, rx: 206, ry: 54 };
+const place = (t) => {
+  const a = t * Math.PI * 2;
+  return { x: orbit.cx + orbit.rx * Math.cos(a), y: orbit.cy + orbit.ry * Math.sin(a), front: Math.sin(a) > 0 };
+};
+---
+<figure class="gem" data-gem data-default-caption={`${groups.length} groups, ${m.skillCount} skills. Each lower facet is a group.`}>
+  <svg viewBox="0 0 440 420" role="group" aria-label="codeGem: skill groups">
+    <defs>
+      <linearGradient id="gem-sheen" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity="0.55" />
+        <stop offset="0.45" stop-color="#fff" stop-opacity="0.08" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+      <linearGradient id="gem-sweep" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#fff" stop-opacity="0" />
+        <stop offset="0.5" stop-color="#fff" stop-opacity="0.55" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+      <radialGradient id="gem-glow" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stop-color="var(--glow)" stop-opacity="0.55" />
+        <stop offset="1" stop-color="var(--glow)" stop-opacity="0" />
+      </radialGradient>
+      <clipPath id="gem-clip"><polygon points={outline} /></clipPath>
+    </defs>
+
+    <ellipse class="gem-glow" cx={cx} cy="220" rx="210" ry="190" fill="url(#gem-glow)" />
+    <ellipse class="gem-orbit" cx={orbit.cx} cy={orbit.cy} rx={orbit.rx} ry={orbit.ry} />
+    <g class="gem-stones-back" data-stones-back>
+      {stones.filter((s) => !place(s.t).front).map((s) => { const p = place(s.t); return <circle class="stone" data-g={s.slug} data-t={s.t} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="4.5"><title>{s.name}</title></circle>; })}
+    </g>
+
+    <g class="gem-body">
+      {crown.map((pts, i) => <polygon class={`crown c${i}`} points={pts} />)}
+      {facets.map((f) => (
+        <a href={`/browse/?group=${encodeURIComponent(f.name)}`} class="facet-link" data-caption={`${f.name}: ${f.count} ${f.count === 1 ? 'skill' : 'skills'}`} aria-label={`Browse ${f.name}, ${f.count} skills`}>
+          <polygon class="facet" data-g={f.slug} points={f.points} />
+        </a>
+      ))}
+      <polygon class="gem-sheen" points={outline} fill="url(#gem-sheen)" />
+      <g clip-path="url(#gem-clip)" class="gem-sweep-wrap"><rect class="gem-sweep" x="-160" y="60" width="120" height="340" fill="url(#gem-sweep)" transform="skewX(-18)" /></g>
+      <polygon class="gem-outline" points={outline} />
+    </g>
+
+    <g class="gem-stones-front" data-stones-front>
+      {stones.filter((s) => place(s.t).front).map((s) => { const p = place(s.t); return <circle class="stone" data-g={s.slug} data-t={s.t} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="4.5"><title>{s.name}</title></circle>; })}
+    </g>
+
+    <g class="glints" aria-hidden="true">
+      <path class="glint g1" d="M318 70 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3z" />
+      <path class="glint g2" d="M96 128 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" />
+      <path class="glint g3" d="M262 300 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" />
+    </g>
+  </svg>
+  <figcaption class="gem-caption" data-gem-caption aria-live="polite">{groups.length} groups, {m.skillCount} skills. Each lower facet is a group.</figcaption>
+</figure>
+
+<script define:vars={{ orbit }}>
+  document.querySelectorAll('[data-gem]').forEach((root) => {
+    const cap = root.querySelector('[data-gem-caption]');
+    const def = root.dataset.defaultCaption || '';
+    root.querySelectorAll('.facet-link').forEach((a) => {
+      const on = () => { cap.textContent = a.dataset.caption; root.classList.add('is-hover'); a.classList.add('on'); };
+      const off = () => { cap.textContent = def; root.classList.remove('is-hover'); a.classList.remove('on'); };
+      a.addEventListener('mouseenter', on);
+      a.addEventListener('focus', on);
+      a.addEventListener('mouseleave', off);
+      a.addEventListener('blur', off);
+    });
+
+    if (!document.documentElement.classList.contains('motion')) return;
+    const back = root.querySelector('[data-stones-back]');
+    const front = root.querySelector('[data-stones-front]');
+    const stones = Array.from(root.querySelectorAll('.stone'));
+    let visible = true;
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((e) => { visible = e.some((x) => x.isIntersecting); }).observe(root);
+    }
+    const start = performance.now();
+    const period = 60000;
+    const frame = (now) => {
+      if (visible && !document.hidden) {
+        const shift = ((now - start) % period) / period;
+        for (const s of stones) {
+          const a = (Number(s.dataset.t) + shift) * Math.PI * 2;
+          const sin = Math.sin(a);
+          s.setAttribute('cx', (orbit.cx + orbit.rx * Math.cos(a)).toFixed(1));
+          s.setAttribute('cy', (orbit.cy + orbit.ry * sin).toFixed(1));
+          s.setAttribute('r', (3.4 + 1.6 * (sin + 1) / 2).toFixed(2));
+          const parent = sin > 0 ? front : back;
+          if (s.parentNode !== parent) parent.appendChild(s);
+        }
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
+</script>

@@ -1,7 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import InstallCommand from '../components/InstallCommand.astro';
+import GroupIcon from '../components/GroupIcon.astro';
 import { getManifest } from '../../lib/skills.mjs';
+import { groupSlug } from '../lib/groups.js';
 
 const m = getManifest();
 const groupOrder = m.groups.map((g) => g.name);
@@ -9,19 +11,24 @@ const skills = [...m.skills].sort(
   (a, b) => Number(b.featured) - Number(a.featured) || groupOrder.indexOf(a.group) - groupOrder.indexOf(b.group) || a.name.localeCompare(b.name),
 );
 const deps = Object.fromEntries(m.skills.map((s) => [s.name, s.allDeps]));
+const usedBy = Object.fromEntries(m.skills.map((s) => [s.name, s.usedBy]));
 ---
 <Base title="Browse skills" active="browse" description="Search and filter every codeGem skill, tick the ones you want, and copy one install command.">
   <div class="wrap">
-    <div class="crumbs">&nbsp;</div>
-    <h1>Browse skills</h1>
-    <p class="lede">Search by name or what it does. Tick the skills you want and the install command below updates as you go.</p>
+    <header class="page-head">
+      <h1>Browse skills</h1>
+      <p class="lede">Search by name or what it does. Tick the skills you want and the install command updates as you go. Hover a skill to see what it brings along.</p>
+    </header>
 
     <div class="toolbar">
       <label class="sr-only" for="q">Search skills</label>
-      <input id="q" class="search" type="search" placeholder="Search, e.g. security, figma, tests" autocomplete="off" />
+      <div class="search-wrap">
+        <input id="q" class="search" type="search" placeholder="Search, e.g. security, figma, tests" autocomplete="off" aria-keyshortcuts="/ Control+K Meta+K" />
+        <kbd class="search-kbd" aria-hidden="true" data-kbd-hint>/</kbd>
+      </div>
       <div class="chips" role="group" aria-label="Filter by group">
         <button type="button" class="chip" data-group="" aria-pressed="true">All</button>
-        {m.groups.map((g) => <button type="button" class="chip" data-group={g.name} aria-pressed="false">{g.name}</button>)}
+        {m.groups.map((g) => <button type="button" class="chip" data-g={groupSlug(g.name)} data-group={g.name} aria-pressed="false"><i class="chip-dot" aria-hidden="true"></i>{g.name}</button>)}
       </div>
     </div>
 
@@ -31,11 +38,13 @@ const deps = Object.fromEntries(m.skills.map((s) => [s.name, s.allDeps]));
       {skills.map((s) => (
         <article
           class="card skill-card"
+          data-g={groupSlug(s.group)}
           data-name={s.name}
           data-group={s.group}
           data-text={`${s.name} ${s.displayName} ${s.summary} ${s.description} ${s.group}`.toLowerCase()}
         >
           <div class="top">
+            <GroupIcon group={s.group} size={34} />
             <h3><a href={`/skill/${s.name}/`}>{s.name}</a></h3>
             <label class="pick" title={`Add ${s.name} to the install command`}>
               <input type="checkbox" value={s.name} aria-label={`Select ${s.name}`} /> Add
@@ -43,8 +52,10 @@ const deps = Object.fromEntries(m.skills.map((s) => [s.name, s.allDeps]));
           </div>
           <p>{s.summary}</p>
           <div class="meta">
-            <span class="pill">{s.group}</span>
-            {s.allDeps.length > 0 && <span>+{s.allDeps.length} it uses</span>}
+            <span class="pill" data-g={groupSlug(s.group)}>{s.group}</span>
+            {s.allDeps.length > 0 && <span>Brings {s.allDeps.length} more</span>}
+            <span class="rel-tag rel-tag-install">Comes with it</span>
+            <span class="rel-tag rel-tag-used">Needs it</span>
           </div>
         </article>
       ))}
@@ -67,6 +78,7 @@ const deps = Object.fromEntries(m.skills.map((s) => [s.name, s.allDeps]));
     </div>
   </div>
   <script type="application/json" id="deps-data" set:html={JSON.stringify(deps)} />
+  <script type="application/json" id="usedby-data" set:html={JSON.stringify(usedBy)} />
 </Base>
 
 <script>
@@ -149,6 +161,27 @@ const deps = Object.fromEntries(m.skills.map((s) => [s.name, s.allDeps]));
     cards.filter((c) => !c.hidden).forEach((c) => selected.add(c.dataset.name));
     update();
   });
+  // Hover or focus a card: outline what it installs and what installs it.
+  const usedBy = JSON.parse(document.getElementById('usedby-data').textContent || '{}');
+  const grid = document.getElementById('cards');
+  const relate = (name) => {
+    const inst = new Set(name ? deps[name] || [] : []);
+    const by = new Set(name ? usedBy[name] || [] : []);
+    grid.classList.toggle('relating', !!name && (inst.size > 0 || by.size > 0));
+    for (const c of cards) {
+      c.classList.toggle('rel-install', inst.has(c.dataset.name));
+      c.classList.toggle('rel-used', by.has(c.dataset.name));
+      c.classList.toggle('rel-self', c.dataset.name === name);
+    }
+  };
+  cards.forEach((c) => {
+    c.addEventListener('mouseenter', () => relate(c.dataset.name));
+    c.addEventListener('mouseleave', () => relate(''));
+    c.addEventListener('focusin', () => relate(c.dataset.name));
+    c.addEventListener('focusout', () => relate(''));
+  });
+  if (location.hash === '#q' || location.hash === '#search') requestAnimationFrame(() => q.focus());
+
   filter();
   update();
 </script>

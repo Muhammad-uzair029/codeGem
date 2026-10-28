@@ -1,0 +1,14 @@
+---
+// Faceted badge with the group's line icon, tinted with the group colour.
+import { groupMeta } from '../lib/groups.js';
+
+interface Props {
+  group: string;
+  size?: number;
+}
+const { group, size = 40 } = Astro.props;
+const meta = groupMeta(group);
+---
+<span class="gicon" data-g={meta.slug} style={`--s:${size}px`} aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={meta.icon} />
+</span>

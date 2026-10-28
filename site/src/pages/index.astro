@@ -2,68 +2,172 @@
 import Base from '../layouts/Base.astro';
 import InstallCommand from '../components/InstallCommand.astro';
 import LoopDiagram from '../components/LoopDiagram.astro';
-import HeroTerminal from '../components/HeroTerminal.astro';
+import QuickStart from '../components/QuickStart.astro';
+import HeroGem from '../components/HeroGem.astro';
+import SkillMap from '../components/SkillMap.astro';
+import GroupIcon from '../components/GroupIcon.astro';
 import DownloadApp from '../components/DownloadApp.astro';
 import { getManifest } from '../../lib/skills.mjs';
+import { groupSlug } from '../lib/groups.js';
 
 const m = getManifest();
 const loop = m.skills.find((s) => s.name === 'feature-loop');
 ---
-<Base title="codeGem Skills" active="home">
+<Base title="codeGem" active="home">
   <section class="hero">
     <div class="wrap hero-grid">
-      <div>
-        <div class="eyebrow" data-anim style="--d:0">For Claude Code</div>
-        <h1 data-anim style="--d:1">Skills that teach Claude <span>how your team ships</span>.</h1>
+      <div class="hero-copy">
+        <p class="hero-kicker" data-anim style="--d:0">
+          <span class="dot" aria-hidden="true"></span>For AI engineers
+        </p>
+        <h1 data-anim style="--d:1">Build with AI. Understand it. Prove it.</h1>
         <p class="lede" data-anim style="--d:2">
-          A skill is a folder of instructions Claude Code follows when you type a slash command like
-          <code>/feature-loop</code> or <code>/pre-merge-check</code>. These {m.skillCount} skills plan and build features,
-          check code before it merges, catch security problems, and handle git chores. Pick the ones you want and
-          install them into your project with one command.
+          codeGem brings together Claude Code skills you install with one command, ten interactive
+          AI-engineering modules, and interview practice with a timed mock mode.
         </p>
         <div class="actions" data-anim style="--d:3">
-          <a class="btn" href="/browse/">Browse all {m.skillCount} skills</a>
-          <a class="btn secondary" href="/getting-started/">New here? Start here</a>
+          <a class="btn" href="#skills">Get the skills</a>
+          <a class="btn secondary" href="/learn/">Start learning</a>
         </div>
       </div>
-      <div data-anim style="--d:3" class="hero-term">
-        <HeroTerminal />
+      <div class="hero-art" data-anim style="--d:2">
+        <HeroGem />
       </div>
     </div>
-  </section>
 
-  <section class="wrap">
-    <div class="card get-all" data-reveal>
-      <h2>Get everything</h2>
-      <p class="muted">Open a terminal in your project folder and paste this. It adds every skill to <code>.claude/skills/</code> and never overwrites one you already have.</p>
-      <InstallCommand args={['--all']} />
-      <p class="faint" style="margin:0">Want them in every project? Add <code>--global</code> (Windows: <code>-Global</code>).</p>
+    <div class="wrap">
+      <ul class="pillars" aria-label="What is on codeGem">
+        <li data-anim style="--d:4">
+          <a class="pillar" data-p="skills" href="/browse/">
+            <svg class="pillar-art" viewBox="0 0 240 110" aria-hidden="true">
+              <rect class="pa-panel" x="16" y="14" width="208" height="82" rx="10" />
+              <circle class="pa-dim" cx="32" cy="28" r="3.5" /><circle class="pa-dim" cx="44" cy="28" r="3.5" /><circle class="pa-dim" cx="56" cy="28" r="3.5" />
+              <text class="pa-code" x="30" y="59"><tspan class="pa-acc">&gt;</tspan> /feature-loop</text>
+              <rect class="pa-acc-fill pa-blink" x="172" y="47" width="8" height="14" rx="1" />
+              <path class="pa-gem" d="M186 80 l7 -9 h14 l7 9 -14 16z" />
+              <path class="pa-gem-line" d="M186 80 h28 M193 71 l4 9 3 -9 3 9 4 -9 M197 80 l3 16 3 -16" />
+            </svg>
+            <span class="pillar-meta">{m.skillCount} skills</span>
+            <h2>Skills</h2>
+            <p>Claude Code skills that plan features, check code before merge, and handle git chores. One command installs them.</p>
+            <span class="pillar-go">Browse skills</span>
+          </a>
+        </li>
+        <li data-anim style="--d:5">
+          <a class="pillar" data-p="learn" href="/learn/">
+            <svg class="pillar-art" viewBox="0 0 240 110" aria-hidden="true">
+              <path class="pa-wire" d="M52 55 H100 M140 55 H188 M120 35 V20 H188 V40" />
+              <path class="pa-wire pa-flow" d="M52 55 H100 M140 55 H188" />
+              <rect class="pa-node" x="16" y="40" width="36" height="30" rx="7" />
+              <rect class="pa-node pa-node-acc" x="100" y="35" width="40" height="40" rx="9" />
+              <rect class="pa-node" x="188" y="40" width="36" height="30" rx="7" />
+              <text class="pa-label" x="34" y="59" text-anchor="middle">Q</text>
+              <text class="pa-label pa-label-acc" x="120" y="60" text-anchor="middle">RAG</text>
+              <text class="pa-label" x="206" y="59" text-anchor="middle">A</text>
+              <rect class="pa-track" x="16" y="90" width="208" height="6" rx="3" />
+              <rect class="pa-fill" x="16" y="90" width="124" height="6" rx="3" />
+            </svg>
+            <span class="pillar-meta">10 modules</span>
+            <h2>Learn</h2>
+            <p>From LLM basics to RAG, agents, evals and AI system design. Short lessons with animated diagrams, and your progress is saved.</p>
+            <span class="pillar-go">Start learning</span>
+          </a>
+        </li>
+        <li data-anim style="--d:6">
+          <a class="pillar" data-p="interview" href="/interview/">
+            <svg class="pillar-art" viewBox="0 0 240 110" aria-hidden="true">
+              <rect class="pa-panel" x="16" y="16" width="132" height="34" rx="10" />
+              <rect class="pa-line" x="28" y="29" width="90" height="8" rx="4" />
+              <rect class="pa-opt" x="40" y="60" width="108" height="16" rx="6" />
+              <rect class="pa-opt pa-opt-ok" x="40" y="82" width="108" height="16" rx="6" />
+              <path class="pa-tick" d="M126 90 l4 4 8 -8" />
+              <circle class="pa-ring-bg" cx="192" cy="58" r="28" />
+              <circle class="pa-ring" cx="192" cy="58" r="28" pathLength="100" />
+              <text class="pa-label" x="192" y="63" text-anchor="middle">12:00</text>
+            </svg>
+            <span class="pillar-meta">Practice and mock interviews</span>
+            <h2>Interview prep</h2>
+            <p>Questions for every topic: multiple choice, open answers with model responses, and system design. Then try a timed mock interview.</p>
+            <span class="pillar-go">Practise questions</span>
+          </a>
+        </li>
+      </ul>
+      <a class="courses-strip" href="/courses/" data-anim style="--d:7">
+        <span class="courses-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5 12 3l9 3.5-9 3.5z" /><path d="M7 8.3V13c0 1.7 2.2 3 5 3s5-1.3 5-3V8.3" /><path d="M21 6.5V12" /></svg>
+        </span>
+        <span class="courses-text"><strong>Courses</strong> A checked list of AI courses worth your time, starting with Anthropic's own.</span>
+        <span class="pillar-go">See courses</span>
+      </a>
     </div>
   </section>
 
-  <section class="wrap">
-    <h2 data-reveal>The feature-loop: from brief to shipped code</h2>
-    <p class="section-lead" data-reveal>
-      The headline skill. Write a short brief, run <code>/feature-loop</code>, and Claude works through six stages.
-      It stops twice for your approval (or never, with <code>-y</code>). Click a stage to see what it does and what files it writes.
-    </p>
+  <section class="wrap section" id="skills" aria-labelledby="skills-h">
+    <header class="section-head" data-reveal>
+      <h2 id="skills-h">Skills: install once, then type a slash command</h2>
+      <p class="section-lead">
+        A skill is a folder of instructions Claude Code follows when you type a command like <code>/feature-loop</code>.
+        Get all {m.skillCount} at once, or <a href="/browse/">pick the ones you want</a>.
+      </p>
+    </header>
+    <div class="get-all" data-reveal>
+      <InstallCommand args={['--all']} label={`Get all ${m.skillCount} skills`} />
+      <p class="faint">Run it in your project folder. Skills you already have are never overwritten. Add <code>--global</code> (Windows: <code>-Global</code>) to use them in every project.</p>
+    </div>
+  </section>
+
+  <section class="band band-tight" aria-labelledby="qs-h">
+    <div class="wrap">
+      <header class="section-head" data-reveal>
+        <h2 id="qs-h">Your first skill in three steps</h2>
+        <p class="section-lead">Click a step to see that part of the run.</p>
+      </header>
+      <div data-reveal><QuickStart /></div>
+    </div>
+  </section>
+
+  <section class="wrap section" aria-labelledby="loop-h">
+    <header class="section-head" data-reveal>
+      <h2 id="loop-h">The feature-loop: from brief to shipped code</h2>
+      <p class="section-lead">
+        The headline skill. Write a short brief, run <code>/feature-loop</code>, and Claude works through six stages.
+        It stops twice for your approval, or never with <code>-y</code>.
+      </p>
+    </header>
     <div data-reveal><LoopDiagram /></div>
     {loop && (
-      <div data-reveal>
-        <h3>Install just the feature-loop</h3>
-        <p class="muted">This also installs the {loop.allDeps.length} skills it uses while building and checking your feature.</p>
+      <div class="loop-install" data-reveal>
+        <div>
+          <h3>Install just the feature-loop</h3>
+          <p class="muted">Also installs the {loop.allDeps.length} skills it uses to build and check your feature. <a href="/skill/feature-loop/">Read the full guide</a>.</p>
+        </div>
         <InstallCommand args={['feature-loop']} />
-        <p><a href="/skill/feature-loop/">Read the full feature-loop guide &rarr;</a></p>
       </div>
     )}
   </section>
 
-  <section class="wrap">
-    <h2 data-reveal>Find a skill by what you need</h2>
-    <div class="grid cols-3">
+  <section class="band" aria-labelledby="map-h">
+    <div class="wrap">
+      <header class="section-head" data-reveal>
+        <h2 id="map-h">How the skills connect</h2>
+        <p class="section-lead">Some skills call others. Installing one brings along everything it needs. Hover or pick a skill to see both directions.</p>
+      </header>
+      <div data-reveal><SkillMap selected="feature-loop" /></div>
+    </div>
+  </section>
+
+  <section class="wrap section" aria-labelledby="groups-h">
+    <header class="section-head" data-reveal>
+      <h2 id="groups-h">Find a skill by what you need</h2>
+    </header>
+    <div class="grid cols-3 tiles">
       {m.groups.map((g, i) => (
-        <a class="card tile" href={`/browse/?group=${encodeURIComponent(g.name)}`} data-reveal style={`--d:${i % 3}`}>
-          <h3>{g.name} <small>{g.skills.length} {g.skills.length === 1 ? 'skill' : 'skills'}</small></h3>
+        <a class="tile" data-g={groupSlug(g.name)} href={`/browse/?group=${encodeURIComponent(g.name)}`} data-reveal style={`--d:${i % 3}`}>
+          <div class="tile-top">
+            <GroupIcon group={g.name} size={42} />
+            <span class="tile-count">{g.skills.length} {g.skills.length === 1 ? 'skill' : 'skills'}</span>
+          </div>
+          <h3>{g.name}</h3>
           <p>{g.blurb}</p>
           <div class="names">{g.skills.slice(0, 4).map((n) => <code>{n}</code>)}{g.skills.length > 4 && <span class="faint">+{g.skills.length - 4} more</span>}</div>
         </a>
@@ -71,18 +175,11 @@ const loop = m.skills.find((s) => s.name === 'feature-loop');
     </div>
   </section>
 
-  <section class="wrap" id="download">
-    <h2 data-reveal>Prefer a desktop app?</h2>
-    <p class="section-lead" data-reveal>codeGem's app, Feature-Loop-Manager, runs the feature-loop for you in a window instead of the terminal.</p>
+  <section class="wrap section" id="download" aria-labelledby="dl-h">
+    <header class="section-head" data-reveal>
+      <h2 id="dl-h">Prefer a desktop app?</h2>
+      <p class="section-lead">Feature-Loop-Manager runs the feature-loop for you in a window instead of the terminal.</p>
+    </header>
     <div data-reveal><DownloadApp /></div>
-  </section>
-
-  <section class="wrap">
-    <h2 data-reveal>Three steps</h2>
-    <ol class="steps">
-      <li data-reveal style="--d:0"><h3>Install Claude Code</h3><p class="muted">You need the <code>claude</code> command on your computer. <a href="/getting-started/">See how</a>.</p></li>
-      <li data-reveal style="--d:1"><h3>Run one install command in your project folder</h3><p class="muted">Skills land in <code>.claude/skills/</code> inside that project. Nothing else changes.</p></li>
-      <li data-reveal style="--d:2"><h3>Open <code>claude</code> and type <code>/</code> plus the skill name</h3><p class="muted">For example <code>/pre-merge-check</code>. Claude reads the skill and follows it.</p></li>
-    </ol>
   </section>
 </Base>

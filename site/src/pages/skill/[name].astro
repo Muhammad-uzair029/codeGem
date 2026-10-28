@@ -2,6 +2,9 @@
 import Base from '../../layouts/Base.astro';
 import InstallCommand from '../../components/InstallCommand.astro';
 import LoopDiagram from '../../components/LoopDiagram.astro';
+import SkillMap from '../../components/SkillMap.astro';
+import GroupIcon from '../../components/GroupIcon.astro';
+import { groupSlug } from '../../lib/groups.js';
 import { getManifest } from '../../../lib/skills.mjs';
 import { renderMarkdown, renderInline } from '../../lib/markdown.js';
 
@@ -18,29 +21,32 @@ const directDeps = new Set(skill.deps);
 const fileCount = skill.files.length;
 const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
 ---
-<Base title={skill.name} description={skill.summary}>
+<Base title={skill.name} description={skill.summary} active="skills">
   <div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb">
       <a href="/browse/">Browse</a> /
       <a href={`/browse/?group=${encodeURIComponent(skill.group)}`}>{skill.group}</a>
     </nav>
-    <header class="skill-head">
-      <h1>{skill.name}</h1>
+    <header class="skill-head" data-g={groupSlug(skill.group)}>
+      <div class="skill-title">
+        <GroupIcon group={skill.group} size={56} />
+        <h1>{skill.name}</h1>
+      </div>
       <p class="lede">{skill.summary}</p>
-      <p style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0">
-        <span class="pill">{skill.group}</span>
+      <div class="skill-meta">
+        <span class="pill" data-g={groupSlug(skill.group)}>{skill.group}</span>
         <span class="faint">Type <code>/{skill.name}</code> in Claude Code</span>
-        {skill.displayName !== skill.name && <span class="faint">· also known as <code>{skill.displayName}</code></span>}
-      </p>
+        {skill.displayName !== skill.name && <span class="faint">Also known as <code>{skill.displayName}</code></span>}
+      </div>
     </header>
 
     <div class="skill-layout">
       <div>
-        <h2 style="margin-top:1.5rem">Install</h2>
+        <h2 class="first">Install</h2>
         <InstallCommand args={[skill.name]} />
         {skill.allDeps.length > 0 ? (
           <p class="muted">
-            This also installs the {skill.allDeps.length} skill{skill.allDeps.length === 1 ? '' : 's'} it uses (listed on the right).
+            This also installs the {skill.allDeps.length} skill{skill.allDeps.length === 1 ? '' : 's'} it uses (see "Also installs").
             Skills you already have are left alone. Add <code>--no-deps</code> (Windows: <code>-NoDeps</code>) to install only this one.
           </p>
         ) : (
@@ -65,8 +71,16 @@ const hasExtraFolders = skill.files.some((f) => f.path.includes('/'));
         {skill.name === 'feature-loop' && (
           <>
             <h2>The six stages</h2>
-            <p class="section-lead">Click a stage to see what it does and which files it writes. Everything for one feature lives under <code>.claude/specs/&lt;module&gt;/&lt;feature&gt;/</code>.</p>
+            <p class="section-lead">Everything for one feature lives under <code>.claude/specs/&lt;module&gt;/&lt;feature&gt;/</code>.</p>
             <LoopDiagram />
+          </>
+        )}
+
+        {(skill.allDeps.length > 0 || skill.usedBy.length > 0) && (
+          <>
+            <h2>Where it fits</h2>
+            <p class="section-lead">Lines run from a skill to the skills it calls. Hover or pick another skill to compare.</p>
+            <SkillMap selected={skill.name} />
           </>
         )}
 

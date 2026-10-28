@@ -3,23 +3,24 @@ import Base from '../layouts/Base.astro';
 import InstallCommand from '../components/InstallCommand.astro';
 ---
 <Base title="Getting started" active="start" description="Install your first codeGem skill and run it in Claude Code, step by step.">
-  <div class="wrap" style="max-width:820px">
-    <div class="crumbs">&nbsp;</div>
-    <h1>Getting started</h1>
-    <p class="lede">From nothing to your first skill running in about five minutes. No GitHub access needed.</p>
+  <div class="wrap narrow">
+    <header class="page-head">
+      <h1>Getting started</h1>
+      <p class="lede">From nothing to your first skill running in about five minutes. No GitHub access needed.</p>
+    </header>
 
-    <ol class="steps" style="margin-top:28px">
+    <ol class="steps timeline">
       <li>
         <h3>Install Claude Code</h3>
         <p>Skills run inside <strong>Claude Code</strong>, Anthropic's command-line coding assistant. Check whether you have it:</p>
-        <pre class="card" style="padding:12px 14px;margin:0 0 0.75rem;box-shadow:none"><code>claude --version</code></pre>
-        <p>If that prints a version number, you are set. If not, follow the official install guide at
+        <pre class="snippet"><code>claude --version</code></pre>
+        <p>If that prints a version number, you are set. If not, follow the official install guide at{' '}
           <a href="https://docs.claude.com/en/docs/claude-code/setup" rel="noopener">docs.claude.com</a>, then sign in by running <code>claude</code> once.</p>
       </li>
       <li>
         <h3>Open a terminal in your project folder</h3>
         <p>Skills are installed per project, into a hidden <code>.claude/skills/</code> folder at the project's top level. Go there first:</p>
-        <pre class="card" style="padding:12px 14px;margin:0 0 0.75rem;box-shadow:none"><code>cd path/to/your-project</code></pre>
+        <pre class="snippet"><code>cd path/to/your-project</code></pre>
         <p class="faint">On Windows, use PowerShell (not the old Command Prompt).</p>
       </li>
       <li>
@@ -32,7 +33,7 @@ import InstallCommand from '../components/InstallCommand.astro';
       <li>
         <h3>Start Claude Code and use the skill</h3>
         <p>In the same folder, run <code>claude</code>. Then type a slash and the skill's name:</p>
-        <pre class="card" style="padding:12px 14px;margin:0 0 0.75rem;box-shadow:none"><code>/feature-loop auth/login</code></pre>
+        <pre class="snippet"><code>/feature-loop auth/login</code></pre>
         <p>Claude reads the skill's instructions and follows them. Each skill's page lists its commands and options. If Claude was already open when you installed, restart it so it picks up the new skills.</p>
       </li>
     </ol>
@@ -46,7 +47,7 @@ import InstallCommand from '../components/InstallCommand.astro';
 
     <h2>Remove a skill</h2>
     <p>Delete its folder. That is all there is to it.</p>
-    <pre class="card" style="padding:12px 14px;box-shadow:none"><code># macOS / Linux
+    <pre class="snippet"><code># macOS / Linux
 rm -rf .claude/skills/feature-loop
 
 # Windows PowerShell

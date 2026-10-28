@@ -17,15 +17,18 @@ const joined = args.join(' ');
 <div class="cmd" id={id} data-cmd>
   <div class="cmd-head">
     <span class="cmd-label" data-cmd-label>{label}</span>
-    <button type="button" class="os-tab" data-os-tab="unix" aria-pressed="true">macOS / Linux</button>
-    <button type="button" class="os-tab" data-os-tab="windows" aria-pressed="false">Windows</button>
+    <div class="os-switch" role="group" aria-label="Operating system">
+      <span class="os-ind" aria-hidden="true"></span>
+      <button type="button" class="os-tab" data-os-tab="unix" aria-pressed="true">macOS / Linux</button>
+      <button type="button" class="os-tab" data-os-tab="windows" aria-pressed="false">Windows</button>
+    </div>
   </div>
   <div class="cmd-line" data-os-pane="unix">
     <code data-install data-os="unix" data-args={joined}>{installCommand('unix', base, args)}</code>
-    <button type="button" class="copy">Copy</button>
+    <button type="button" class="copy" aria-label="Copy command"><span class="copy-ico" aria-hidden="true"></span><span class="copy-txt">Copy</span></button>
   </div>
   <div class="cmd-line" data-os-pane="windows">
     <code data-install data-os="windows" data-args={joined}>{installCommand('windows', base, args)}</code>
-    <button type="button" class="copy">Copy</button>
+    <button type="button" class="copy" aria-label="Copy command"><span class="copy-ico" aria-hidden="true"></span><span class="copy-txt">Copy</span></button>
   </div>
 </div>
