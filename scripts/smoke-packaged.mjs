@@ -5,7 +5,8 @@
 //   node scripts/smoke-packaged.mjs            # finds the app under dist/
 //   node scripts/smoke-packaged.mjs <binary>
 import { spawn } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, openSync, readFileSync, readdirSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const TIMEOUT_MS = 45_000;
@@ -41,24 +42,27 @@ if (!bin || !existsSync(bin)) {
   process.exit(1);
 }
 
-// ELECTRON_ENABLE_LOGGING makes the packaged app flush stdout promptly.
+// Output goes to a file, not a pipe: on some runners (GitHub's macOS arm64)
+// a packaged app's piped stdout never arrives, while a file is written fine.
+// ELECTRON_ENABLE_LOGGING makes the app flush stdout promptly.
+const logFile = join(mkdtempSync(join(tmpdir(), 'smoke-packaged-')), 'app.log');
+const fd = openSync(logFile, 'a');
 const args = process.platform === 'linux' ? ['--no-sandbox'] : [];
 const child = spawn(bin, args, {
+  stdio: ['ignore', fd, fd],
   env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', ELECTRON_DISABLE_AUTO_UPDATE: '1' },
 });
-let out = '';
+const output = () => { try { return readFileSync(logFile, 'utf8'); } catch { return ''; } };
 const done = (ok, why) => {
+  clearInterval(poll);
   clearTimeout(timer);
   child.kill();
-  console.log(ok ? `smoke-packaged: OK — ${why}` : `smoke-packaged: FAILED — ${why}\n--- output ---\n${out.slice(-4000)}`);
+  console.log(ok ? `smoke-packaged: OK — ${why}` : `smoke-packaged: FAILED (${bin}) — ${why}\n--- output ---\n${output().slice(-4000)}`);
   process.exit(ok ? 0 : 1);
 };
-const onData = (d) => {
-  out += d;
-  const m = out.match(READY);
+const poll = setInterval(() => {
+  const m = output().match(READY);
   if (m) done(true, `${bin} printed "${m[0]}"`);
-};
-child.stdout.on('data', onData);
-child.stderr.on('data', onData);
+}, 500);
 child.on('exit', (code) => done(false, `app exited early with code ${code}`));
 const timer = setTimeout(() => done(false, `no ready line within ${TIMEOUT_MS / 1000}s`), TIMEOUT_MS);
