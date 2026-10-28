@@ -1,10 +1,16 @@
 name: Release · codeGem
 
-# Fires on every human push to main.
+# Fires on every human push to main that touches the desktop app.
 # Skips bot-pushed version-bump commits ([skip ci]) to prevent loops.
+# Website, content and docs changes deploy via Vercel/Netlify only and
+# don't cut an app release.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'site/**'
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 concurrency:
