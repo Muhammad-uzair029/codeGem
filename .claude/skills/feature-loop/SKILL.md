@@ -92,7 +92,7 @@ On `approve`, dispatch **spec-writer** sub-agent (see `agents/spec-writer.md`). 
 Loop until verdict = `ship` or `iter == --max-iters` (default 3):
 
 1. Dispatch **implementer** (see `agents/implementer.md`) with the spec set (and the previous iter's `verify/iter-N-verdict.md` on retry). Implementer writes code + `build/iter-N-plan.md` + `build/iter-N-diff.md`. When the diff touches NestJS Controllers or Prisma DTOs, implementer runs the **contract-first sub-step** (see `agents/implementer.md` §Contract-first Orval sub-step): localized workspace build → `swagger.json` → `npx orval` → typed TanStack Query / Axios hooks land in the RN workspace.
-2. Dispatch **verifier** (see `agents/verifier.md`). Verifier first runs the **compile-gate sub-stage** (`pre-merge-check`, `contract-drift-check`, `null-safety-scan`); if any of those return `FAIL` and heal-iter < `--max-heal-iters` (default 3), verifier packages the exact CLI/compiler/test stderr into `build/iter-N-heal-M.md` and hands control back to the implementer with the runtime engineering prompt described in `agents/verifier.md` §Self-healing loop. Heal-iter increments; the normal iter counter does NOT. Once compile-gate passes (or heal-iter cap hit), verifier fans out to the remaining sub-skills in parallel (`feature-review`, `security-audit`, `api-mock-parity`, `complexity-check`, `test-coverage-delta`, `dead-code-scan`, `perf-budget`, `migration-safety`, `dependency-hygiene`) via the `Agent` tool, cap 6 concurrent. Verifier writes `verify/iter-N-verdict.md`.
+2. Dispatch **verifier** (see `agents/verifier.md`). Verifier first runs the **compile-gate sub-stage** (`pre-merge-check`, `contract-drift-check`, `null-safety-scan`); if any of those return `FAIL` and heal-iter < `--max-heal-iters` (default 3), verifier packages the exact CLI/compiler/test stderr into `build/iter-N-heal-M.md` and hands control back to the implementer with the runtime engineering prompt described in `agents/verifier.md` §Self-healing loop. Heal-iter increments; the normal iter counter does NOT. Once compile-gate passes (or heal-iter cap hit), verifier fans out to the remaining sub-skills in parallel (`feature-review`, `security-audit`, `api-mock-parity`, `complexity-check`, `test-coverage-delta`, `dead-code-scan`, `perf-budget`, `migration-safety`, `dependency-hygiene`, `feature-qa`) via the `Agent` tool, cap 6 concurrent. Verifier writes `verify/iter-N-verdict.md`.
 3. Verdict = `ship` → step 6. Verdict = `block` and iter < max → next iter with `gaps[]` as implementer input. Verdict = `block` and iter == max → **escalate**: skip to result-writer with `ESCALATE` tag. Heal-iter cap hit without compile-gate green → same escalate path, tagged `SELF-HEAL-EXHAUSTED`.
 
 ### 6. Stage 4 — result-writer
@@ -137,6 +137,7 @@ On `ship` only. Dispatch **learnings** sub-agent (see `agents/learnings.md`). Le
 - `dead-code-scan` — unused code (verifier)
 - `migration-safety` — DB migrations (verifier)
 - `dependency-hygiene` — third-party deps (verifier)
+- `feature-qa` — end-to-end Playwright QA with a report (verifier, UI/HTTP features)
 - `adr-writer` — nudged by learnings when a new pattern lands
 - `feature-audit` — orchestrator sibling; `feature-loop` does NOT invoke `feature-audit` to avoid recursion. Verifier composes the same underlying sub-skills directly.
 

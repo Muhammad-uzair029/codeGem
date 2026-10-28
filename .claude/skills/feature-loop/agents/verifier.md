@@ -27,6 +27,7 @@ The verifier runs in two ordered phases per iter. Phase A (compile-gate) is a fa
 - `perf-budget` — bundle / p95 / startup (if applicable).
 - `migration-safety` — if migrations touched.
 - `dependency-hygiene` — if deps changed.
+- `feature-qa` — if the feature has a UI or HTTP surface: autonomous Playwright E2E against the spec set (pass the `.claude/specs/<mod>/<feat>/` path as its source). Its `report.md` verdict FAIL → `block`, with each BUG-n as a gap.
 
 Skip sub-skills that don't apply (e.g., no migrations → skip migration-safety).
 

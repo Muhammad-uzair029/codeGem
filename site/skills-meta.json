@@ -26,6 +26,7 @@
         "complexity-check",
         "null-safety-scan",
         "test-coverage-delta",
+        "feature-qa",
         "perf-budget",
         "dead-code-scan",
         "migration-safety",
@@ -75,6 +76,12 @@
       "group": "Quality gates",
       "summary": "Runs lint, type checks, and tests in parallel (TS/JS and Python) and stops if anything fails.",
       "whenToUse": "Before you open or merge a pull request, to make sure nothing is broken.",
+      "deps": []
+    },
+    "feature-qa": {
+      "group": "Quality gates",
+      "summary": "Tests a feature end to end on its own: writes a feature doc, designs test cases, writes and runs Playwright tests, triages failures, and hands back a report with a verdict.",
+      "whenToUse": "When a feature is built and you want proof it actually works in a real browser or app, without babysitting the testing.",
       "deps": []
     },
     "null-safety-scan": {

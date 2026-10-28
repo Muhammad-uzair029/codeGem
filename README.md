@@ -189,7 +189,7 @@ Full playbook: [`.claude/skills/feature-loop/SKILL.md`](.claude/skills/feature-l
 <details>
 <summary><h2>🧰 All skills</h2></summary>
 
-26 skills, grouped by purpose. Each one is a folder in [`.claude/skills/`](.claude/skills) with a `SKILL.md`. Run any of them as `/<skill-name>` in Claude Code.
+27 skills, grouped by purpose. Each one is a folder in [`.claude/skills/`](.claude/skills) with a `SKILL.md`. Run any of them as `/<skill-name>` in Claude Code.
 
 <details>
 <summary><b>🏗️ Build</b>: create features and UI</summary>
@@ -213,6 +213,7 @@ Full playbook: [`.claude/skills/feature-loop/SKILL.md`](.claude/skills/feature-l
 | `null-safety-scan` | Finds unguarded property access, missing optional chaining, unchecked returns |
 | `complexity-check` | Enforces limits on function/file length, nesting, parameters, and cyclomatic complexity |
 | `test-coverage-delta` | Reports only the **new** lines that aren't covered by tests |
+| `feature-qa` | Tests a feature end to end with Playwright, no human needed: feature doc → test cases → tests → run and triage → report with a verdict |
 | `dead-code-scan` | Finds unused exports, unreachable branches, orphan files |
 | `perf-budget` | Tracks bundle size, API p95 latency, and RN startup against a baseline; blocks regressions |
 

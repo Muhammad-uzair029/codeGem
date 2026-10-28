@@ -38,6 +38,13 @@ export default defineConfig({
       testMatch: 'detection.spec.ts',
     },
     {
+      // feature-qa suites for the static site (site/dist, served by the spec itself).
+      // Build first: cd site && npm run build. Uses installed Chrome.
+      name: 'qa',
+      testMatch: 'qa/**/*.spec.ts',
+      use: { channel: 'chrome', viewport: { width: 1440, height: 900 }, screenshot: 'only-on-failure' },
+    },
+    {
       // Runs against the packaged .app bundle (requires pnpm pack:dir first).
       name: 'packaged',
       testMatch: 'packaged.spec.ts',
