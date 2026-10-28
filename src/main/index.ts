@@ -15,6 +15,14 @@ import { registerSkillsRemoteIpc } from './services/skillsRemoteService.js';
 const isDev = !app.isPackaged;
 const __dirname_ = join(fileURLToPath(import.meta.url), '..');
 
+// Fuses already block Node's --inspect, but Chromium's own debugging flags
+// would still let someone attach DevTools to the renderer. A shipped build
+// has no reason to accept them, so refuse to start.
+const DEBUG_FLAGS = ['remote-debugging-port', 'remote-debugging-pipe', 'remote-debugging-address', 'inspect', 'inspect-brk', 'js-flags'];
+if (!isDev && DEBUG_FLAGS.some((f) => app.commandLine.hasSwitch(f))) {
+  app.exit(1);
+}
+
 let mainWin: BrowserWindow | null = null;
 const getWin = (): BrowserWindow | null => mainWin;
 
@@ -35,10 +43,14 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset',
     show: false,
     webPreferences: {
-      preload: join(__dirname_, '..', 'preload', 'preload.mjs'),
+      preload: join(__dirname_, '..', 'preload', 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      // Bytecode preloads need the Node loader, so no renderer sandbox.
       sandbox: false,
+      // No DevTools in shipped builds: they'd expose the renderer's code
+      // and state to anyone with the installer.
+      devTools: !app.isPackaged,
     },
   });
 

@@ -63,7 +63,7 @@ async function scaffold(name: string): Promise<{ parent: string; path: string }>
 
 test.beforeAll(async () => {
   app = await electron.launch({
-    args: [resolve(here, '..', 'out', 'main', 'index.js')],
+    args: [resolve(here, '..', 'out', 'main', 'index.cjs')],
     env: { ...process.env, ELECTRON_DISABLE_AUTO_UPDATE: '1' },
   });
   window = await app.firstWindow();

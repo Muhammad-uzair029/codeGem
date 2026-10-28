@@ -70,12 +70,18 @@ jobs:
 
   # ── 2. Build binaries (macOS / Windows / Linux — parallel) ───────────────
   build:
-    name: Build · ${{ matrix.os }}
+    name: Build · ${{ matrix.os }} ${{ matrix.arch }}
     needs: prepare
     strategy:
       fail-fast: false
+      # Main/preload ship as V8 bytecode, which is tied to the CPU
+      # architecture — so each macOS arch builds on its own runner type.
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - { os: macos-latest, arch: arm64 }
+          - { os: macos-15-intel, arch: x64 }
+          - { os: windows-latest, arch: x64 }
+          - { os: ubuntu-latest, arch: x64 }
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -114,6 +120,12 @@ jobs:
         if: runner.os == 'Windows'
         run: pnpm install --frozen-lockfile --ignore-scripts
 
+      # --ignore-scripts skips electron's own postinstall, but the bytecode
+      # step runs Electron to compile main/preload, so fetch the binary.
+      - name: Download Electron binary (Windows)
+        if: runner.os == 'Windows'
+        run: node node_modules/electron/install.js
+
       - name: Install dependencies (macOS + Linux)
         if: runner.os != 'Windows'
         run: pnpm install --frozen-lockfile
@@ -124,11 +136,11 @@ jobs:
       - name: Build renderer + main + preload
         run: pnpm build
 
-      - name: Package · macOS (arm64 + x64 DMG + zip)
+      - name: Package · macOS (${{ matrix.arch }} DMG + zip)
         if: runner.os == 'macOS'
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: pnpm exec electron-builder --mac --arm64 --x64 --publish never
+        run: pnpm exec electron-builder --mac --${{ matrix.arch }} --publish never
 
       - name: Package · Windows (NSIS installer)
         if: runner.os == 'Windows'
@@ -137,6 +149,14 @@ jobs:
       - name: Package · Linux (AppImage + deb)
         if: runner.os == 'Linux'
         run: pnpm exec electron-builder --linux --publish never
+
+      # Each macOS arch job writes its own latest-mac.yml; keep them apart so
+      # the publish job can merge them (otherwise one would overwrite the
+      # other and auto-update would break for that arch).
+      - name: Name latest-mac.yml per arch
+        if: runner.os == 'macOS'
+        shell: bash
+        run: mv dist/latest-mac.yml "dist/latest-mac-${{ matrix.arch }}.yml"
 
       - name: Upload artifacts to draft release
         shell: bash
@@ -163,7 +183,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs-${{ matrix.os }}
+          name: build-logs-${{ matrix.os }}-${{ matrix.arch }}
           path: |
             dist/*.log
             dist/*.yml
@@ -178,6 +198,24 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
+      - name: Merge per-arch latest-mac.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.prepare.outputs.tag }}"
+          REPO="${{ github.repository }}"
+          gh release download "$TAG" --repo "$REPO" --dir mac-yml --pattern 'latest-mac-*.yml'
+          node scripts/merge-latest-mac.cjs mac-yml/latest-mac-arm64.yml mac-yml/latest-mac-x64.yml > latest-mac.yml
+          cat latest-mac.yml
+          gh release upload "$TAG" latest-mac.yml --clobber --repo "$REPO"
+          gh release delete-asset "$TAG" latest-mac-arm64.yml --yes --repo "$REPO"
+          gh release delete-asset "$TAG" latest-mac-x64.yml --yes --repo "$REPO"
+
       - name: Mark release as published + latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
