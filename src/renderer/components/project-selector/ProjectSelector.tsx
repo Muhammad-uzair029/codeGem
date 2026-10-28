@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@renderer/lib/api';
 import { useWorkspaceStore } from '@renderer/state/workspaceStore';
 import type { ProjectType, TargetFramework } from '@shared/ipc';
+import { STACK_PRESETS } from '@shared/stacks';
 
 async function persistActive(
   path: string,
@@ -59,6 +60,16 @@ export function ProjectSelector(): JSX.Element {
       await persistActive(path, projectTypeForPersist, det.framework);
     } catch {
       setFramework(null, []);
+    }
+  };
+
+  // Manual stack pick overrides detection; persisted so skill injection
+  // writes the matching CLAUDE.md template.
+  const pickStack = async (value: string): Promise<void> => {
+    const framework: TargetFramework | null = STACK_PRESETS.find((p) => p.id === value)?.id ?? null;
+    setFramework(framework, frameworkSignals);
+    if (targetPath && projectType) {
+      await persistActive(targetPath, projectType, framework);
     }
   };
 
@@ -243,15 +254,24 @@ export function ProjectSelector(): JSX.Element {
           <span className="pill">
             {projectType === 'NEW_SCAFFOLD' ? 'NEW_SCAFFOLD' : 'EXISTING_LEGACY'}
           </span>
-          {targetFramework ? (
-            <span className="pill">
-              <span className="text-good">●</span> {targetFramework}
-            </span>
-          ) : (
-            <span className="pill">
-              <span className="text-warn">●</span> framework: unknown
-            </span>
-          )}
+          <label className="pill gap-1" data-testid="stack-picker">
+            <span className={targetFramework ? 'text-good' : 'text-warn'}>●</span>
+            <span className="text-neutral-400">stack:</span>
+            <select
+              className="bg-transparent text-xs text-neutral-200 outline-none cursor-pointer"
+              value={targetFramework ?? ''}
+              onChange={(e) => void pickStack(e.target.value)}
+              aria-label="Project stack (selects the CLAUDE.md template)"
+              data-testid="stack-picker-select"
+            >
+              <option value="">unknown (pick one)</option>
+              {STACK_PRESETS.map((p) => (
+                <option key={p.id} value={p.id} data-testid={`stack-option-${p.id}`}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
           {frameworkSignals.length > 0 && (
             <span className="text-[10px] text-neutral-500 truncate max-w-full">
               signals: {frameworkSignals.join(', ')}

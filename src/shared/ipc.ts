@@ -3,7 +3,15 @@
 // via contextBridge.
 
 export type ProjectType = 'NEW_SCAFFOLD' | 'EXISTING_LEGACY';
-export type TargetFramework = 'REACT_NATIVE_EXPO' | 'NEST_JS';
+// GENERIC is never auto-detected — the user picks it for any stack that
+// should get a CLAUDE.md without stack-specific rules.
+export type TargetFramework =
+  | 'REACT_NATIVE_EXPO'
+  | 'NEST_JS'
+  | 'NEXT_JS'
+  | 'FASTAPI'
+  | 'GO'
+  | 'GENERIC';
 
 // Layout panel sizes persisted in config.json.
 export interface LayoutConfig {
@@ -96,6 +104,9 @@ export interface SkillInjectionRequest {
   targetPath: string;
   overwrite?: boolean;
   skills?: string[];   // if provided, only inject these skill names; otherwise inject all
+  // Picks the CLAUDE.md stack template. When omitted, the main process uses
+  // the framework persisted for targetPath, else the RN/Nest default.
+  framework?: TargetFramework | null;
 }
 
 export interface SkillInjectionResult {

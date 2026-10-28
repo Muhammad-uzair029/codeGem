@@ -9,7 +9,7 @@ import type {
   NewWorkspaceResult,
 } from '@shared/ipc';
 import { desktopDefault } from './pathService.js';
-import { detectFramework } from './projectStateService.js';
+import { detectFramework } from './frameworkDetection.js';
 
 const IDENT_RX = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 

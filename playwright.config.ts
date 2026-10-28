@@ -33,6 +33,11 @@ export default defineConfig({
       testMatch: 'loop-helpers.spec.ts',
     },
     {
+      // Pure node: framework detection on temp folders (no Electron).
+      name: 'detection',
+      testMatch: 'detection.spec.ts',
+    },
+    {
       // Runs against the packaged .app bundle (requires pnpm pack:dir first).
       name: 'packaged',
       testMatch: 'packaged.spec.ts',

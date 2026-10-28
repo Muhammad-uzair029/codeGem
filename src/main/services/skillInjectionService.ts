@@ -11,7 +11,9 @@ import {
 import { join } from 'node:path';
 import type { SkillInjectionRequest, SkillInjectionResult } from '@shared/ipc';
 import { CLIENT_CLAUDE_BLUEPRINT } from '@shared/projectSchema';
-import { boilerplateSkillsDir, boilerplateTemplateClaudeMd } from './pathService.js';
+import { stackTemplateFor } from '@shared/stacks';
+import { boilerplateSkillsDir, boilerplateTemplateClaudeMd, templatePath } from './pathService.js';
+import { persistedFrameworkFor } from './projectStateService.js';
 
 const FALLBACK_CLAUDE_MD = `# Project — orchestrated by claude-code-boilerplate
 
@@ -169,9 +171,14 @@ export function registerSkillsIpc(): void {
       if (!claudeMdExists || overwrite) {
         let content = FALLBACK_CLAUDE_MD;
         try {
-          const templatePath = boilerplateTemplateClaudeMd();
-          if (existsSync(templatePath)) {
-            content = readFileSync(templatePath, 'utf8');
+          // Stack template: explicit request framework, else the one the
+          // project selector persisted, else the RN/Nest default template.
+          const framework =
+            req.framework !== undefined ? req.framework : persistedFrameworkFor(req.targetPath);
+          let tplPath = templatePath(stackTemplateFor(framework));
+          if (!existsSync(tplPath)) tplPath = boilerplateTemplateClaudeMd();
+          if (existsSync(tplPath)) {
+            content = readFileSync(tplPath, 'utf8');
           }
         } catch {
           /* fall through to inline default */
