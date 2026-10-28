@@ -1,4 +1,4 @@
-# Netlify config for the codeGem skills site.
+# Netlify config for the SkillFacet site.
 # In the Netlify UI set "Base directory" to `site`; Netlify then reads this
 # file from there and resolves `publish` relative to it. Netlify clones the
 # whole repo, so the build can read ../.claude/skills/.

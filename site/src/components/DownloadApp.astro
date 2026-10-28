@@ -1,6 +1,5 @@
 ---
-// codeGem desktop app downloads from GitHub Releases (the installer files are
-// still named Feature-Loop-Manager).
+// SkillFacet desktop app downloads from GitHub Releases.
 // The repo comes from RELEASES_REPO / site.config.json at build time. The
 // browser asks the GitHub API for the latest release; if that fails (private
 // repo 404, rate limit, offline) the fallback card stays, which is also what
@@ -19,17 +18,16 @@ const releasesUrl = `https://github.com/${repo}/releases/latest`;
         <li>Approve or send back the work at the two review points.</li>
       </ul>
       <p class="muted">You do not need it: every skill also works by typing a command in Claude Code. Use whichever you prefer, or both.</p>
-      <p class="faint">The installer file is named <code>Feature-Loop-Manager</code>, the app's working title.</p>
     </div>
 
     <div class="card dl-card">
       <!-- Fallback, shown until (and unless) the latest release loads. -->
       <div data-dl-fallback>
-        <div class="eyebrow">codeGem desktop app</div>
+        <div class="eyebrow">SkillFacet desktop app</div>
         <h3 style="margin:0 0 6px">Download for macOS, Windows or Linux</h3>
         <p class="muted">Installers are published on GitHub Releases.</p>
         <a class="btn" href={releasesUrl} rel="noopener">Open the latest release</a>
-        <p class="faint" style="margin:10px 0 0" data-dl-status>If the page asks you to sign in, use a GitHub account that has access to the codeGem repo.</p>
+        <p class="faint" style="margin:10px 0 0" data-dl-status></p>
       </div>
 
       <!-- Filled in by the script when the release is available. -->
@@ -48,7 +46,7 @@ const releasesUrl = `https://github.com/${repo}/releases/latest`;
   </div>
   <div class="note warn" style="margin-top:16px">
     <p><strong>macOS:</strong> the app is not signed yet. If macOS says it is damaged or blocks it, move it to Applications and run
-    <code>xattr -cr /Applications/Feature-Loop-Manager.app</code> in Terminal, then open it again.</p>
+    <code>xattr -cr /Applications/SkillFacet.app</code> in Terminal, then open it again.</p>
   </div>
 </div>
 
@@ -153,7 +151,7 @@ const releasesUrl = `https://github.com/${repo}/releases/latest`;
 
     const version = String(rel.tag_name || rel.name || '').replace(/^v?/, 'v');
     const date = rel.published_at ? new Date(rel.published_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-    q('[data-dl-version]')!.textContent = ['codeGem desktop app', version, date && `released ${date}`].filter(Boolean).join(' · ');
+    q('[data-dl-version]')!.textContent = ['SkillFacet desktop app', version, date && `released ${date}`].filter(Boolean).join(' · ');
     if (!primary.length) q('[data-dl-title]')!.textContent = 'Choose your platform';
     const prim = q('[data-dl-primary]')!;
     prim.replaceChildren(...primary.map((b, i) => button(b, i === 0 || os === 'mac')));

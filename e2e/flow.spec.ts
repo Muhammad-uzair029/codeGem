@@ -389,7 +389,7 @@ test('screenshot: full app with a project loaded', async () => {
     }, path);
     await window.reload();
     await window.waitForLoadState('domcontentloaded');
-    await window.locator('text=Feature-Loop Manager').first().waitFor({ state: 'visible', timeout: 30_000 });
+    await window.locator('text=SkillFacet').first().waitFor({ state: 'visible', timeout: 30_000 });
     await window.waitForTimeout(1500); // let terminal + explorer settle
     await window.screenshot({ path: join(outDir, 'flow-project-loaded.png'), fullPage: false });
   } finally {

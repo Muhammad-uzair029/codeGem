@@ -15,9 +15,9 @@ import { stackTemplateFor } from '@shared/stacks';
 import { boilerplateSkillsDir, boilerplateTemplateClaudeMd, templatePath } from './pathService.js';
 import { persistedFrameworkFor } from './projectStateService.js';
 
-const FALLBACK_CLAUDE_MD = `# Project — orchestrated by claude-code-boilerplate
+const FALLBACK_CLAUDE_MD = `# Project — orchestrated by SkillFacet
 
-This project was scaffolded (or adopted) by feature-loop-manager. See
+This project was scaffolded (or adopted) by SkillFacet. See
 \`.claude/skills/\` for the injected skill matrix. Canonical entry points:
 
 - \`feature-loop\` — 6-stage autonomous feature-development engine.

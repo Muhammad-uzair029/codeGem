@@ -1,6 +1,6 @@
-# Project — orchestrated by claude-code-boilerplate
+# Project — orchestrated by SkillFacet
 
-This project was scaffolded (or adopted) by feature-loop-manager with the
+This project was scaffolded (or adopted) by SkillFacet with the
 `GENERIC` stack preset: no stack-specific rules. See `.claude/skills/` for
 the injected skill matrix. Canonical entry points:
 
@@ -8,7 +8,7 @@ the injected skill matrix. Canonical entry points:
 - `quality-assurance` — self-healing compilation verification engine (TS/JS + Python toolchains).
 - `figma-to-code` — injected as a canonical dir; emits React Native code only.
 
-## Directory blueprint (enforced by feature-loop-manager)
+## Directory blueprint (enforced by SkillFacet)
 
 ```
 [Client-Project-Root]/

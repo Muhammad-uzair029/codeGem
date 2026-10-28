@@ -1,6 +1,6 @@
-# Project — orchestrated by claude-code-boilerplate (Next.js)
+# Project — orchestrated by SkillFacet (Next.js)
 
-This project was scaffolded (or adopted) by feature-loop-manager with the
+This project was scaffolded (or adopted) by SkillFacet with the
 `NEXT_JS` stack preset. See `.claude/skills/` for the injected skill matrix.
 Canonical entry points:
 
@@ -9,7 +9,7 @@ Canonical entry points:
 - `figma-to-code` — injected as a canonical dir, but it emits React Native +
   NativeWind. Do not use it for web components (see skills below).
 
-## Directory blueprint (enforced by feature-loop-manager)
+## Directory blueprint (enforced by SkillFacet)
 
 ```
 [Client-Project-Root]/

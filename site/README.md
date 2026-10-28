@@ -1,6 +1,6 @@
-# codeGem skills site
+# SkillFacet site
 
-A static site (Astro) that lets anyone browse codeGem's Claude Code skills and
+A static site (Astro) that lets anyone browse SkillFacet's Claude Code skills and
 install them into a project with one command. Design:
 [`docs/superpowers/specs/2026-10-28-skills-site-design.md`](../docs/superpowers/specs/2026-10-28-skills-site-design.md).
 

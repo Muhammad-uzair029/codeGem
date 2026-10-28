@@ -72,12 +72,12 @@ test.afterAll(async () => {
 // ─── 1. Header & branding ────────────────────────────────────────────────────
 
 test('header shows app title', async () => {
-  await expect(window.locator('text=Feature-Loop Manager').first()).toBeVisible();
+  await expect(window.locator('text=SkillFacet').first()).toBeVisible();
 });
 
 test('header shows subtitle', async () => {
   await expect(
-    window.locator('text=claude-code-boilerplate orchestrator').first(),
+    window.locator('text=Feature-loop orchestrator for Claude Code').first(),
   ).toBeVisible();
 });
 

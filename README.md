@@ -1,10 +1,10 @@
-# codeGem
+# SkillFacet
 
 AI-powered feature orchestrator for Claude Code workflows.
 
 Built on Electron + React + node-pty.
 
-codeGem is a desktop app that turns a feature idea into shipped code using Claude Code. You pick a project, write a short feature brief, and codeGem runs the **feature-loop**: it brainstorms, writes a spec, builds, verifies (with self-healing retries), and records what it learned. You watch it live in the app.
+SkillFacet is a desktop app that turns a feature idea into shipped code using Claude Code. You pick a project, write a short feature brief, and SkillFacet runs the **feature-loop**: it brainstorms, writes a spec, builds, verifies (with self-healing retries), and records what it learned. You watch it live in the app.
 
 ### Install skills
 
@@ -31,20 +31,20 @@ The site lives in [`site/`](site/README.md) and deploys to Vercel or Netlify.
 
 > Click any section below to expand it.
 
-**Contents:** [What is codeGem](#what-is-codegem) · [Quick start](#quick-start) · [Use the skills in another project](#use-the-skills-in-another-project) · [The feature-loop](#the-feature-loop) · [All skills](#all-skills) · [Repo layout](#repo-layout) · [Development](#development)
+**Contents:** [What is SkillFacet](#what-is-skillfacet) · [Quick start](#quick-start) · [Use the skills in another project](#use-the-skills-in-another-project) · [The feature-loop](#the-feature-loop) · [All skills](#all-skills) · [Repo layout](#repo-layout) · [Development](#development)
 
 ---
 
-<a id="what-is-codegem"></a>
+<a id="what-is-skillfacet"></a>
 <details open>
-<summary><h2>🧭 What is codeGem</h2></summary>
+<summary><h2>🧭 What is SkillFacet</h2></summary>
 
 Three pieces work together:
 
 | Piece | Role |
 |---|---|
 | **Skills** (in `.claude/skills/`, from [claude-code-boilerplate](https://github.com/Muhammad-uzair029/claude-code-boilerplate)) | The instructions Claude follows to build a feature |
-| **codeGem** (this app) | Installs those skills into your project, collects the brief, runs the loop, and shows progress |
+| **SkillFacet** (this app) | Installs those skills into your project, collects the brief, runs the loop, and shows progress |
 | **Claude Code CLI** (`claude`) | Does the actual coding work |
 
 ### What the app does
@@ -63,9 +63,9 @@ Three pieces work together:
 <details>
 <summary><h2>🚀 Quick start</h2></summary>
 
-**Option A: install a release.** Download the build for your OS from [GitHub Releases](https://github.com/Muhammad-uzair029/codeGem/releases) (`.dmg` / `.zip` for macOS, `.exe` for Windows, `.AppImage` / `.deb` for Linux). The app updates itself.
+**Option A: install a release.** Download the build for your OS from [GitHub Releases](https://github.com/Muhammad-uzair029/codeGem-releases/releases) (`.dmg` / `.zip` for macOS, `.exe` for Windows, `.AppImage` / `.deb` for Linux). The app updates itself.
 
-> macOS builds are unsigned. If macOS blocks the app, run `xattr -cr /Applications/Feature-Loop-Manager.app`.
+> macOS builds are unsigned. If macOS blocks the app, run `xattr -cr /Applications/SkillFacet.app`.
 
 **Option B: run from source.**
 
@@ -74,7 +74,7 @@ pnpm install
 pnpm dev
 ```
 
-**Prerequisite:** the Claude Code CLI must be on your `PATH` (`claude`). If it isn't, codeGem falls back to `npx`.
+**Prerequisite:** the Claude Code CLI must be on your `PATH` (`claude`). If it isn't, SkillFacet falls back to `npx`.
 
 **First run:**
 1. The onboarding screen downloads the latest skills from GitHub. Choose **Skip for now** to use the bundled copy.
@@ -90,7 +90,7 @@ pnpm dev
 
 ### Through the app (recommended)
 
-Pick the project in codeGem, then inject skills. This creates:
+Pick the project in SkillFacet, then inject skills. This creates:
 
 ```
 <your-project>/
@@ -274,13 +274,13 @@ Full playbook: [`.claude/skills/feature-loop/SKILL.md`](.claude/skills/feature-l
 
 ### Updating the skills
 
-The skills here are a copy of [claude-code-boilerplate](https://github.com/Muhammad-uzair029/claude-code-boilerplate). The app loads skills in this order:
+`.claude/skills/` in this repo is the source of truth. Push a change to `main` and:
 
-1. The downloaded copy in the app's data folder (refresh it from **Settings → Update All**)
-2. `.claude/skills/` in this repo (dev mode)
-3. The copy bundled inside the packaged app (built from `.claude/skills/`)
+1. Vercel rebuilds the [skills site](https://code-gem-eosin.vercel.app), which serves every skill with a version fingerprint.
+2. People update with one command: `install.sh --update` (Windows: `Install-Skills -Update`).
+3. The desktop app downloads from the same site (**Settings → Update All**), and falls back to the copy bundled in the installer.
 
-To refresh the copy in this repo, copy `.claude/skills/` from the boilerplate repo again.
+`claude-code-boilerplate` is no longer used.
 
 </details>
 

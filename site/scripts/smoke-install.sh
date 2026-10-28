@@ -208,7 +208,7 @@ check "--update --all is rejected" [ "$RC" -ne 0 ]
 P="$WORK/p11-empty"
 install "$P" --update
 check "empty project: exit 0" [ "$RC" -eq 0 ]
-check "empty project: says nothing installed" grep -q "No codeGem skills are installed" <<<"$OUT"
+check "empty project: says nothing installed" grep -q "No SkillFacet skills are installed" <<<"$OUT"
 check "empty project: creates nothing" [ ! -e "$P/.claude" ]
 
 echo ""

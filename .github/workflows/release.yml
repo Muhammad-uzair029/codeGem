@@ -1,4 +1,4 @@
-name: Release · codeGem
+name: Release · SkillFacet
 
 # Fires on every human push to main that touches the desktop app.
 # Skips bot-pushed version-bump commits ([skip ci]) to prevent loops.
@@ -250,5 +250,5 @@ jobs:
           gh release create "$TAG" assets/* \
             --repo "$PUBLIC_REPO" \
             --title "${{ needs.prepare.outputs.version }}" \
-            --notes "codeGem desktop app $TAG. Installers only; source is private. macOS builds are unsigned: if macOS blocks the app, run \`xattr -cr /Applications/Feature-Loop-Manager.app\`." \
+            --notes "SkillFacet desktop app $TAG. Installers only; source is private. macOS builds are unsigned: if macOS blocks the app, run \`xattr -cr /Applications/SkillFacet.app\`." \
             --latest

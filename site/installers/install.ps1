@@ -1,4 +1,4 @@
-# codeGem skills installer (Windows PowerShell 5+ and PowerShell 7).
+# SkillFacet skills installer (Windows PowerShell 5+ and PowerShell 7).
 #
 #   irm @@SITE_URL@@/install.ps1 | iex; Install-Skills feature-loop pre-merge-check
 #   irm @@SITE_URL@@/install.ps1 | iex; Install-Skills -All
@@ -12,7 +12,7 @@
 #   -Force        Replace skills you named that are already installed. The old copy is
 #                 moved to .claude\skills\.backup\<name>-<timestamp>\ first.
 #                 Never applies to skills pulled in as dependencies.
-#   -Update       Update every codeGem skill already installed here to the latest
+#   -Update       Update every SkillFacet skill already installed here to the latest
 #                 version (only the ones that changed; old copies are backed up)
 #                 and list new skills you don't have yet. Name skills to limit it.
 #   -List         List available skills.
@@ -106,7 +106,7 @@ function Install-Skills {
                 if (Test-Path -LiteralPath (Join-Path $target $n)) { $have += $n } else { $newAvailable += $n }
             }
             if ($have.Count -eq 0) {
-                Write-Host "No codeGem skills are installed in $target yet."
+                Write-Host "No SkillFacet skills are installed in $target yet."
                 Write-Host "Install some first, e.g.:  Install-Skills -All"
                 return
             }
@@ -120,7 +120,7 @@ function Install-Skills {
                 if ($byName[$n].version -and $cur -eq $byName[$n].version) { $upToDate += $n } else { $outdated += $n }
             }
             if ($outdated.Count -eq 0) {
-                Write-Host "codeGem skills -> $target"
+                Write-Host "SkillFacet skills -> $target"
                 Write-Host "  All $($upToDate.Count) installed skills are up to date."
                 if ($newAvailable.Count -gt 0) {
                     Write-Host "  New skills you don't have yet ($($newAvailable.Count)): $($newAvailable -join ', ')"
@@ -212,7 +212,7 @@ function Install-Skills {
         }
 
         Write-Host ""
-        Write-Host "codeGem skills -> $target"
+        Write-Host "SkillFacet skills -> $target"
         if ($installed.Count -gt 0) { Write-Host "  Installed ($($installed.Count)): $($installed -join ', ')" }
         if ($updated.Count -gt 0) {
             Write-Host "  Updated ($($updated.Count)): $($updated -join ', ')"

@@ -74,7 +74,7 @@ prompt: |
 
 ## Client-side contract
 
-The client-side blueprint enforced by `feature-loop-manager` guarantees
+The client-side blueprint enforced by SkillFacet guarantees
 this directory exists at every managed project:
 
 ```

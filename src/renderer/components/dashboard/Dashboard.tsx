@@ -28,9 +28,9 @@ export function Dashboard(): JSX.Element {
     <div className="flex flex-col min-h-screen">
       <header className="px-6 py-4 border-b border-surface-800 flex items-center justify-between">
         <div>
-          <div className="text-lg font-semibold tracking-tight">Feature-Loop Manager</div>
+          <div className="text-lg font-semibold tracking-tight">SkillFacet</div>
           <div className="text-xs text-neutral-400">
-            Entry workspace controller for claude-code-boilerplate + feature-loop.
+            Run the feature-loop on your projects with Claude Code.
           </div>
         </div>
         <span className="pill">v0.1.0</span>

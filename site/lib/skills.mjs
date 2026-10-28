@@ -149,7 +149,7 @@ export function buildManifest({ siteUrl } = {}) {
   const problems = [];
   const warnings = [];
   if (!fs.existsSync(SKILLS_DIR)) {
-    throw new SkillsBuildError([`Skills folder not found at ${SKILLS_DIR}. The site must be built from inside the codeGem repo (root directory "site").`]);
+    throw new SkillsBuildError([`Skills folder not found at ${SKILLS_DIR}. The site must be built from inside the SkillFacet repo (root directory "site").`]);
   }
   const meta = loadMeta();
   const groupNames = new Set(meta.groups.map((g) => g.name));
@@ -273,7 +273,7 @@ export function publicManifest(manifest) {
  *   file  <TAB> name <TAB> x|- <TAB> relative path
  */
 export function installIndex(manifest) {
-  const lines = ['# codeGem skills install index. Generated at build time; do not edit.'];
+  const lines = ['# SkillFacet skills install index. Generated at build time; do not edit.'];
   for (const s of manifest.skills) {
     lines.push(['skill', s.name, s.allDeps.join(',') || '-', s.version].join('\t'));
     for (const f of s.files) lines.push(['file', s.name, f.exec ? 'x' : '-', f.path].join('\t'));

@@ -120,7 +120,7 @@ export function registerWorkspaceIpc(getWin: () => BrowserWindow | null): void {
         mkdirSync(target, { recursive: false });
         writeFileSync(
           join(target, 'README.md'),
-          `# ${projectName}\n\nScaffolded by feature-loop-manager on ${new Date().toISOString()}.\n`,
+          `# ${projectName}\n\nScaffolded by SkillFacet on ${new Date().toISOString()}.\n`,
         );
         writeFileSync(
           join(target, 'package.json'),

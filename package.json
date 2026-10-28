@@ -2,7 +2,7 @@
   "name": "codegem",
   "version": "0.2.25",
   "private": true,
-  "description": "codeGem — AI-powered feature orchestrator for Claude Code workflows.",
+  "description": "SkillFacet — AI-powered feature orchestrator for Claude Code workflows.",
   "author": {
     "name": "Muhammad-uzair029",
     "email": "muhammaduzair0299@gmail.com"
@@ -64,7 +64,7 @@
   },
   "build": {
     "appId": "com.softaims.feature-loop-manager",
-    "productName": "Feature-Loop-Manager",
+    "productName": "SkillFacet",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "npmRebuild": false,
     "directories": {

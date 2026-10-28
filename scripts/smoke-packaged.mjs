@@ -9,7 +9,8 @@ import { existsSync, openSync, readFileSync, readdirSync, mkdtempSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const TIMEOUT_MS = 45_000;
+// Generous: macOS scans a new unsigned bundle on its first launch.
+const TIMEOUT_MS = 90_000;
 const READY = /\[codegem\] ready v\d+\.\d+\.\d+/;
 
 function findBinary() {

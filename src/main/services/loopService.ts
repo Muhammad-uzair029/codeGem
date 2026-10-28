@@ -170,7 +170,7 @@ export function registerLoopIpc(getWin: () => BrowserWindow | null): void {
       if (lines.length === 0) return;
       emitChunk({
         channel: 'system',
-        data: lines.map((l) => `[feature-loop-manager] ${l}\n`).join(''),
+        data: lines.map((l) => `[skillfacet] ${l}\n`).join(''),
         stage,
       });
     };
@@ -230,7 +230,7 @@ export function registerLoopIpc(getWin: () => BrowserWindow | null): void {
 
     emitChunk({
       channel: 'system',
-      data: `[feature-loop-manager] launch cli=${cli.cmd} pid=${proc.pid} cwd=${iso.cwd}\n`,
+      data: `[skillfacet] launch cli=${cli.cmd} pid=${proc.pid} cwd=${iso.cwd}\n`,
       stage: 'unknown',
     });
     emitSystem(isolationLines(iso, Boolean(prev)), 'unknown');
@@ -279,7 +279,7 @@ export function registerLoopIpc(getWin: () => BrowserWindow | null): void {
     proc.on('exit', (code, signal) => {
       emitChunk({
         channel: 'system',
-        data: `[feature-loop-manager] exit code=${code ?? 'null'} signal=${signal ?? 'null'}\n`,
+        data: `[skillfacet] exit code=${code ?? 'null'} signal=${signal ?? 'null'}\n`,
         stage: session.stage,
       });
       finalize(code, signal);
@@ -299,7 +299,7 @@ export function registerLoopIpc(getWin: () => BrowserWindow | null): void {
     proc.on('error', (err) => {
       emitChunk({
         channel: 'stderr',
-        data: `[feature-loop-manager] child error: ${err.message}\n`,
+        data: `[skillfacet] child error: ${err.message}\n`,
         stage: session.stage,
       });
       // A failed spawn (e.g. ENOENT) never emits 'exit'; close the record.

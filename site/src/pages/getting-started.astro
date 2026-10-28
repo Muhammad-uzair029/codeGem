@@ -2,11 +2,11 @@
 import Base from '../layouts/Base.astro';
 import InstallCommand from '../components/InstallCommand.astro';
 ---
-<Base title="Getting started" active="start" description="How to use codeGem: install Claude Code skills, work through the Learn modules, practise for interviews, and get the desktop app.">
+<Base title="Getting started" active="start" description="How to use SkillFacet: install Claude Code skills, work through the Learn modules, practise for interviews, and get the desktop app.">
   <div class="wrap narrow">
     <header class="page-head">
       <h1>Getting started</h1>
-      <p class="lede">codeGem has three parts plus an optional app. Start with whichever you need; none depends on the others.</p>
+      <p class="lede">SkillFacet has three parts plus an optional app. Start with whichever you need; none depends on the others.</p>
       <ul class="page-jump" aria-label="On this page">
         <li><a href="#skills">Skills</a></li>
         <li><a href="#learn">Learn</a></li>
@@ -70,10 +70,10 @@ import InstallCommand from '../components/InstallCommand.astro';
     </section>
 
     <section class="gs-section" id="app" aria-labelledby="gs-app">
-      <h2 id="gs-app">The codeGem desktop app (optional)</h2>
+      <h2 id="gs-app">The SkillFacet desktop app (optional)</h2>
       <p>The app runs the feature-loop in a window instead of the terminal: pick a project, write a brief, press Launch, and watch each stage. It installs the skills for you. You still need Claude Code installed.</p>
       <p><a class="btn secondary" href="/#download">Download the desktop app</a></p>
-      <p class="faint">The installer file is named Feature-Loop-Manager. On macOS, if the app is blocked as "damaged", move it to Applications and run <code>xattr -cr /Applications/Feature-Loop-Manager.app</code>.</p>
+      <p class="faint">On macOS, if the app is blocked as "damaged", move it to Applications and run <code>xattr -cr /Applications/SkillFacet.app</code>.</p>
     </section>
 
     <h2 id="options">Install options</h2>
@@ -120,7 +120,7 @@ Remove-Item -Recurse -Force .claude\skills\feature-loop</code></pre>
     <details class="box"><summary>Claude does not see the skill</summary>
       <p>Make sure you ran the install command in the project's top folder (where you start <code>claude</code>), then restart Claude Code. You should see <code>.claude/skills/&lt;name&gt;/SKILL.md</code> in that folder.</p>
     </details>
-    <details class="box"><summary>Do I need the codeGem desktop app?</summary>
+    <details class="box"><summary>Do I need the SkillFacet desktop app?</summary>
       <p>No. The app adds a guided, screen-by-screen flow around the feature-loop, but every skill works on its own in Claude Code.</p>
     </details>
     <details class="box"><summary>Do Learn and Interview prep need anything installed?</summary>

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Static site to browse and install codeGem's Claude Code skills.",
+  "description": "Static site to browse and install SkillFacet's Claude Code skills.",
   "engines": {
     "node": ">=22.12.0"
   },

@@ -120,8 +120,8 @@ export function AppShell(): JSX.Element {
             onClick={toggleLeft}
           />
           <div className="min-w-0 hidden sm:block">
-            <div className="text-sm font-semibold tracking-tight truncate">Feature-Loop Manager</div>
-            <div className="text-[10px] text-neutral-500 truncate">claude-code-boilerplate orchestrator</div>
+            <div className="text-sm font-semibold tracking-tight truncate">SkillFacet</div>
+            <div className="text-[10px] text-neutral-500 truncate">Feature-loop orchestrator for Claude Code</div>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# codeGem skills installer (macOS / Linux).
+# SkillFacet skills installer (macOS / Linux).
 #
 #   curl -fsSL @@SITE_URL@@/install.sh | bash -s -- feature-loop pre-merge-check
 #   curl -fsSL @@SITE_URL@@/install.sh | bash -s -- --all
@@ -13,7 +13,7 @@
 #   --force        Replace skills you named that are already installed. The old copy is
 #                  moved to .claude/skills/.backup/<name>-<timestamp>/ first.
 #                  Never applies to skills pulled in as dependencies.
-#   --update       Update every codeGem skill already installed here to the latest
+#   --update       Update every SkillFacet skill already installed here to the latest
 #                  version (only the ones that changed; old copies are backed up)
 #                  and list new skills you don't have yet. Name skills to limit it.
 #   --list         List available skills and exit.
@@ -32,7 +32,7 @@ cg_err() { printf 'error: %s\n' "$*" >&2; }
 
 cg_usage() {
   cat <<'USAGE'
-codeGem skills installer
+SkillFacet skills installer
 
 Usage:  install.sh [options] <skill> [<skill> ...]
         install.sh --all
@@ -150,7 +150,7 @@ main() {
       if [ -d "$target/$s" ]; then have+=("$s"); else new_available+=("$s"); fi
     done
     if [ ${#have[@]} -eq 0 ]; then
-      cg_say "No codeGem skills are installed in $target yet."
+      cg_say "No SkillFacet skills are installed in $target yet."
       cg_say "Install some first, e.g.:  install.sh --all"
       return 0
     fi
@@ -166,7 +166,7 @@ main() {
       if [ -n "$latest" ] && [ "$cur" = "$latest" ]; then up_to_date+=("$s"); else outdated+=("$s"); fi
     done
     if [ ${#outdated[@]} -eq 0 ]; then
-      cg_say "codeGem skills -> $target"
+      cg_say "SkillFacet skills -> $target"
       cg_say "  All ${#up_to_date[@]} installed skills are up to date."
       if [ ${#new_available[@]} -gt 0 ]; then
         cg_say "  New skills you don't have yet (${#new_available[@]}): $(cg_join ', ' "${new_available[@]}")"
@@ -277,7 +277,7 @@ main() {
   done
 
   cg_say ""
-  cg_say "codeGem skills -> $target"
+  cg_say "SkillFacet skills -> $target"
   if [ ${#installed[@]} -gt 0 ]; then
     cg_say "  Installed (${#installed[@]}): $(cg_join ', ' "${installed[@]}")"
   fi

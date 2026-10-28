@@ -77,7 +77,7 @@ export function Onboarding({ onDone }: { onDone: () => void }): JSX.Element {
               <GemIcon />
             </div>
             <div className="text-center">
-              <h1 className="text-lg font-semibold tracking-tight text-white">Welcome to codeGem</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-white">Welcome to SkillFacet</h1>
               <p className="text-sm text-neutral-400 mt-0.5">Install Claude Code skills to begin</p>
             </div>
           </div>

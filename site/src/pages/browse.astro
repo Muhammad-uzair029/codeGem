@@ -13,7 +13,7 @@ const skills = [...m.skills].sort(
 const deps = Object.fromEntries(m.skills.map((s) => [s.name, s.allDeps]));
 const usedBy = Object.fromEntries(m.skills.map((s) => [s.name, s.usedBy]));
 ---
-<Base title="Browse skills" active="browse" description="Search and filter every codeGem skill, tick the ones you want, and copy one install command.">
+<Base title="Browse skills" active="browse" description="Search and filter every SkillFacet skill, tick the ones you want, and copy one install command.">
   <div class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb">
       <ol><li><a href="/skill/">Skills</a></li><li><span aria-current="page">Browse</span></li></ol>

@@ -137,7 +137,7 @@ export function SkillsUpdater(): JSX.Element {
       {/* Source + status */}
       <div className="space-y-1">
         <div className="text-[11px] text-neutral-600 font-mono truncate">
-          {status?.source ?? 'codeGem skills site'}
+          {status?.source ?? 'SkillFacet site'}
         </div>
         <div className="flex items-center gap-2">
           {status === null ? (

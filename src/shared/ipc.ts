@@ -98,7 +98,7 @@ export interface SkillsCacheStatus {
   count: number;
   skills: string[];
   skipped: boolean;
-  /** Host the skills are downloaded from (the codeGem skills site). */
+  /** Host the skills are downloaded from (the SkillFacet skills site). */
   source: string;
 }
 

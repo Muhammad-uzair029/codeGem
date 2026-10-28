@@ -24,7 +24,7 @@ test.afterAll(async () => {
 });
 
 test('renderer boots + shows header', async () => {
-  await expect(window.locator('text=Feature-Loop Manager').first()).toBeVisible();
+  await expect(window.locator('text=SkillFacet').first()).toBeVisible();
 });
 
 test('preload exposes the full window.orchestrator surface including new v0.2 surfaces', async () => {

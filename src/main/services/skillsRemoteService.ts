@@ -10,7 +10,7 @@ import type {
 import { SKILLS_SITE_URL } from '@shared/siteConfig';
 import { userDataPath } from './pathService.js';
 
-// Skills come from the codeGem skills site — the same manifest.json and
+// Skills come from the SkillFacet skills site — the same manifest.json and
 // files the one-line installer (install.sh / install.ps1 --update) uses —
 // so the app and the website always serve one source of truth.
 // CODEGEM_SKILLS_URL overrides the site (tests, self-hosted mirrors).

@@ -1,6 +1,6 @@
-# Project — orchestrated by claude-code-boilerplate (Go)
+# Project — orchestrated by SkillFacet (Go)
 
-This project was scaffolded (or adopted) by feature-loop-manager with the
+This project was scaffolded (or adopted) by SkillFacet with the
 `GO` stack preset. See `.claude/skills/` for the injected skill matrix.
 Canonical entry points:
 
@@ -10,7 +10,7 @@ Canonical entry points:
 - `figma-to-code` — injected as a canonical dir, but it emits React Native
   code. Not relevant to Go (see skills below).
 
-## Directory blueprint (enforced by feature-loop-manager)
+## Directory blueprint (enforced by SkillFacet)
 
 ```
 [Client-Project-Root]/

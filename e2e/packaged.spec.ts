@@ -19,8 +19,8 @@ import { fileURLToPath } from 'node:url';
 import { createConnection } from 'node:net';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const APP = resolve(here, '..', 'dist', `mac-${process.arch}`, 'Feature-Loop-Manager.app');
-const BIN = join(APP, 'Contents', 'MacOS', 'Feature-Loop-Manager');
+const APP = resolve(here, '..', 'dist', `mac-${process.arch}`, 'SkillFacet.app');
+const BIN = join(APP, 'Contents', 'MacOS', 'SkillFacet');
 
 test.skip(!existsSync(BIN), `Packaged .app not found at ${APP}. Run 'pnpm pack:dir' first.`);
 
@@ -83,7 +83,7 @@ test('[packaged] refuses to start when app.asar is modified', async () => {
   const fd = openSync(join(copy, 'Contents', 'Resources', 'app.asar'), 'r+');
   writeSync(fd, Buffer.from('X'), 0, 1, 5000);
   closeSync(fd);
-  const { alive, out } = await run(join(copy, 'Contents', 'MacOS', 'Feature-Loop-Manager'), [], {}, 4000);
+  const { alive, out } = await run(join(copy, 'Contents', 'MacOS', 'SkillFacet'), [], {}, 4000);
   expect(alive).toBe(false);
   expect(out).toMatch(/Integrity check failed/i);
 });
