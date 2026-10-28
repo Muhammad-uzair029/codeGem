@@ -26,7 +26,7 @@ Three pieces work together:
 
 ### What the app does
 
-1. **Project selector.** Pick a folder and tag it as a new or existing project, with an optional framework (`REACT_NATIVE_EXPO` or `NEST_JS`). Recent projects are remembered.
+1. **Project selector.** Pick a folder and tag it as a new or existing project, and pick its stack (React Native/Expo, NestJS, Next.js, FastAPI, Go, or Generic). The stack is auto-detected when possible and picks the `CLAUDE.md` template. Recent projects are remembered.
 2. **Skill injection.** Copies all skills, or the ones you choose, into `<project>/.claude/skills/`, plus a `CLAUDE.md` and the `.claude/specs/{inbox,active}/` folders.
 3. **Brief intake.** A form that saves your feature description to `.claude/specs/inbox/`. Paste a Figma URL and it extracts the file key and node ID, and can write `.mcp.json` so Claude can read the design.
 4. **Launch.** Stays disabled until a brief exists, then runs `claude` with `/feature-loop`. The dashboard tracks the current stage live.
@@ -91,7 +91,7 @@ To take only some skills, copy just those folders (for example `feature-loop` an
 
 Then open the project in `claude` and use them as slash commands, for example `/feature-loop -y auth/login`.
 
-> **Note:** `templates/CLAUDE.md` is written for React Native/Expo + NestJS projects (Orval-generated hooks, 42-rule security audit). For other stacks, edit it or leave it out.
+> **Note:** `templates/CLAUDE.md` is written for React Native/Expo + NestJS projects (Orval-generated hooks, 42-rule security audit). For Next.js, FastAPI, Go, or any other stack, copy the matching file from `templates/stacks/` instead (`generic.md` has no stack-specific rules). The app's stack picker does this for you.
 
 </details>
 

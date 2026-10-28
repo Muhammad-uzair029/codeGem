@@ -9,7 +9,7 @@
 # usage:
 #   ./link-workspace.sh --target /abs/path/to/client \
 #       --project-type NEW_SCAFFOLD|EXISTING_LEGACY \
-#       [--framework REACT_NATIVE_EXPO|NEST_JS]
+#       [--framework REACT_NATIVE_EXPO|NEST_JS|NEXT_JS|FASTAPI|GO|GENERIC]
 
 set -euo pipefail
 
@@ -21,7 +21,7 @@ usage() {
   cat >&2 <<EOF
 usage: $(basename "$0") --target /abs/path/to/client \\
     --project-type NEW_SCAFFOLD|EXISTING_LEGACY \\
-    [--framework REACT_NATIVE_EXPO|NEST_JS]
+    [--framework REACT_NATIVE_EXPO|NEST_JS|NEXT_JS|FASTAPI|GO|GENERIC]
 EOF
   exit 2
 }
@@ -44,8 +44,8 @@ case "$PROJECT_TYPE" in
 esac
 if [ -n "$FRAMEWORK" ]; then
   case "$FRAMEWORK" in
-    REACT_NATIVE_EXPO|NEST_JS) ;;
-    *) echo "framework must be REACT_NATIVE_EXPO or NEST_JS (or omit)" >&2; exit 5 ;;
+    REACT_NATIVE_EXPO|NEST_JS|NEXT_JS|FASTAPI|GO|GENERIC) ;;
+    *) echo "framework must be one of REACT_NATIVE_EXPO, NEST_JS, NEXT_JS, FASTAPI, GO, GENERIC (or omit)" >&2; exit 5 ;;
   esac
 fi
 

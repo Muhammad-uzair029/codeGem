@@ -9,6 +9,7 @@
 #
 # usage:
 #   ./inject-skills.sh --target /abs/path/to/client [--overwrite]
+#       [--framework REACT_NATIVE_EXPO|NEST_JS|NEXT_JS|FASTAPI|GO|GENERIC]
 
 set -euo pipefail
 
@@ -16,16 +17,21 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"                # apps/feature-loop-manager
 BOILERPLATE_ROOT="$(cd "$APP_DIR/../.." && pwd)"       # repo root
 SRC_SKILLS="$BOILERPLATE_ROOT/.claude/skills"
-TEMPLATE_CLAUDE_MD="$APP_DIR/templates/CLAUDE.md"
+# Standalone checkout: skills are bundled at the app root.
+[ -d "$SRC_SKILLS" ] || SRC_SKILLS="$APP_DIR/.claude/skills"
 
 TARGET=""
 OVERWRITE=0
+FRAMEWORK=""
 
 usage() {
   cat >&2 <<EOF
 usage: $(basename "$0") --target /abs/path/to/client [--overwrite]
+    [--framework REACT_NATIVE_EXPO|NEST_JS|NEXT_JS|FASTAPI|GO|GENERIC]
   --target      Absolute path to the client project root.
   --overwrite   Replace files that already exist in the target.
+  --framework   Stack preset that picks the CLAUDE.md template
+                (omit for the React Native / NestJS default).
 EOF
   exit 2
 }
@@ -34,10 +40,23 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --target) TARGET="$2"; shift 2 ;;
     --overwrite) OVERWRITE=1; shift ;;
+    --framework) FRAMEWORK="$2"; shift 2 ;;
     -h|--help) usage ;;
     *) echo "unknown arg: $1" >&2; usage ;;
   esac
 done
+
+# Mirror of src/shared/stacks.ts STACK_PRESETS.
+case "$FRAMEWORK" in
+  ""|REACT_NATIVE_EXPO|NEST_JS) TEMPLATE_REL="CLAUDE.md" ;;
+  NEXT_JS) TEMPLATE_REL="stacks/next-js.md" ;;
+  FASTAPI) TEMPLATE_REL="stacks/fastapi.md" ;;
+  GO)      TEMPLATE_REL="stacks/go.md" ;;
+  GENERIC) TEMPLATE_REL="stacks/generic.md" ;;
+  *) echo "framework must be one of REACT_NATIVE_EXPO, NEST_JS, NEXT_JS, FASTAPI, GO, GENERIC (or omit)" >&2; exit 5 ;;
+esac
+TEMPLATE_CLAUDE_MD="$APP_DIR/templates/$TEMPLATE_REL"
+[ -f "$TEMPLATE_CLAUDE_MD" ] || TEMPLATE_CLAUDE_MD="$APP_DIR/templates/CLAUDE.md"
 
 [ -z "$TARGET" ] && usage
 [ ! -d "$TARGET" ] && { echo "target does not exist: $TARGET" >&2; exit 3; }

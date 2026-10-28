@@ -45,16 +45,29 @@ export function boilerplateSkillsDir(): string {
   return join(boilerplateRepoRoot(), '.claude', 'skills');
 }
 
-export function boilerplateTemplateClaudeMd(): string {
+// Resolve a file under the app's templates/ dir (e.g. 'CLAUDE.md' or
+// 'stacks/go.md'). Same candidates as before, plus the app path: build.files
+// ships templates/ inside app.asar, which resourcesPath does not cover.
+export function templatePath(relPath: string): string {
   // Bundled via electron-vite resource inlining — resolve from the app root
   // during dev, and from resourcesPath after packaging.
   const here = dirname(fileURLToPath(import.meta.url));
   // dev: src/main/services → up 3 = apps/feature-loop-manager/
-  const devPath = resolve(here, '..', '..', '..', 'templates', 'CLAUDE.md');
+  const devPath = resolve(here, '..', '..', '..', 'templates', relPath);
   if (existsSync(devPath)) return devPath;
-  const packagedPath = join(process.resourcesPath ?? '', 'templates', 'CLAUDE.md');
+  const packagedPath = join(process.resourcesPath ?? '', 'templates', relPath);
   if (existsSync(packagedPath)) return packagedPath;
+  try {
+    const appPath = join(app.getAppPath(), 'templates', relPath);
+    if (existsSync(appPath)) return appPath;
+  } catch {
+    /* app not ready — fall through */
+  }
   return devPath;
+}
+
+export function boilerplateTemplateClaudeMd(): string {
+  return templatePath('CLAUDE.md');
 }
 
 export function desktopDefault(): string {
