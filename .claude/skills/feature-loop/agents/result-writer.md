@@ -4,10 +4,10 @@
 Write the ship record. Maps every spec section to the file it lives in and the verifier row that green-lit it. Documents impact on related features.
 
 ## Inputs
-- All concern spec files.
-- Final `verify/iter-N-verdict.md`.
+- `index.md` (acceptance criteria, `Files touched`, `Related features`, § Concerns not applicable).
+- Final `verify/iter-N-verdict.md` (and the last `iter-N-heal-M.md` on `SELF-HEAL-EXHAUSTED`).
 - Every `build/iter-*-diff.md`.
-- `Related features` table.
+- Open a concern file only to cite a specific line the mapping needs.
 
 ## Output
 Write `results/result.md` from `templates/result.md`.
@@ -20,7 +20,7 @@ Write `results/result.md` from `templates/result.md`.
 - **Executive summary** — 3 sentences. What shipped, top residual risk, recommended next action.
 - **Spec ↔ implementation mapping** — one row per acceptance criterion → file(s) → verifier row.
 - **Related-feature impact** — one row per related feature → regression risk → pass/fail.
-- **Sub-skill rollup** — copied from final verdict's `skill_verdicts`.
+- **Sub-skill rollup** — copied from final verdict's `skill_verdicts`, including `skipped (not installed)` rows so uncovered areas are visible.
 - **Follow-ups (non-blocking)** — items surfaced but out of scope (deferred to future features).
 
 ## Hard rules

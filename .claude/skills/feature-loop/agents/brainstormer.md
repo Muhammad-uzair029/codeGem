@@ -4,7 +4,7 @@
 Zero-hallucination expansion of the raw brief. Every assumption ties to evidence: a spec line, a code file, a related feature's spec, or the source doc itself.
 
 ## Inputs
-- Raw brief file (from inbox or `--from-doc`).
+- Raw brief file (from inbox or `--from-doc`). PDF/DOCX → convert once to `.claude/specs/inbox/<slug>.md` (text + tables; images referenced by path) and work from that; never re-read the original.
 - `.claude/specs/_index.md` — registry of every prior feature.
 - Related features' `index.md` (discovered per rules below).
 - `CLAUDE.md`, `.claude/specs/_project.yaml`.
@@ -19,7 +19,7 @@ Zero-hallucination expansion of the raw brief. Every assumption ties to evidence
 For every match, open the related feature's `index.md` and note the relation (extends / overlaps / depends-on / conflicts-with) + shared contracts.
 
 ## Parallel research (see `../SKILL.md` §Multi-agent policy)
-If ≥ 3 related features are found or the brief touches ≥ 2 workspaces, dispatch read-only sub-agents in parallel: one per related feature (returns relation + shared contracts, each with a file:line citation) and/or one per workspace (returns the existing modules, patterns, and contracts the feature will meet). For large briefs, split the 9 edge-case categories across ≤ 3 agents. You merge their results into the four outputs; drop any claim that lacks a citation.
+If ≥ 3 related features are found or the brief touches ≥ 2 workspaces, you cannot spawn agents yourself: stop after related-feature discovery and return `fanout:` — one line per related feature (relation + shared contracts, each with a file:line citation) and/or per workspace (existing modules, patterns, and contracts the feature will meet), each `→ .claude/specs/<mod>/<feat>/research/<scope>.md`. For large briefs, also split the 9 edge-case categories across ≤ 3 agents (`→ research/edge-<categories>.md`). The coordinator dispatches them as `general-purpose` agents on the main model (their findings feed judgement work; each writes its own file) and re-dispatches you in **merge mode** with the research paths; you merge their results into the four outputs and drop any claim that lacks a citation.
 
 ## Edge-case exhaustion (9 categories — ALL mandatory)
 
@@ -45,7 +45,7 @@ Categories:
 ## Hard rules
 - **Zero invented facts.** Every assumption in `brief-refined.md` has a `source:` line pointing at evidence.
 - **No guessing between two related features.** If overlap is ambiguous, log a `BLOCKING` question.
-- **No edge case skipped.** All 9 categories filled. If truly N/A, cite why.
+- **No edge case skipped.** All 9 categories filled. If truly N/A, one line with the cited reason — no padding.
 - **No implementation detail.** Brainstormer never proposes code or file paths — that's stage 1's job.
 
 ## Abort conditions
@@ -92,7 +92,7 @@ When invoked with `-y`, the brainstormer MUST classify every open question up fr
 
 If a non-`BLOCKING` question does not match a rule, the brainstormer MUST either (a) reclassify it as `BLOCKING`, or (b) add a new rule to `templates/open-questions.md` §Auto-default catalog extension in the same run, cite a source, and use it. Never resolve without a citation.
 
-Append a `> autonomous-mode: on` line to `brief-refined.md` and `open-questions.md` so reviewers can filter after the fact.
+Append a `> autonomous-mode: on` line to `brief-refined.md` and `open-questions.md` so reviewers can filter after the fact. Keep BLOCKING questions as `- ` bullets under `## BLOCKING` — the coordinator counts them there deterministically, so when there are none, leave the section with **no bullets at all** (not `- None`) — and return `auto_resolved: <n>`.
 
 ## On revise
 Master orchestrator appends the reviewer feedback under a `## Reviewer input` section in `brief-refined.md`, then re-runs this agent. New assumptions born from feedback get `source: reviewer`.

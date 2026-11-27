@@ -43,6 +43,7 @@
         { "cmd": "/feature-loop --from-spec <mod>/<feat>", "desc": "Skip planning and build from an existing spec" },
         { "cmd": "/feature-loop --verify-only <mod>/<feat>", "desc": "Only check the current changes against the spec" },
         { "cmd": "/feature-loop --dry-learnings <mod>/<feat>", "desc": "Preview the skill updates without applying them" },
+        { "cmd": "/feature-loop --full-spec <mod>/<feat>", "desc": "Write every spec file, including the ones that do not apply" },
         { "cmd": "--max-iters N / --max-heal-iters N", "desc": "Change the retry limits (default 3 each)" },
         { "cmd": "--max-agents N", "desc": "Limit how many helper agents run at the same time" },
         { "cmd": "--no-fanout", "desc": "Run the checks one after another instead of in parallel" }
@@ -126,6 +127,21 @@
       "summary": "Checks that your mock data and fixtures still match the real API.",
       "whenToUse": "After a backend response shape changes, so the app is not quietly tested against stale mocks.",
       "deps": []
+    },
+    "multi-repo-sync": {
+      "group": "Contracts and data",
+      "featured": true,
+      "summary": "Links several repos (backend, web, mobile, workers) through their API contract and builds features across them contract-first.",
+      "whenToUse": "Your product lives in more than one repo. Run it to see which repo produces and which consumes the API, whether they are in sync, and to take one feature through all of them: contract, then backend and frontend in parallel on mocks, then integration.",
+      "deps": ["feature-loop", "contract-drift-check", "api-mock-parity", "feature-qa"],
+      "commands": [
+        { "cmd": "/multi-repo-sync", "desc": "Find the linked repos, map producer and consumers, report contract sync" },
+        { "cmd": "/multi-repo-sync status", "desc": "Contract sync, breaking changes and pending-overlay status per repo pair" },
+        { "cmd": "/multi-repo-sync sync", "desc": "Preview the contract diff, then sync each consumer and typecheck" },
+        { "cmd": "/multi-repo-sync feature \"<brief>\"", "desc": "Plan and build one feature across every repo, contract first" },
+        { "cmd": "/multi-repo-sync setup <repo>", "desc": "Add a contract sync pipeline to a repo that has none" },
+        { "cmd": "/multi-repo-sync link <path>", "desc": "Add a repo to the group" }
+      ]
     },
     "migration-safety": {
       "group": "Contracts and data",

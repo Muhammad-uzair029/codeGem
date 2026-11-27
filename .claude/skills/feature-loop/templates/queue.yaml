@@ -1,0 +1,10 @@
+# template: coordinator — PRD split queue. Path: .claude/specs/_queue.yaml
+# Lives outside every feature folder so it survives /clear between features.
+source: {{source_doc_path}}
+split: .claude/specs/inbox/_split-{{date}}.md
+status: awaiting-split-approve | approved | done
+flags: {autonomous: false, full_spec: false, no_fanout: false, max_agents: 6, max_iters: 3, max_heal_iters: 3, dry_learnings: false}
+pending:                          # dependency order; the coordinator pops the head when a feature ends
+  - {{module}}/{{feature}}
+finished: []                      # "<mod>/<feat>: done | escalated"
+updated: {{utc_timestamp}}

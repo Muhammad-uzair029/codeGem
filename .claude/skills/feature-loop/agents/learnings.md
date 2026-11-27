@@ -6,8 +6,11 @@ Detect recurring friction from the iteration history and update the skill ecosys
 ## Inputs
 - All `build/iter-*.md` for this feature.
 - All `verify/iter-*.md` for this feature.
-- Every prior `learnings/*.md` under `.claude/specs/**/learnings/`.
+- From every prior `learnings/*.md` under `.claude/specs/**/learnings/`: only the `## Deferred` sections and the gap categories of `## Applied patches` (e.g. `sed -n '/^## Deferred/,/^## /p'`). Whole files grow with every feature; the pattern rules only need categories.
 - Target project's `.claude/skills/` (may or may not exist yet).
+
+## When this stage runs
+Only on `ship` with something to learn — any gap (any severity) in any iter, any heal iter, or any `error` check. A clean first-iter ship cannot trigger any rule below, so the coordinator skips this stage and records it in `state.yaml`.
 
 ## Pattern detection
 

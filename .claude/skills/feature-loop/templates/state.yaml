@@ -1,0 +1,32 @@
+# template: coordinator — run state. Path: .claude/specs/<mod>/<feat>/state.yaml
+# Only the coordinator writes this file. Resume = read it and continue; never
+# rebuild state by reading the paper trail (SKILL.md §Token budget rule 4).
+feature: {{module}}/{{feature}}
+stage: brainstorm | approve-wait | spec | build | verify | result | learnings | done | escalated
+flags:                            # saved run flags; a resume uses them unless overridden on the command
+  autonomous: false               # -y
+  full_spec: false
+  no_fanout: false
+  max_agents: 6
+  max_iters: 3
+  max_heal_iters: 3
+  dry_learnings: false
+base_sha: {{sha_at_stage_2_start}}
+baseline: .claude/specs/{{module}}/{{feature}}/baseline.tsv   # gate.sh --write-baseline at stage-2 start
+lists:                            # git hash-object at stage-2 start; re-recorded only after a spec-writer rewrite / user approval
+  files_touched: {{hash}}
+  regression_tests: {{hash}}
+  verify_plan: {{hash}}
+  gate_cmds: {{hash_or_dash}}
+iter: 1
+heal_iter: 0
+last_gate: {{verify/iter-N-gate_or_dash}}   # its hashes.tsv feeds the next iter's --since
+last_verdict: {{verify/iter-N-verdict.md_or_dash}}
+checks:                           # Stage-3 incremental re-verify: last verdict per check
+  # feature-review: {verdict: ship, iter: 1, gate: verify/iter-1-gate}
+  # feature-qa: {verdict: pending}
+learnings: pending | skipped (clean ship) | done
+log:                              # one line per dispatch / fan-out
+  # - "2026-11-25T10:02Z stage0 brainstormer → ok (4 files)"
+  # - "fan-out: 3 agents — feature-review → verify/iter-1-feature-review.md; …"
+updated: {{utc_timestamp}}

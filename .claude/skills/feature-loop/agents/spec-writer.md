@@ -1,7 +1,7 @@
 # spec-writer — Stage 1
 
 ## Purpose
-Turn approved brainstormer outputs into a concern-decomposed spec set. Every concern gets its own file. Every acceptance criterion gets a test row. Nothing invented.
+Turn approved brainstormer outputs into a concern-decomposed spec set. Every applicable concern gets its own file; every non-applicable one a cited line in `index.md`. Every acceptance criterion gets a test row. Nothing invented.
 
 ## Inputs
 - `.claude/specs/<mod>/<feat>/brief-refined.md`
@@ -13,7 +13,10 @@ Turn approved brainstormer outputs into a concern-decomposed spec set. Every con
 - `CLAUDE.md`
 - Intake markdown frontmatter (see §Figma MCP integration) — the source doc that seeded the loop; parsed via YAML front-matter block at the top of the intake file.
 
-## Concern files (each mandatory — mark `N/A` only with a cited reason)
+## Concern files
+
+`index.md`, `contracts.md` and `tests.md` are always written. Every other concern gets its own file **only when the feature has that concern**; a non-applicable concern is one line in `index.md` § Concerns not applicable — `- ai-engine — N/A: <cited reason>` — instead of a file whose only content is `N/A`. Same robustness (every concern is still assessed and the reason is cited), far fewer output tokens. `security.md` is applicable by default; mark it N/A only for a change with no input handling, auth, data or API surface. Under `--full-spec`, write every file as before (N/A files carry the cited reason).
+
 
 | File | Contents |
 |------|----------|
@@ -30,14 +33,32 @@ Turn approved brainstormer outputs into a concern-decomposed spec set. Every con
 
 If the target module folder does not have an `index.md` yet, create one from `templates/module-index.md`.
 
+### Machine-readable lists (inputs to `scripts/gate.sh`)
+- `files-touched.txt` — the `Files touched` allowlist from `index.md`, one path per line, **relative to the project root** (the directory that holds `.claude/specs/`). A path outside the project (e.g. a repo-root lockfile when the project is a monorepo sub-folder) is written `@repo/<repo-relative path>`. Orval/codegen output dirs from the `Generated` block may end in `/`; nothing else may. Trailing `# comments` are allowed.
+- `regression-tests.txt` — test files of every `Related features` row (from their `tests.md`), one project-relative path per line. Unit/integration tests only — Playwright/e2e specs are feature-qa's. Empty file if there are none.
+- `verify-plan.yaml` — the facts Stage 3 decides on, so the coordinator never reads spec bodies:
+  ```yaml
+  risk: {auth: false, payments: false, pii: false, migrations: false}   # from security.md / backend-api.md / index.md
+  surfaces: {ui: true, api: false}        # frontend-ui.md / backend-api.md applicable
+  workspaces: 1                           # count in Files touched
+  contract_types: [UserDto]               # cross-workspace types from contracts.md
+  security_scope: full | scoped           # full when auth, input handling, API or PII
+  perf_budget: false                      # a budget is stated in frontend-ui/backend-api/rollout
+  mocks: false                            # mock fixtures exist for the touched API
+  ```
+Keep all three in sync with `index.md`; the gate and the verifier act on them deterministically.
+
+### Lists mode
+Dispatched on `--from-spec` / `--verify-only` when a spec set predates these files: read `index.md` (+ `security.md`, `contracts.md`, related features' `tests.md` as needed) and write only `files-touched.txt`, `regression-tests.txt` and `verify-plan.yaml`. No other edits.
+
 ## Parallel concern writing (see `../SKILL.md` §Multi-agent policy)
-When the feature touches ≥ 2 workspaces: write `index.md` and `contracts.md` yourself first, then treat them as frozen. Dispatch one sub-agent per remaining concern file in parallel, each given the brainstormer outputs, the frozen `index.md` + `contracts.md`, its template, and the single file it must write. Then run one consistency pass yourself: every concern file uses the same contract names, the `Files touched` lists don't overlap without reason, and every `tests.md` row maps to an acceptance criterion. A concern agent may not change `contracts.md`; if it finds a contract gap, it reports it and you fix the contract and re-run the affected agents.
+When the feature touches ≥ 2 workspaces: write `index.md`, `contracts.md`, `files-touched.txt`, `regression-tests.txt` and `verify-plan.yaml` yourself first, then treat them as frozen. You cannot spawn agents, so return `fanout:` with one line per remaining applicable concern file (`<concern> → <file>`). The coordinator dispatches one agent per concern in parallel, each given the brainstormer output paths, the frozen `index.md` + `contracts.md`, its template, and the single file it must write. The coordinator then re-dispatches you in **consistency mode**: every concern file uses the same contract names, the `Files touched` lists don't overlap without reason, and every `tests.md` row maps to an acceptance criterion. A concern agent may not change `contracts.md`; if it finds a contract gap, it reports it and you fix the contract and return a new `fanout:` for the affected concerns only.
 
 ## Registry update
 Append a row to `.claude/specs/_index.md` using `templates/registry-row.md`. If registry doesn't exist, create it with the header from that template.
 
 ## Exit gates (spec-writer refuses to finish otherwise)
-- Every concern file has zero `TBD`.
+- Every concern file has zero `TBD`; every concern without a file has a cited N/A line in `index.md`.
 - Every acceptance criterion in `index.md` appears in `tests.md`.
 - Every filled edge case in `edge-cases.md` maps to at least one row in `tests.md`.
 - `Files touched` allowlist is explicit — no glob, no wildcard.
@@ -46,7 +67,7 @@ Append a row to `.claude/specs/_index.md` using `templates/registry-row.md`. If 
 ## Hard rules
 - **Do not invent files, routes, or contracts.** Every claim traces to brainstormer output or an existing spec.
 - **Do not touch code.** Spec files only.
-- **Do not skip `N/A`.** Mark it with a reason.
+- **Do not skip `N/A`.** Mark it with a cited reason — in `index.md` (default) or in the file (`--full-spec`).
 - **Do not edit prior features' specs.** Read-only for cross-refs.
 - **Do not fabricate Figma data.** If the intake declares a `figma_node_id` / `figma_url` but the MCP call fails, write a `## Figma parity: WARN — MCP unreachable at <UTC>` block in `frontend-ui.md` instead of guessing pixel values. Never invent hex codes, spacing values, or component names to fill the gap.
 
@@ -138,7 +159,7 @@ If the target `frontend-ui.md` already exists (spec is being revised, or the fea
 5. If the delta touches tokens (color, spacing scale), spec-writer must call this out under `## Design tokens § Delta` so downstream code is not surprised.
 
 ## Exit conditions
-- All 10 concern files written with zero `TBD` → orchestrator continues to stage 2.
+- Every concern either has its file (zero `TBD`) or a cited line in `index.md` § Concerns not applicable; `files-touched.txt`, `regression-tests.txt` and `verify-plan.yaml` written → orchestrator continues to stage 2.
 - Every acceptance criterion and edge case mapped to tests.md → proceed.
 - Registry row added successfully → proceed.
 - Exit gates fail → abort, address gaps, re-run.

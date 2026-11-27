@@ -31,13 +31,14 @@ _See [`user-journeys.md`](./user-journeys.md) for full detail._
 - {{workspace}}/{{path}}
 - {{workspace}}/{{path}}
 
+_Machine-readable copy for `scripts/gate.sh`: [`files-touched.txt`](./files-touched.txt). Related features' tests: [`regression-tests.txt`](./regression-tests.txt)._
+
 ## Concern files
-- [Frontend UI](./frontend-ui.md)
-- [Backend API](./backend-api.md)
-- [AI engine](./ai-engine.md)
+_List only the files written for this feature._
 - [Contracts](./contracts.md)
-- [Security](./security.md)
-- [Code audit](./code-audit.md)
-- [Telemetry](./telemetry.md)
 - [Tests](./tests.md)
-- [Rollout](./rollout.md)
+- [{{concern}}](./{{concern_file}}.md)
+
+## Concerns not applicable
+_One line per concern without a file (omit this section under `--full-spec`)._
+- {{concern}} — N/A: {{cited_reason}}

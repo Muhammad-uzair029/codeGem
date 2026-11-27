@@ -4,7 +4,7 @@
 Detect when the input document contains ≥ 2 independent features / milestones and propose a split into one feature per downstream loop.
 
 ## Inputs
-- Input document path (from the master orchestrator).
+- Input document path (from the master orchestrator). PDF/DOCX → convert once to `.claude/specs/inbox/<slug>.md` and cite line ranges from that text; downstream stages read the text, never the original.
 - `.claude/specs/_index.md` (may be empty on first run).
 
 ## Detection rules (any one triggers a split proposal)
@@ -39,6 +39,9 @@ Write `.claude/specs/inbox/_split-<YYYY-MM-DD>.md`:
 - Do NOT split into fewer than 2 items — if only one feature is present, return `single-feature`.
 - Do NOT edit the source doc.
 
+## Return
+The ≤ 15-line summary from `../SKILL.md` §Token budget rule 3: `verdict: single-feature | split-proposed`, the split file path, and the proposed slugs in order — not the proposal body.
+
 ## Exit conditions
 - `single-feature` → orchestrator continues to stage 0 with the input as-is.
 - `split-proposed` → default mode: orchestrator prints the file path and waits for `/feature-loop split-approve`.
@@ -50,5 +53,5 @@ Write `.claude/specs/inbox/_split-<YYYY-MM-DD>.md`:
 - Prepend a `> autonomous-approved: <UTC-timestamp>` line to `_split-<YYYY-MM-DD>.md` so the paper trail records that this was not human-reviewed.
 - If detection is ambiguous (e.g., a section is not clearly a feature vs. a subsection of the previous one), fall back to `single-feature` rather than guessing — a wrong split cannot be undone cheaply mid-loop.
 
-## After approval
-Orchestrator (not this agent) writes one `inbox/<mod>/<feature>.md` per row, copying the referenced section of the source doc. Then it queues features sequentially per the dependency order.
+## After approval — materialize mode
+The coordinator re-dispatches this agent after `split-approve` (or immediately under `-y`). Write one `.claude/specs/inbox/<mod>/<feature>.md` per row, copying the referenced section of the source doc (the text conversion, if the original was PDF/DOCX) plus any shared context the row's `Source:` depends on. Return the slugs in dependency order; the coordinator records them in `.claude/specs/_queue.yaml`.

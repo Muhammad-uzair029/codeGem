@@ -155,15 +155,17 @@ Then open the project in `claude` and use them as slash commands, for example `/
 |---|---|---|
 | **-1 · PRD splitter** | Splits a multi-feature document into separate features in dependency order | `.claude/specs/inbox/_split-<date>.md` |
 | **0 · Brainstormer** | Refines the brief against existing specs, maps user journeys and edge cases, lists open questions | `brief-refined.md`, `user-journeys.md`, `edge-cases.md`, `open-questions.md` |
-| **1 · Spec writer** | Writes one spec file per concern | `index.md`, `frontend-ui.md`, `backend-api.md`, `contracts.md`, `security.md`, `tests.md`, `rollout.md`, … |
+| **1 · Spec writer** | Writes one spec file per concern that applies (the rest get a one-line cited `N/A` in `index.md`; `--full-spec` writes them all), plus the file allowlist the gate enforces | `index.md`, `contracts.md`, `tests.md`, `frontend-ui.md`, `backend-api.md`, `security.md`, …, `files-touched.txt` |
 | **2 · Implementer** | Writes the code. For NestJS controllers/DTOs it regenerates `swagger.json` and runs Orval for typed client hooks | Code diff + `build/iter-N-*.md` |
-| **3 · Verifier** | **Compile gate** first (`pre-merge-check`, `contract-drift-check`, `null-safety-scan`). On failure it sends the raw error back to the implementer to self-heal. Then it runs the review skills in parallel | `verify/iter-N-verdict.md` |
+| **3 · Verifier** | **Compile gate** first: `scripts/gate.sh` runs lint, typecheck, related tests, the file allowlist and related features' tests with no AI involved (changed code that no check could examine stops the loop instead of passing), then `contract-drift-check` / `null-safety-scan`. On failure it sends the failing lines back to the implementer to self-heal. Then the review checks run in parallel (only the ones that apply, re-run only when their files changed), and Playwright QA runs once on the final candidate | `verify/iter-N-verdict.md` |
 | **4 · Result writer** | Summarizes what shipped | `results/result.md` |
-| **5 · Learnings** | Makes small additive patches to skills/templates (max 1 per skill per feature, ≤ 40 lines) | `learnings/<date>-learnings.md` |
+| **5 · Learnings** | Makes small additive patches to skills/templates (max 1 per skill per feature, ≤ 40 lines). Skipped on a clean first-iteration ship | `learnings/<date>-learnings.md` |
 
 All files for a feature go under `.claude/specs/<module>/<feature>/`.
 
-**Parallel agents:** on bigger features the loop splits work across sub-agents: research in brainstorming, one writer per spec file, one builder per workspace (when their files don't overlap), the verification checks, and an independent second reviewer for risky features (auth, payments, migrations). Small features stay single-agent.
+**Parallel agents:** on bigger features the loop splits work across sub-agents: research in brainstorming, one writer per spec file, one builder per workspace (when their files don't overlap), the verification checks, and an independent second reviewer for risky features (auth, payments, migrations). Small features use one agent per stage.
+
+**Token budget:** the session you start the loop in only coordinates. Each stage runs in its own sub-agent with a fresh context and returns a short summary; progress lives in `.claude/specs/<module>/<feature>/state.yaml`, so a run resumes exactly after `/clear`. Screenshots, PDFs and long command output stay inside the agent that needs them. Routine stages (PRD split, result, learnings, mechanical checks) run on Sonnet; brainstorming, specs, building, reviews and QA keep the main model. A check whose skill is not installed falls back to a reviewer or is marked skipped in the verdict, never improvised. Measure a run with `python3 -I .claude/skills/feature-loop/scripts/usage.py` (`~/.claude/skills/…` for a global install).
 
 If the build still fails after the retry limits, the loop stops and tags the result `ESCALATE` or `SELF-HEAL-EXHAUSTED` for a human to pick up.
 
@@ -184,6 +186,7 @@ By default the loop pauses twice: after splitting a multi-feature PRD (`split-ap
 | `/feature-loop --from-spec <mod>/<feat>` | Skip stages 0–1 and build from an existing spec |
 | `/feature-loop --verify-only <mod>/<feat>` | Run only stage 3 on the current diff |
 | `/feature-loop --dry-learnings <mod>/<feat>` | Preview stage-5 patches without applying them |
+| `/feature-loop --full-spec <mod>/<feat>` | Write every spec file, including concerns marked `N/A` |
 | `--max-iters N` / `--max-heal-iters N` | Change the retry limits (default 3 each) |
 | `--max-agents N` / `--no-fanout` | Change how many sub-agents run in parallel per stage (default 6), or turn parallel agents off |
 
@@ -195,7 +198,7 @@ Full playbook: [`.claude/skills/feature-loop/SKILL.md`](.claude/skills/feature-l
 <details>
 <summary><h2>🧰 All skills</h2></summary>
 
-27 skills, grouped by purpose. Each one is a folder in [`.claude/skills/`](.claude/skills) with a `SKILL.md`. Run any of them as `/<skill-name>` in Claude Code.
+28 skills, grouped by purpose. Each one is a folder in [`.claude/skills/`](.claude/skills) with a `SKILL.md`. Run any of them as `/<skill-name>` in Claude Code.
 
 <details>
 <summary><b>🏗️ Build</b>: create features and UI</summary>
@@ -232,6 +235,7 @@ Full playbook: [`.claude/skills/feature-loop/SKILL.md`](.claude/skills/feature-l
 |---|---|
 | `contract-drift-check` | Catches renamed, removed, or newly-required fields between frontend, backend, and AI engine |
 | `api-mock-parity` | Checks that mock fixtures still match the real API schema |
+| `multi-repo-sync` | Links several repos through their API contract: maps producer and consumers, checks sync and breaking changes, and runs a feature across all of them contract-first (uses `feature-loop` per repo) |
 | `migration-safety` | Flags risky DB migrations: drops, NOT NULL on full tables, locking indexes, unsafe backfills |
 | `dependency-hygiene` | Finds unused packages, duplicate versions, peer conflicts, license drift |
 

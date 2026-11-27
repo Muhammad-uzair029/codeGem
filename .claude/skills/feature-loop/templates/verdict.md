@@ -11,18 +11,21 @@
 verdict: {{ship_or_block}}
 iter: {{n}}
 head_sha: {{sha}}
+gate: {{PASS_FAIL_or_INCOMPLETE}} ({{gate_summary_path}})
+uncovered: [{{gate_SKIP_lines_or_empty}}]
 gaps:
   - section: {{spec_section}}
     expected: {{spec_line}}
     actual: {{code_behavior}}
     location: {{file_line}}
     severity: {{H_M_L}}
+    source: {{check_name}}
 regression_risk:
   - existing_feature: {{feature}}
     risk: {{description}}
     evidence: {{file_line}}
     result: {{pass_or_fail}}
-skill_verdicts:
+skill_verdicts:            # one line per applicable check: verdict | error | skipped (reason); reused ones marked (iter K)
   feature-review: {{verdict}}
   security-audit: {{verdict}}
   contract-drift-check: {{verdict}}
@@ -34,8 +37,10 @@ skill_verdicts:
   perf-budget: {{verdict}}
   migration-safety: {{verdict}}
   dependency-hygiene: {{verdict}}
+  feature-qa: {{verdict}}
+  second-opinion: {{verdict}}
 files_touched_violation:
-  - {{file_line}}
+  - {{file}}
 ```
 
 ## Human summary
